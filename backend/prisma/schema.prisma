@@ -1,0 +1,385 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  DEPT_ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum TaskType {
+  LISTENING
+  SPEAKING
+  READING
+  WRITING
+}
+
+enum ListeningSubType {
+  MCQ_AUDIO
+  FILL_BLANKS_AUDIO
+  NOTE_TAKING
+  LISTENING_GIST
+  LISTENING_DETAILS
+  DICTATION
+  MATCHING_AUDIO
+}
+
+enum SpeakingSubType {
+  SELF_INTRODUCTION
+  PICTURE_DESCRIPTION
+  READ_ALOUD
+  ANSWER_QUESTIONS
+  REPEAT_SENTENCES
+}
+
+enum ReadingSubType {
+  COMPREHENSION_MCQ
+  TRUE_FALSE
+  FILL_BLANKS
+  MATCHING_HEADINGS
+  SKIMMING
+  SCANNING
+  VOCABULARY
+}
+
+enum WritingSubType {
+  ESSAY
+  PARAGRAPH
+  LETTER_EMAIL
+  STORY_COMPLETION
+  SUMMARIZATION
+  GRAMMAR_CORRECTION
+  REPORT
+}
+
+enum VisibilityScope {
+  GLOBAL          // All students across all organizations (Super Admin only)
+  ORGANIZATION    // All students within the organization
+  DEPARTMENT      // Students in selected departments
+  GROUP           // Students in selected groups only
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum TaskStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  subdomain   String   @unique
+  status      String   @default("ACTIVE")
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[]
+  tasks       Task[]
+  departments Department[]
+  groups      Group[]
+  subscriptions Subscription[]
+}
+
+model User {
+  id              String       @id @default(uuid())
+  email           String       @unique
+  password        String
+  firstName       String?
+  lastName        String?
+  role            Role         @default(STUDENT)
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  organizationId  String
+  department      String?
+  
+  // Group relationships
+  groupsOwned      Group[]      @relation("GroupOwner")
+  groupsMemberships GroupMembership[]
+  
+  // Department Admin roles
+  departmentAdminDepartments Department[] @relation("DepartmentAdministrator")
+  
+  // Teacher-Student Relation
+  teacher         User?        @relation("TeacherStudents", fields: [teacherId], references: [id])
+  teacherId       String?
+  students        User[]       @relation("TeacherStudents")
+
+  // Tasks and attempts
+  tasksCreated    Task[]       @relation("TaskCreator")
+  attempts        Attempt[]
+  auditLogs       AuditLog[]   @relation("AuditUser")
+  progressSummary StudentProgressSummary?
+
+  status          String       @default("ACTIVE") // ACTIVE, INACTIVE, INVITED
+  forcePasswordReset Boolean    @default(false)
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([role])
+}
+
+model Department {
+  id            String       @id @default(uuid())
+  name          String
+  status        String       @default("ACTIVE")
+  organization  Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  admin         User?        @relation("DepartmentAdministrator", fields: [adminId], references: [id])
+  adminId       String?
+  staffMemberIds Json?
+  
+  groups        Group[]
+  tasks         TaskDepartmentAssignment[]
+  
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@index([adminId])
+}
+
+model Group {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?  @db.Text
+  academicYear    String?
+  section         String?
+  status          String   @default("ACTIVE") // ACTIVE, INACTIVE
+  
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  organizationId  String
+  
+  department      Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  departmentId    String
+  
+  owner           User     @relation("GroupOwner", fields: [ownerId], references: [id])
+  ownerId         String
+  
+  members         GroupMembership[]
+  tasks           TaskGroupAssignment[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([organizationId, name, departmentId])
+  @@index([organizationId])
+  @@index([departmentId])
+  @@index([ownerId])
+}
+
+model GroupMembership {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  group       Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId     String
+  role        String   // OWNER, COLLABORATOR, MEMBER (for student members)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([userId, groupId])
+  @@index([groupId])
+}
+
+model Task {
+  id              String       @id @default(uuid())
+  title           String
+  description     String?      @db.Text
+  
+  type            TaskType
+  subType         String?      // ListeningSubType, SpeakingSubType, etc.
+  difficulty      Difficulty   @default(INTERMEDIATE)
+  status          TaskStatus   @default(DRAFT)
+  timeLimit       Int?         // in seconds
+  
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  organizationId  String
+  
+  visibilityScope VisibilityScope @default(ORGANIZATION)
+  
+  // Creator info
+  createdBy       User         @relation("TaskCreator", fields: [createdById], references: [id])
+  createdById     String
+  createdByRole   Role
+  
+  // Module specific data - populated based on task type
+  audioUrl        String?      // Listening
+  audioFileName   String?
+  passage         String?      @db.Text // Reading
+  instructions    String?      @db.Text // Speaking/Writing
+  evaluationRubric Json?       // Writing/Speaking
+  
+  // Additional metadata
+  passingScore    Int          @default(60)
+  showAnswers     Boolean      @default(false)
+  showScores      Boolean      @default(true)
+  
+  // Assignments (one-to-many relationships)
+  departmentAssignments TaskDepartmentAssignment[]
+  groupAssignments      TaskGroupAssignment[]
+  
+  questions       Question[]
+  attempts        Attempt[]
+  auditLogs       AuditLog[]   @relation("TaskAudit")
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([type])
+  @@index([visibilityScope])
+  @@index([createdById])
+  @@index([status])
+}
+
+model TaskDepartmentAssignment {
+  id            String   @id @default(uuid())
+  task          Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId        String
+  department    Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  departmentId  String
+  
+  createdAt     DateTime @default(now())
+  
+  @@unique([taskId, departmentId])
+  @@index([taskId])
+  @@index([departmentId])
+}
+
+model TaskGroupAssignment {
+  id            String   @id @default(uuid())
+  task          Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId        String
+  group         Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId       String
+  dueDate       DateTime?
+  
+  createdAt     DateTime @default(now())
+  
+  @@unique([taskId, groupId])
+  @@index([taskId])
+  @@index([groupId])
+}
+
+model Question {
+  id          String   @id @default(uuid())
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId      String
+  questionText String   @db.Text
+  options      Json?    // For MCQs: ["A", "B", "C", "D"]
+  correctAnswer String
+  questionType  String?  // MCQ, FILL_BLANK, TRUE_FALSE, MATCHING, etc.
+  time         Int?     @default(20)
+  order        Int      @default(0)
+  explanation  String?  @db.Text // For answers/explanations
+  imageUrl     String?  // For picture-based questions
+  audioUrl     String?  // For audio-based questions
+
+  @@index([taskId])
+}
+
+model Attempt {
+  id              String   @id @default(uuid())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  task            Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId          String
+  
+  status          String   @default("COMPLETED") // COMPLETED, IN_PROGRESS, SUBMITTED
+  score           Float?
+  totalScore      Float?
+  percentage      Float?
+  
+  // AI Results stored as JSON
+  aiResults       Json?    // { grammar: 0.8, fluency: 0.7, stt: "...", etc }
+  studentAnswers  Json?    // { "q1": "A", "q2": "B", etc. }
+  
+  teacherFeedback String?  @db.Text
+  manualScore     Float?
+  
+  recordingUrl    String?  // For speaking tasks
+  submittedAt     DateTime @default(now())
+  evaluatedAt     DateTime?
+
+  @@index([userId])
+  @@index([taskId])
+  @@index([submittedAt])
+}
+
+model StudentProgressSummary {
+  id              String   @id @default(uuid())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String   @unique
+
+  listeningAvg    Float    @default(0)
+  speakingAvg     Float    @default(0)
+  readingAvg      Float    @default(0)
+  writingAvg      Float    @default(0)
+  
+  totalAttempts   Int      @default(0)
+  completedAttempts Int    @default(0)
+  lastAttemptAt   DateTime?
+
+  updatedAt       DateTime @updatedAt
+}
+
+model AuditLog {
+  id              String   @id @default(uuid())
+  userId          String?  // User performing the action
+  user            User?    @relation("AuditUser", fields: [userId], references: [id], onDelete: SetNull)
+  
+  action          String   // USER_CREATED, ROLE_ASSIGNED, TASK_CREATED, TASK_PUBLISHED, GROUP_CREATED, etc.
+  entityType      String   // User, Task, Group, Department, Organization
+  entityId        String?
+  
+  task            Task?    @relation("TaskAudit", fields: [entityId], references: [id], onDelete: SetNull)
+  
+  changes         Json?    // What was changed
+  ipAddress       String?
+  userAgent       String?
+  
+  timestamp       DateTime @default(now())
+  
+  @@index([userId])
+  @@index([entityType])
+  @@index([action])
+  @@index([timestamp])
+}
+
+model Subscription {
+  id              String       @id @default(uuid())
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  organizationId  String
+  plan            String       // FREE, BASIC, PRO, INSTITUTIONAL
+  status          String       @default("ACTIVE")
+  startDate       DateTime     @default(now())
+  endDate         DateTime?
+  
+  // Limits
+  aiLimit         Int          @default(100)
+  studentLimit    Int          @default(50)
+  storageLimit    Int          @default(1024) // in MB
+
+  @@index([organizationId])
+}

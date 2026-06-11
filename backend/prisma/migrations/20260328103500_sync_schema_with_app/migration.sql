@@ -1,0 +1,13 @@
+-- AlterTable
+ALTER TABLE `User`
+    ADD COLUMN `status` VARCHAR(191) NOT NULL DEFAULT 'ACTIVE';
+
+-- AlterTable
+ALTER TABLE `Task`
+    ADD COLUMN `createdByRole` ENUM('ADMIN', 'TEACHER', 'STUDENT') NULL,
+    ADD COLUMN `createdById` VARCHAR(191) NULL;
+
+-- AlterTable
+ALTER TABLE `Question`
+    ADD COLUMN `type` VARCHAR(191) NULL,
+    ADD COLUMN `time` INTEGER NULL DEFAULT 20;

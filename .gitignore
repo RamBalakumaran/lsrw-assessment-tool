@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Python Virtual Environment
+venv/
+__pycache__/
+*.pyc
+
+# Environment variables (Safety)
+.env
+
+ai-engine/ffmpeg.zip
+# Build outputs
+build/
+dist/
+uploads/
+
+# OS generated files
+.DS_Store
+Thumbs.db

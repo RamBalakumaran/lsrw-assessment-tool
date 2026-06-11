@@ -1,0 +1,17 @@
+[
+  {
+    "id": "38958907-fa81-4136-ab91-2571b09c470b",
+    "email": "student@fluentpro.com",
+    "role": "STUDENT"
+  },
+  {
+    "id": "905891c0-2369-4ce8-97ac-11cf9f257cbe",
+    "email": "admin@fluentpro.com",
+    "role": "ADMIN"
+  },
+  {
+    "id": "e8396ef2-2f81-4636-a048-e33eaac61209",
+    "email": "teacher@fluentpro.com",
+    "role": "TEACHER"
+  }
+]

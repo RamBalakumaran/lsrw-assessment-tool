@@ -1,0 +1,6 @@
+language-tool-python
+pydub
+scikit-learn
+SpeechRecognition
+strsimpy
+textblob

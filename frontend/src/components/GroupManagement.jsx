@@ -1,0 +1,447 @@
+import React, { useState, useEffect } from 'react';
+import { Plus, Edit2, Trash2, Users, AlertCircle, CheckCircle2, X } from 'lucide-react';
+import api from '../utils/api';
+
+const GroupManagement = () => {
+    const [groups, setGroups] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    const [editingGroup, setEditingGroup] = useState(null);
+    const [departments, setDepartments] = useState([]);
+    const [availableUsers, setAvailableUsers] = useState([]);
+    
+    const [formData, setFormData] = useState({
+        name: '',
+        description: '',
+        academicYear: new Date().getFullYear().toString(),
+        section: '',
+        departmentId: '',
+        status: 'ACTIVE'
+    });
+
+    const [errors, setErrors] = useState({});
+    const [success, setSuccess] = useState('');
+    const [selectedMembers, setSelectedMembers] = useState([]);
+    const [showAddMembersModal, setShowAddMembersModal] = useState(false);
+    const [selectedGroupForMembers, setSelectedGroupForMembers] = useState(null);
+
+    // Fetch data on component mount
+    useEffect(() => {
+        fetchGroups();
+        fetchDepartments();
+        fetchUsers();
+    }, []);
+
+    const fetchGroups = async () => {
+        try {
+            setLoading(true);
+            const res = await api.get('/api/groups');
+            setGroups(res.data || []);
+        } catch (err) {
+            console.error('Failed to fetch groups:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchDepartments = async () => {
+        try {
+            const res = await api.get('/admin/departments');
+            setDepartments(res.data || []);
+        } catch (err) {
+            console.error('Failed to fetch departments:', err);
+        }
+    };
+
+    const fetchUsers = async () => {
+        try {
+            const res = await api.get('/admin/users');
+            setAvailableUsers(res.data || []);
+        } catch (err) {
+            console.error('Failed to fetch users:', err);
+        }
+    };
+
+    const resetForm = () => {
+        setFormData({
+            name: '',
+            description: '',
+            academicYear: new Date().getFullYear().toString(),
+            section: '',
+            departmentId: '',
+            status: 'ACTIVE'
+        });
+        setErrors({});
+        setSelectedMembers([]);
+    };
+
+    const handleOpenCreateModal = () => {
+        setEditingGroup(null);
+        resetForm();
+        setShowModal(true);
+    };
+
+    const handleEditGroup = (group) => {
+        setEditingGroup(group);
+        setFormData({
+            name: group.name,
+            description: group.description || '',
+            academicYear: group.academicYear || '',
+            section: group.section || '',
+            departmentId: group.departmentId,
+            status: group.status
+        });
+        setShowModal(true);
+    };
+
+    const validateForm = () => {
+        const newErrors = {};
+        if (!formData.name.trim()) newErrors.name = 'Group name is required';
+        if (!formData.departmentId) newErrors.departmentId = 'Department is required';
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSubmitGroup = async () => {
+        if (!validateForm()) return;
+
+        try {
+            if (editingGroup) {
+                await api.put(`/api/groups/${editingGroup.id}`, formData);
+                setSuccess('Group updated successfully');
+            } else {
+                await api.post('/api/groups', formData);
+                setSuccess('Group created successfully');
+            }
+            setShowModal(false);
+            fetchGroups();
+            setTimeout(() => setSuccess(''), 3000);
+        } catch (err) {
+            setErrors({
+                submit: err.response?.data?.error || 'Failed to save group'
+            });
+        }
+    };
+
+    const handleDeleteGroup = async (groupId) => {
+        if (!window.confirm('Are you sure you want to delete this group?')) return;
+
+        try {
+            await api.delete(`/api/groups/${groupId}`);
+            setSuccess('Group deleted successfully');
+            fetchGroups();
+            setTimeout(() => setSuccess(''), 3000);
+        } catch (err) {
+            setErrors({
+                submit: err.response?.data?.error || 'Failed to delete group'
+            });
+        }
+    };
+
+    const handleAddMembers = async () => {
+        if (selectedMembers.length === 0) {
+            setErrors({ members: 'Select at least one member' });
+            return;
+        }
+
+        try {
+            await api.post(`/api/groups/${selectedGroupForMembers.id}/members`, {
+                userIds: selectedMembers,
+                role: 'COLLABORATOR'
+            });
+            setSuccess('Members added successfully');
+            setShowAddMembersModal(false);
+            setSelectedMembers([]);
+            fetchGroups();
+            setTimeout(() => setSuccess(''), 3000);
+        } catch (err) {
+            setErrors({
+                members: err.response?.data?.error || 'Failed to add members'
+            });
+        }
+    };
+
+    const handleRemoveMember = async (groupId, memberId) => {
+        if (!window.confirm('Remove this member?')) return;
+
+        try {
+            await api.delete(`/api/groups/${groupId}/members/${memberId}`);
+            fetchGroups();
+        } catch (err) {
+            setErrors({ submit: 'Failed to remove member' });
+        }
+    };
+
+    if (loading) {
+        return <div className="p-6 text-center">Loading groups...</div>;
+    }
+
+    return (
+        <div className="p-6 max-w-6xl mx-auto">
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-3xl font-bold">Group Management</h2>
+                <button
+                    onClick={handleOpenCreateModal}
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center"
+                >
+                    <Plus size={20} className="mr-2" /> Create Group
+                </button>
+            </div>
+
+            {success && (
+                <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded flex items-center">
+                    <CheckCircle2 className="mr-2" />
+                    {success}
+                </div>
+            )}
+
+            {errors.submit && (
+                <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded flex items-center">
+                    <AlertCircle className="mr-2" />
+                    {errors.submit}
+                </div>
+            )}
+
+            {/* Groups Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {groups.map(group => (
+                    <div key={group.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900">{group.name}</h3>
+                                {group.section && (
+                                    <p className="text-sm text-gray-600">Section: {group.section}</p>
+                                )}
+                            </div>
+                            <span className={`px-3 py-1 rounded text-sm font-semibold ${
+                                group.status === 'ACTIVE' 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-gray-100 text-gray-800'
+                            }`}>
+                                {group.status}
+                            </span>
+                        </div>
+
+                        {group.description && (
+                            <p className="text-gray-700 text-sm mb-4">{group.description}</p>
+                        )}
+
+                        <div className="mb-4">
+                            <div className="flex items-center text-gray-600 mb-2">
+                                <Users size={16} className="mr-2" />
+                                <span className="font-semibold">{group.members.length} Members</span>
+                            </div>
+                            <div className="space-y-1 max-h-24 overflow-y-auto">
+                                {group.members.slice(0, 3).map(member => (
+                                    <div key={member.id} className="text-sm text-gray-700">
+                                        <span className="font-medium">{member.user.email}</span>
+                                        <span className="text-gray-500 ml-2">({member.role})</span>
+                                    </div>
+                                ))}
+                                {group.members.length > 3 && (
+                                    <div className="text-sm text-gray-500 italic">
+                                        +{group.members.length - 3} more...
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2 pt-4 border-t border-gray-200">
+                            {group.ownerId === JSON.parse(localStorage.getItem('user') || '{}').id && (
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            setSelectedGroupForMembers(group);
+                                            setShowAddMembersModal(true);
+                                            setSelectedMembers([]);
+                                        }}
+                                        className="flex-1 px-3 py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-sm font-semibold"
+                                    >
+                                        <Users size={14} className="inline mr-1" /> Add Members
+                                    </button>
+                                    <button
+                                        onClick={() => handleEditGroup(group)}
+                                        className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                                    >
+                                        <Edit2 size={14} className="inline mr-1" />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteGroup(group.id)}
+                                        className="flex-1 px-3 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200"
+                                    >
+                                        <Trash2 size={14} className="inline mr-1" />
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {groups.length === 0 && (
+                <div className="text-center py-12">
+                    <Users size={48} className="mx-auto text-gray-400 mb-4" />
+                    <p className="text-gray-600">No groups yet. Create one to get started!</p>
+                </div>
+            )}
+
+            {/* Create/Edit Group Modal */}
+            {showModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-96 max-h-96 overflow-y-auto">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold">
+                                {editingGroup ? 'Edit Group' : 'Create Group'}
+                            </h3>
+                            <button onClick={() => setShowModal(false)}>
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block font-semibold mb-1">Group Name *</label>
+                                <input
+                                    type="text"
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                    className={`w-full p-2 border rounded ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
+                                    placeholder="e.g., Class A1 - 2024"
+                                />
+                                {errors.name && <span className="text-red-600 text-sm">{errors.name}</span>}
+                            </div>
+
+                            <div>
+                                <label className="block font-semibold mb-1">Department *</label>
+                                <select
+                                    value={formData.departmentId}
+                                    onChange={(e) => setFormData({...formData, departmentId: e.target.value})}
+                                    className={`w-full p-2 border rounded ${errors.departmentId ? 'border-red-500' : 'border-gray-300'}`}
+                                >
+                                    <option value="">Select Department</option>
+                                    {departments.map(dept => (
+                                        <option key={dept.id} value={dept.id}>{dept.name}</option>
+                                    ))}
+                                </select>
+                                {errors.departmentId && <span className="text-red-600 text-sm">{errors.departmentId}</span>}
+                            </div>
+
+                            <div>
+                                <label className="block font-semibold mb-1">Description</label>
+                                <textarea
+                                    value={formData.description}
+                                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                                    className="w-full p-2 border border-gray-300 rounded"
+                                    placeholder="Optional description..."
+                                    rows="2"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block font-semibold mb-1">Academic Year</label>
+                                    <input
+                                        type="text"
+                                        value={formData.academicYear}
+                                        onChange={(e) => setFormData({...formData, academicYear: e.target.value})}
+                                        placeholder="e.g., 2024-2025"
+                                        className="w-full p-2 border border-gray-300 rounded"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block font-semibold mb-1">Section</label>
+                                    <input
+                                        type="text"
+                                        value={formData.section}
+                                        onChange={(e) => setFormData({...formData, section: e.target.value})}
+                                        placeholder="e.g., A1"
+                                        className="w-full p-2 border border-gray-300 rounded"
+                                    />
+                                </div>
+                            </div>
+
+                            {errors.submit && (
+                                <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                                    {errors.submit}
+                                </div>
+                            )}
+
+                            <div className="flex gap-2 pt-4 border-t">
+                                <button
+                                    onClick={() => setShowModal(false)}
+                                    className="flex-1 px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSubmitGroup}
+                                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                >
+                                    {editingGroup ? 'Update' : 'Create'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Members Modal */}
+            {showAddMembersModal && selectedGroupForMembers && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-96 max-h-96 overflow-y-auto">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold">Add Members</h3>
+                            <button onClick={() => setShowAddMembersModal(false)}>
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-2 mb-4">
+                            {availableUsers.map(user => (
+                                <label key={user.id} className="flex items-center p-2 border rounded hover:bg-gray-50">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedMembers.includes(user.id)}
+                                        onChange={(e) => {
+                                            if (e.target.checked) {
+                                                setSelectedMembers([...selectedMembers, user.id]);
+                                            } else {
+                                                setSelectedMembers(selectedMembers.filter(id => id !== user.id));
+                                            }
+                                        }}
+                                        className="mr-2"
+                                    />
+                                    <span className="flex-1">{user.email}</span>
+                                    <span className="text-sm text-gray-600">{user.role}</span>
+                                </label>
+                            ))}
+                        </div>
+
+                        {errors.members && (
+                            <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm mb-4">
+                                {errors.members}
+                            </div>
+                        )}
+
+                        <div className="flex gap-2 pt-4 border-t">
+                            <button
+                                onClick={() => setShowAddMembersModal(false)}
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleAddMembers}
+                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                            >
+                                Add Members
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default GroupManagement;
