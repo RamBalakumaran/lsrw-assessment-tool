@@ -20,3 +20,6 @@ uploads/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+ai-engine/ffmpeg.exe
+ai-engine/ffmpeg_backup.exe
