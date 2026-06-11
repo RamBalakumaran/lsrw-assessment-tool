@@ -66,7 +66,6 @@ router.post('/register', async (req, res) => {
                 organizationId: orgId,
                 department: department?.trim() || null,
                 teacherId: assignedTeacher?.id,
-                groupMemberships: normalizedGroups.length ? normalizedGroups : undefined,
             },
             include: userProfileInclude,
         });

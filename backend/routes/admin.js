@@ -1131,7 +1131,6 @@ router.post('/users/invite', authMiddleware, authorize(ADMIN_ACCESS_ROLES), asyn
                     password: hashedPassword,
                     department: targetDepartment?.name || targetManagedDepartment?.name || department?.trim() || null,
                     teacherId: normalizedRole === 'STUDENT' ? assignedTeacher?.id || null : null,
-                    groupMemberships: normalizedGroups.length ? normalizedGroups : undefined,
                 },
             });
 
@@ -1218,7 +1217,7 @@ router.patch('/users/:id/access', authMiddleware, authorize(ADMIN_ACCESS_ROLES),
 
         const normalizedGroups = Array.isArray(groupMemberships)
             ? parseGroupMembershipsInput(groupMemberships)
-            : targetUser.groupMemberships;
+            : targetUser.groupsMemberships;
 
         const updatedUser = await prisma.$transaction(async (db) => {
             await db.user.update({
@@ -1227,7 +1226,6 @@ router.patch('/users/:id/access', authMiddleware, authorize(ADMIN_ACCESS_ROLES),
                     role: normalizedRole,
                     status: normalizedStatus,
                     teacherId: normalizedRole === 'STUDENT' ? assignedTeacher?.id || null : null,
-                    groupMemberships: normalizedGroups,
                 },
             });
 

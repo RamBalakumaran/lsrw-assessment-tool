@@ -193,49 +193,6 @@ async function main() {
 
     console.log('✅ Department created:', dept.name);
 
-    // 8. Create Group
-    const group = await prisma.group.create({
-        data: {
-            name: 'CSE Batch 2024-A',
-            description: 'Computer Science Engineering Batch A',
-            academicYear: '2024-2025',
-            departmentId: dept.id,
-            organizationId: org.id,
-            ownerId: teacher.id,
-            status: 'ACTIVE',
-        },
-    });
-
-    console.log('✅ Group created:', group.name);
-
-    // 9. Add teacher as owner of group
-    await prisma.groupMembership.create({
-        data: {
-            userId: teacher.id,
-            groupId: group.id,
-            role: 'OWNER',
-        },
-    });
-
-    // 10. Add students to group
-    await prisma.groupMembership.create({
-        data: {
-            userId: student1.id,
-            groupId: group.id,
-            role: 'MEMBER',
-        },
-    });
-
-    await prisma.groupMembership.create({
-        data: {
-            userId: student2.id,
-            groupId: group.id,
-            role: 'MEMBER',
-        },
-    });
-
-    console.log('✅ Teacher and students added to group');
-
     console.log('\n' + '='.repeat(50));
     console.log('✅ SEED DATA CREATED SUCCESSFULLY!');
     console.log('='.repeat(50));
