@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import api from '../utils/api';
 import {
@@ -8,6 +9,7 @@ import {
     CheckCircle,
     AlertCircle,
     Loader2,
+    ShieldAlert,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -22,6 +24,8 @@ const readStoredUser = () => {
 
 const PasswordReset = () => {
     const [user] = useState(readStoredUser);
+    const navigate = useNavigate();
+    const isForced = Boolean(user?.forcePasswordReset);
     const [formData, setFormData] = useState({
         currentPassword: '',
         newPassword: '',
@@ -83,8 +87,24 @@ const PasswordReset = () => {
                 confirmPassword: '',
             });
 
-            // Reset success message after 3 seconds
-            setTimeout(() => setSuccess(false), 3000);
+            // Update local user state: clear forcePasswordReset flag
+            try {
+                const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+                storedUser.forcePasswordReset = false;
+                localStorage.setItem('user', JSON.stringify(storedUser));
+            } catch (_) {}
+
+            if (isForced) {
+                // Redirect to role dashboard after short delay
+                setTimeout(() => {
+                    const role = user?.role;
+                    if (role === 'ADMIN') navigate('/admin/dashboard');
+                    else if (role === 'TEACHER') navigate('/teacher/dashboard');
+                    else navigate('/dashboard');
+                }, 1800);
+            } else {
+                setTimeout(() => setSuccess(false), 3000);
+            }
         } catch (err) {
             setError(err.response?.data?.error || 'Password reset failed. Please try again.');
         } finally {
@@ -112,9 +132,27 @@ const PasswordReset = () => {
 
             <main className="flex-1 p-10 overflow-y-auto">
                 <header className="mb-10">
-                    <h1 className="text-4xl font-black text-gray-900 tracking-tight">Reset Password</h1>
-                    <p className="text-gray-500 font-medium">Change your account password securely.</p>
+                    <h1 className="text-4xl font-black text-gray-900 tracking-tight">
+                        {isForced ? 'Set Your Password' : 'Reset Password'}
+                    </h1>
+                    <p className="text-gray-500 font-medium">
+                        {isForced ? 'Your account requires a new password before you can continue.' : 'Change your account password securely.'}
+                    </p>
                 </header>
+
+                {isForced && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="max-w-2xl mx-auto mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3"
+                    >
+                        <ShieldAlert size={20} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <div className="font-black text-amber-900 text-sm">First Login — Password Setup Required</div>
+                            <div className="text-xs text-amber-700 mt-0.5">Your account was created with a temporary password. Please set a new secure password to access the platform.</div>
+                        </div>
+                    </motion.div>
+                )}
 
                 <div className="max-w-2xl mx-auto">
                     <motion.div
@@ -140,8 +178,12 @@ const PasswordReset = () => {
                             >
                                 <CheckCircle size={20} className="text-emerald-600 flex-shrink-0" />
                                 <div>
-                                    <div className="font-black text-emerald-900">Password Updated</div>
-                                    <div className="text-sm text-emerald-700">Your password has been changed successfully.</div>
+                                    <div className="font-black text-emerald-900">Password Updated!</div>
+                                    <div className="text-sm text-emerald-700">
+                                        {isForced
+                                            ? 'Your password has been set. Redirecting to your dashboard…'
+                                            : 'Your password has been changed successfully.'}
+                                    </div>
                                 </div>
                             </motion.div>
                         )}

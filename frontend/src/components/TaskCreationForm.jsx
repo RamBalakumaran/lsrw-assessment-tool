@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle2, X, Plus, Trash2, ChevronDown } from 'lucide-react';
+import { AlertCircle, CheckCircle2, X, Plus, Trash2, ChevronDown, ChevronLeft, Headphones, Mic, BookOpen, PenTool, LayoutTemplate, Layers } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
 
-// Task subtype configurations
 const TASK_CONFIG = {
     LISTENING: {
-        icon: '🎧',
+        icon: <Headphones size={32} />,
+        color: 'text-blue-600',
+        bg: 'bg-blue-50',
+        border: 'border-blue-100',
         subtypes: {
             MCQ_AUDIO: { label: 'Multiple Choice from Audio', fields: ['audioUrl', 'questions'] },
             FILL_BLANKS_AUDIO: { label: 'Fill Blanks from Audio', fields: ['audioUrl', 'questions'] },
@@ -17,7 +20,10 @@ const TASK_CONFIG = {
         }
     },
     SPEAKING: {
-        icon: '🗣️',
+        icon: <Mic size={32} />,
+        color: 'text-indigo-600',
+        bg: 'bg-indigo-50',
+        border: 'border-indigo-100',
         subtypes: {
             SELF_INTRODUCTION: { label: 'Self-Introduction', fields: ['instructions', 'timeLimit', 'evaluationRubric'] },
             PICTURE_DESCRIPTION: { label: 'Picture Description', fields: ['instructions', 'timeLimit', 'evaluationRubric'] },
@@ -27,7 +33,10 @@ const TASK_CONFIG = {
         }
     },
     READING: {
-        icon: '📖',
+        icon: <BookOpen size={32} />,
+        color: 'text-emerald-600',
+        bg: 'bg-emerald-50',
+        border: 'border-emerald-100',
         subtypes: {
             COMPREHENSION_MCQ: { label: 'Reading Comprehension (MCQ)', fields: ['passage', 'questions'] },
             TRUE_FALSE: { label: 'True/False Questions', fields: ['passage', 'questions'] },
@@ -39,7 +48,10 @@ const TASK_CONFIG = {
         }
     },
     WRITING: {
-        icon: '✍️',
+        icon: <PenTool size={32} />,
+        color: 'text-amber-600',
+        bg: 'bg-amber-50',
+        border: 'border-amber-100',
         subtypes: {
             ESSAY: { label: 'Essay Writing', fields: ['instructions', 'evaluationRubric', 'timeLimit'] },
             PARAGRAPH: { label: 'Paragraph Writing', fields: ['instructions', 'timeLimit'] },
@@ -53,530 +65,384 @@ const TASK_CONFIG = {
 };
 
 const VISIBILITY_SCOPES = [
-    { value: 'ORGANIZATION', label: 'Organization-Wide', description: 'All students in the organization' },
-    { value: 'DEPARTMENT', label: 'Department-Specific', description: 'Selected departments only' },
-    { value: 'GROUP', label: 'Group-Specific', description: 'Selected groups only' }
+    { value: 'Global', label: 'Global', description: 'Visible to all students.' },
+    { value: 'GroupSpecific', label: 'Group-Specific', description: 'Visible to selected groups only.' }
 ];
 
-const TaskCreationForm = ({ onTaskCreated, userRole, userId }) => {
+const TaskCreationForm = ({ onTaskCreated, userRole }) => {
     const [step, setStep] = useState(1);
     const [taskType, setTaskType] = useState(null);
     const [subType, setSubType] = useState(null);
     const [formData, setFormData] = useState({
         title: '',
         description: '',
-        difficulty: 'INTERMEDIATE',
-        visibilityScope: 'ORGANIZATION',
-        departmentIds: [],
+        difficultyLevel: 'Beginner',
+        visibilityScope: 'Global',
         groupIds: [],
         audioUrl: '',
         passage: '',
         instructions: '',
         timeLimit: 120,
-        questions: [],
+        maxAttempts: 1,
         passingScore: 60,
+        startDate: '',
+        endDate: '',
+        questions: [],
         showAnswers: false,
         evaluationRubric: null
     });
 
-    const [departments, setDepartments] = useState([]);
     const [groups, setGroups] = useState([]);
     const [errors, setErrors] = useState({});
     const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    // Fetch departments and groups on mount
     useEffect(() => {
-        fetchDepartmentsAndGroups();
-    }, []);
-
-    const fetchDepartmentsAndGroups = async () => {
-        try {
-            if (userRole !== 'STUDENT') {
-                const deptRes = await api.get('/admin/departments');
-                setDepartments(deptRes.data || []);
+        const fetchGroups = async () => {
+            try {
+                if (userRole !== 'STUDENT') {
+                    const groupRes = await api.get('/groups/my-groups');
+                    setGroups(groupRes.data || []);
+                }
+            } catch (err) {
+                console.error('Failed to fetch groups:', err);
             }
-            const groupRes = await api.get('/api/groups');
-            setGroups(groupRes.data || []);
-        } catch (err) {
-            console.error('Failed to fetch data:', err);
-        }
-    };
-
-    const handleTaskTypeSelect = (type) => {
-        setTaskType(type);
-        setSubType(null);
-        setStep(2);
-    };
-
-    const handleSubTypeSelect = (sub) => {
-        setSubType(sub);
-        setStep(3);
-    };
+        };
+        fetchGroups();
+    }, [userRole]);
 
     const handleInputChange = (field, value) => {
-        setFormData(prev => ({
-            ...prev,
-            [field]: value
-        }));
-        // Clear error for this field
-        if (errors[field]) {
-            setErrors(prev => ({
-                ...prev,
-                [field]: null
-            }));
-        }
-    };
-
-    const handleQuestionAdd = () => {
-        setFormData(prev => ({
-            ...prev,
-            questions: [...prev.questions, {
-                questionText: '',
-                options: ['', '', '', ''],
-                correctAnswer: 'A',
-                questionType: 'MCQ'
-            }]
-        }));
-    };
-
-    const handleQuestionUpdate = (index, field, value) => {
-        const newQuestions = [...formData.questions];
-        newQuestions[index][field] = value;
-        setFormData(prev => ({
-            ...prev,
-            questions: newQuestions
-        }));
-    };
-
-    const handleQuestionRemove = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            questions: prev.questions.filter((_, i) => i !== index)
-        }));
+        setFormData(prev => ({ ...prev, [field]: value }));
+        if (errors[field]) setErrors(prev => ({ ...prev, [field]: null }));
     };
 
     const validateForm = () => {
         const newErrors = {};
-
         if (!formData.title.trim()) newErrors.title = 'Title is required';
-        if (!taskType) newErrors.taskType = 'Task type is required';
-        if (!subType) newErrors.subType = 'Task subtype is required';
-        if (!formData.visibilityScope) newErrors.visibilityScope = 'Visibility scope is required';
-
-        // Check required fields based on subtype
         const config = TASK_CONFIG[taskType]?.subtypes[subType];
         if (config) {
-            if (config.fields.includes('audioUrl') && !formData.audioUrl.trim()) {
-                newErrors.audioUrl = 'Audio URL is required for this task';
-            }
-            if (config.fields.includes('passage') && !formData.passage.trim()) {
-                newErrors.passage = 'Passage is required for this task';
-            }
-            if (config.fields.includes('instructions') && !formData.instructions.trim()) {
-                newErrors.instructions = 'Instructions are required for this task';
-            }
+            if (config.fields.includes('audioUrl') && !formData.audioUrl.trim()) newErrors.audioUrl = 'Audio URL is required for this task';
+            if (config.fields.includes('passage') && !formData.passage.trim()) newErrors.passage = 'Passage is required for this task';
+            if (config.fields.includes('instructions') && !formData.instructions.trim()) newErrors.instructions = 'Instructions are required for this task';
         }
-
-        // Validate visibility scope selections
-        if (formData.visibilityScope === 'DEPARTMENT' && formData.departmentIds.length === 0) {
-            newErrors.departmentIds = 'Select at least one department';
-        }
-        if (formData.visibilityScope === 'GROUP' && formData.groupIds.length === 0) {
+        if (formData.visibilityScope === 'GroupSpecific' && formData.groupIds.length === 0) {
             newErrors.groupIds = 'Select at least one group';
         }
-
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = async () => {
         if (!validateForm()) return;
-
         setLoading(true);
         try {
             const payload = {
                 ...formData,
-                type: taskType,
-                subType: subType
+                lsrwComponent: taskType.charAt(0).toUpperCase() + taskType.slice(1).toLowerCase(),
+                assessmentType: TASK_CONFIG[taskType].subtypes[subType].label,
+                status: 'Draft'
             };
+            if (!payload.startDate) delete payload.startDate;
+            if (!payload.endDate) delete payload.endDate;
+            if (payload.visibilityScope !== 'GroupSpecific') payload.groupIds = [];
 
-            const response = await api.post('/api/tasks', payload);
+            const response = await api.post('/tasks', payload);
             setSuccess(true);
-            
-            // Reset form
             setTimeout(() => {
                 setTaskType(null);
                 setSubType(null);
                 setStep(1);
                 setFormData({
-                    title: '',
-                    description: '',
-                    difficulty: 'INTERMEDIATE',
-                    visibilityScope: 'ORGANIZATION',
-                    departmentIds: [],
-                    groupIds: [],
-                    audioUrl: '',
-                    passage: '',
-                    instructions: '',
-                    timeLimit: 120,
-                    questions: [],
-                    passingScore: 60,
-                    showAnswers: false,
-                    evaluationRubric: null
+                    title: '', description: '', difficultyLevel: 'Beginner', visibilityScope: 'Global', groupIds: [],
+                    audioUrl: '', passage: '', instructions: '', timeLimit: 120, maxAttempts: 1, passingScore: 60,
+                    startDate: '', endDate: '', questions: [], showAnswers: false, evaluationRubric: null
                 });
                 setSuccess(false);
                 if (onTaskCreated) onTaskCreated(response.data);
             }, 2000);
         } catch (error) {
-            setErrors({
-                submit: error.response?.data?.error || 'Failed to create task'
-            });
+            setErrors({ submit: error.response?.data?.error || 'Failed to create task' });
         } finally {
             setLoading(false);
         }
     };
 
-    // Step 1: Task Type Selection
     if (step === 1) {
         return (
-            <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow">
-                <h2 className="text-2xl font-bold mb-6">Create New Assessment Task</h2>
-                <p className="text-gray-600 mb-8">Select the type of assessment task you want to create:</p>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[2.5rem] shadow-xl p-10 font-sans border border-gray-100 max-w-4xl w-full mx-auto">
+                <div className="flex items-center gap-4 mb-10">
+                    <div className="w-16 h-16 rounded-2xl bg-gray-900 text-white flex items-center justify-center shadow-lg">
+                        <LayoutTemplate size={32} />
+                    </div>
+                    <div>
+                        <h2 className="text-3xl font-black text-gray-900 tracking-tight">Create Assessment</h2>
+                        <p className="text-gray-500 font-medium">Select the foundational component for your new task.</p>
+                    </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {Object.entries(TASK_CONFIG).map(([type, config]) => (
+                        <motion.button
+                            whileHover={{ y: -4 }}
+                            key={type}
+                            onClick={() => { setTaskType(type); setStep(2); }}
+                            className={`p-8 border-2 border-gray-100 rounded-[2rem] text-left transition-all hover:border-transparent hover:shadow-xl group relative overflow-hidden`}
+                        >
+                            <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity ${config.bg}`}></div>
+                            <div className={`w-16 h-16 rounded-2xl mb-6 flex items-center justify-center shadow-inner ${config.bg} ${config.color}`}>
+                                {config.icon}
+                            </div>
+                            <h3 className="font-black text-2xl text-gray-900 mb-2">{type}</h3>
+                            <p className="text-gray-400 font-bold text-sm uppercase tracking-widest">Select Category →</p>
+                        </motion.button>
+                    ))}
+                </div>
+            </motion.div>
+        );
+    }
+
+    if (step === 2 && taskType) {
+        const config = TASK_CONFIG[taskType];
+        return (
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-[2.5rem] shadow-xl p-10 font-sans border border-gray-100 max-w-4xl w-full mx-auto">
+                <button onClick={() => setStep(1)} className="flex items-center text-gray-400 hover:text-gray-900 font-bold mb-8 transition">
+                    <ChevronLeft size={20} className="mr-1" /> Back to Categories
+                </button>
+
+                <div className="flex items-center gap-4 mb-10">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${config.bg} ${config.color}`}>
+                        {config.icon}
+                    </div>
+                    <div>
+                        <h2 className="text-3xl font-black text-gray-900 tracking-tight">{taskType} Focus</h2>
+                        <p className="text-gray-500 font-medium">Select the specific assessment format.</p>
+                    </div>
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Object.entries(TASK_CONFIG).map(([type, config]) => (
-                        <button
-                            key={type}
-                            onClick={() => handleTaskTypeSelect(type)}
-                            className="p-6 border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition text-left"
-                        >
-                            <div className="text-4xl mb-2">{config.icon}</div>
-                            <div className="font-bold text-lg">{type}</div>
-                            <div className="text-sm text-gray-600">Click to continue</div>
-                        </button>
-                    ))}
-                </div>
-            </div>
-        );
-    }
-
-    // Step 2: Subtype Selection
-    if (step === 2 && taskType) {
-        const subtypes = TASK_CONFIG[taskType].subtypes;
-        return (
-            <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow">
-                <button onClick={() => setStep(1)} className="mb-4 text-blue-600 hover:underline">
-                    ← Back
-                </button>
-                <h2 className="text-2xl font-bold mb-6">{TASK_CONFIG[taskType].icon} {taskType} - Select Subtype</h2>
-                
-                <div className="space-y-2">
-                    {Object.entries(subtypes).map(([subtype, config]) => (
+                    {Object.entries(config.subtypes).map(([subtype, subConfig]) => (
                         <button
                             key={subtype}
-                            onClick={() => handleSubTypeSelect(subtype)}
-                            className="w-full p-4 border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition text-left"
+                            onClick={() => { setSubType(subtype); setStep(3); }}
+                            className="p-6 border-2 border-gray-100 rounded-2xl text-left hover:border-gray-900 transition-all group"
                         >
-                            <div className="font-semibold">{config.label}</div>
-                            <div className="text-sm text-gray-600">Required fields: {config.fields.join(', ')}</div>
+                            <div className="font-black text-lg text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">{subConfig.label}</div>
+                            <div className="text-xs text-gray-400 font-bold uppercase tracking-widest">
+                                Required: {subConfig.fields.join(', ')}
+                            </div>
                         </button>
                     ))}
                 </div>
-            </div>
+            </motion.div>
         );
     }
 
-    // Step 3: Task Details Form
     if (step === 3 && taskType && subType) {
-        const config = TASK_CONFIG[taskType].subtypes[subType];
+        const typeConfig = TASK_CONFIG[taskType];
+        const config = typeConfig.subtypes[subType];
         
         return (
-            <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow">
-                <button onClick={() => setStep(2)} className="mb-4 text-blue-600 hover:underline">
-                    ← Back
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-[2.5rem] shadow-xl p-10 font-sans border border-gray-100 max-w-4xl w-full mx-auto relative overflow-hidden">
+                <button onClick={() => setStep(2)} className="flex items-center text-gray-400 hover:text-gray-900 font-bold mb-8 transition relative z-10">
+                    <ChevronLeft size={20} className="mr-1" /> Back to Formats
                 </button>
-                <h2 className="text-2xl font-bold mb-6">Create {taskType} - {config.label}</h2>
 
-                {errors.submit && (
-                    <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded flex items-center">
-                        <AlertCircle className="mr-2" />
-                        {errors.submit}
+                <div className="flex items-center gap-4 mb-10 relative z-10">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-inner ${typeConfig.bg} ${typeConfig.color}`}>
+                        <Layers size={24} />
                     </div>
-                )}
-
-                {success && (
-                    <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded flex items-center">
-                        <CheckCircle2 className="mr-2" />
-                        Task created successfully!
-                    </div>
-                )}
-
-                <div className="space-y-6">
-                    {/* Basic Info */}
                     <div>
-                        <label className="block font-semibold mb-2">Task Title *</label>
-                        <input
-                            type="text"
-                            value={formData.title}
-                            onChange={(e) => handleInputChange('title', e.target.value)}
-                            placeholder="e.g., English Grammar Basics"
-                            className={`w-full p-2 border rounded ${errors.title ? 'border-red-500' : 'border-gray-300'}`}
-                        />
-                        {errors.title && <span className="text-red-600 text-sm">{errors.title}</span>}
+                        <h2 className="text-3xl font-black text-gray-900 tracking-tight">{config.label}</h2>
+                        <p className="text-gray-500 font-medium">Configure the parameters for this assessment.</p>
                     </div>
+                </div>
 
-                    <div>
-                        <label className="block font-semibold mb-2">Description</label>
-                        <textarea
-                            value={formData.description}
-                            onChange={(e) => handleInputChange('description', e.target.value)}
-                            placeholder="Additional instructions or context..."
-                            rows="3"
-                            className="w-full p-2 border border-gray-300 rounded"
-                        />
-                    </div>
+                <AnimatePresence>
+                    {errors.submit && (
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mb-8 p-4 bg-rose-50 text-rose-600 rounded-2xl border border-rose-100 flex items-start space-x-3 font-bold text-sm">
+                            <AlertCircle size={20} className="flex-shrink-0" />
+                            <span>{errors.submit}</span>
+                        </motion.div>
+                    )}
+                    {success && (
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mb-8 p-4 bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-100 flex items-center space-x-3 font-bold text-sm">
+                            <CheckCircle2 size={20} />
+                            <span>Assessment Task deployed successfully!</span>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
-                    {/* Difficulty and Time Limit */}
-                    <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-8 relative z-10">
+                    {/* Title & Description */}
+                    <div className="bg-gray-50 p-8 rounded-[2rem] border border-gray-100 space-y-6">
                         <div>
-                            <label className="block font-semibold mb-2">Difficulty</label>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Task Title *</label>
+                            <input
+                                type="text"
+                                value={formData.title}
+                                onChange={(e) => handleInputChange('title', e.target.value)}
+                                placeholder="e.g., Advanced English Grammar Review"
+                                className={`w-full px-5 py-4 bg-white border ${errors.title ? 'border-rose-300 focus:ring-rose-100' : 'border-gray-200 focus:ring-primary-100'} rounded-2xl font-bold focus:outline-none focus:ring-4 transition`}
+                            />
+                            {errors.title && <span className="text-rose-600 text-xs font-bold mt-2 block">{errors.title}</span>}
+                        </div>
+                        <div>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Description</label>
+                            <textarea
+                                value={formData.description}
+                                onChange={(e) => handleInputChange('description', e.target.value)}
+                                placeholder="Additional instructions or context..."
+                                rows="3"
+                                className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl font-medium focus:outline-none focus:ring-4 focus:ring-primary-100 transition resize-none"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Meta Config */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Difficulty</label>
                             <select
-                                value={formData.difficulty}
-                                onChange={(e) => handleInputChange('difficulty', e.target.value)}
-                                className="w-full p-2 border border-gray-300 rounded"
+                                value={formData.difficultyLevel}
+                                onChange={(e) => handleInputChange('difficultyLevel', e.target.value)}
+                                className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition appearance-none cursor-pointer"
                             >
-                                <option>BEGINNER</option>
-                                <option>INTERMEDIATE</option>
-                                <option>ADVANCED</option>
+                                <option value="Beginner">Beginner</option>
+                                <option value="Intermediate">Intermediate</option>
+                                <option value="Advanced">Advanced</option>
                             </select>
                         </div>
+                        <div>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Time Limit (s)</label>
+                            <input
+                                type="number"
+                                value={formData.timeLimit}
+                                onChange={(e) => handleInputChange('timeLimit', parseInt(e.target.value) || 0)}
+                                className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Max Attempts</label>
+                            <input
+                                type="number"
+                                value={formData.maxAttempts}
+                                onChange={(e) => handleInputChange('maxAttempts', parseInt(e.target.value) || 1)}
+                                className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition"
+                                min="1"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Passing Score</label>
+                            <input
+                                type="number"
+                                value={formData.passingScore}
+                                onChange={(e) => handleInputChange('passingScore', parseInt(e.target.value) || 0)}
+                                className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition"
+                                min="0" max="100"
+                            />
+                        </div>
+                    </div>
 
-                        {config.fields.includes('timeLimit') && (
+                    {/* Content Fields based on subtype */}
+                    <div className="space-y-6 pt-4 border-t border-gray-100">
+                        {config.fields.includes('audioUrl') && (
                             <div>
-                                <label className="block font-semibold mb-2">Time Limit (seconds)</label>
+                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Audio Source URL *</label>
                                 <input
-                                    type="number"
-                                    value={formData.timeLimit}
-                                    onChange={(e) => handleInputChange('timeLimit', parseInt(e.target.value))}
-                                    className="w-full p-2 border border-gray-300 rounded"
+                                    type="url"
+                                    value={formData.audioUrl}
+                                    onChange={(e) => handleInputChange('audioUrl', e.target.value)}
+                                    placeholder="https://example.com/audio.mp3"
+                                    className={`w-full px-5 py-4 bg-white border ${errors.audioUrl ? 'border-rose-300 focus:ring-rose-100' : 'border-gray-200 focus:ring-primary-100'} rounded-2xl font-bold focus:outline-none focus:ring-4 transition`}
                                 />
+                                {errors.audioUrl && <span className="text-rose-600 text-xs font-bold mt-2 block">{errors.audioUrl}</span>}
+                            </div>
+                        )}
+
+                        {config.fields.includes('passage') && (
+                            <div>
+                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Reading Passage / Prompt *</label>
+                                <textarea
+                                    value={formData.passage}
+                                    onChange={(e) => handleInputChange('passage', e.target.value)}
+                                    placeholder="Enter the text passage..."
+                                    rows="6"
+                                    className={`w-full px-5 py-4 bg-white border ${errors.passage ? 'border-rose-300 focus:ring-rose-100' : 'border-gray-200 focus:ring-primary-100'} rounded-2xl font-medium focus:outline-none focus:ring-4 transition resize-none`}
+                                />
+                                {errors.passage && <span className="text-rose-600 text-xs font-bold mt-2 block">{errors.passage}</span>}
+                            </div>
+                        )}
+
+                        {config.fields.includes('instructions') && (
+                            <div>
+                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Specific Instructions *</label>
+                                <textarea
+                                    value={formData.instructions}
+                                    onChange={(e) => handleInputChange('instructions', e.target.value)}
+                                    placeholder="Provide specific instructions to the student..."
+                                    rows="3"
+                                    className={`w-full px-5 py-4 bg-white border ${errors.instructions ? 'border-rose-300 focus:ring-rose-100' : 'border-gray-200 focus:ring-primary-100'} rounded-2xl font-medium focus:outline-none focus:ring-4 transition resize-none`}
+                                />
+                                {errors.instructions && <span className="text-rose-600 text-xs font-bold mt-2 block">{errors.instructions}</span>}
                             </div>
                         )}
                     </div>
 
-                    {/* Conditional Fields */}
-                    {config.fields.includes('audioUrl') && (
-                        <div>
-                            <label className="block font-semibold mb-2">Audio URL *</label>
-                            <input
-                                type="url"
-                                value={formData.audioUrl}
-                                onChange={(e) => handleInputChange('audioUrl', e.target.value)}
-                                placeholder="https://example.com/audio.mp3"
-                                className={`w-full p-2 border rounded ${errors.audioUrl ? 'border-red-500' : 'border-gray-300'}`}
-                            />
-                            {errors.audioUrl && <span className="text-red-600 text-sm">{errors.audioUrl}</span>}
-                        </div>
-                    )}
-
-                    {config.fields.includes('passage') && (
-                        <div>
-                            <label className="block font-semibold mb-2">Passage *</label>
-                            <textarea
-                                value={formData.passage}
-                                onChange={(e) => handleInputChange('passage', e.target.value)}
-                                placeholder="Enter the passage text..."
-                                rows="6"
-                                className={`w-full p-2 border rounded ${errors.passage ? 'border-red-500' : 'border-gray-300'}`}
-                            />
-                            {errors.passage && <span className="text-red-600 text-sm">{errors.passage}</span>}
-                        </div>
-                    )}
-
-                    {config.fields.includes('instructions') && (
-                        <div>
-                            <label className="block font-semibold mb-2">Instructions *</label>
-                            <textarea
-                                value={formData.instructions}
-                                onChange={(e) => handleInputChange('instructions', e.target.value)}
-                                placeholder="Provide clear instructions for the task..."
-                                rows="4"
-                                className={`w-full p-2 border rounded ${errors.instructions ? 'border-red-500' : 'border-gray-300'}`}
-                            />
-                            {errors.instructions && <span className="text-red-600 text-sm">{errors.instructions}</span>}
-                        </div>
-                    )}
-
-                    {config.fields.includes('evaluationRubric') && (
-                        <div className="p-4 bg-blue-50 border border-blue-200 rounded">
-                            <p className="text-sm">Evaluation Rubric will be configured during advanced settings</p>
-                        </div>
-                    )}
-
-                    {/* Questions */}
-                    {config.fields.includes('questions') && (
-                        <div>
-                            <div className="flex justify-between items-center mb-4">
-                                <label className="block font-semibold">Questions</label>
-                                <button
-                                    onClick={handleQuestionAdd}
-                                    className="bg-blue-600 text-white px-3 py-1 rounded text-sm flex items-center"
-                                >
-                                    <Plus size={16} className="mr-1" /> Add Question
-                                </button>
-                            </div>
-                            
-                            {formData.questions.map((q, idx) => (
-                                <div key={idx} className="mb-4 p-4 border border-gray-200 rounded">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="font-semibold">Question {idx + 1}</span>
-                                        <button
-                                            onClick={() => handleQuestionRemove(idx)}
-                                            className="text-red-600 hover:text-red-800"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </div>
-
-                                    <textarea
-                                        value={q.questionText}
-                                        onChange={(e) => handleQuestionUpdate(idx, 'questionText', e.target.value)}
-                                        placeholder="Question text..."
-                                        rows="2"
-                                        className="w-full p-2 border border-gray-300 rounded mb-2"
-                                    />
-
-                                    <label className="block text-sm font-semibold mb-1">Options</label>
-                                    {q.options.map((opt, optIdx) => (
-                                        <input
-                                            key={optIdx}
-                                            type="text"
-                                            value={opt}
-                                            onChange={(e) => {
-                                                const newOptions = [...q.options];
-                                                newOptions[optIdx] = e.target.value;
-                                                handleQuestionUpdate(idx, 'options', newOptions);
-                                            }}
-                                            placeholder={`Option ${String.fromCharCode(65 + optIdx)}`}
-                                            className="w-full p-2 border border-gray-300 rounded mb-1"
-                                        />
-                                    ))}
-
-                                    <select
-                                        value={q.correctAnswer}
-                                        onChange={(e) => handleQuestionUpdate(idx, 'correctAnswer', e.target.value)}
-                                        className="w-full p-2 border border-gray-300 rounded mt-2"
-                                    >
-                                        <option value="A">Correct Answer: A</option>
-                                        <option value="B">Correct Answer: B</option>
-                                        <option value="C">Correct Answer: C</option>
-                                        <option value="D">Correct Answer: D</option>
-                                    </select>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Visibility Scope */}
-                    <div>
-                        <label className="block font-semibold mb-2">Visibility Scope *</label>
-                        <div className="space-y-2">
+                    {/* Visibility & Assignments */}
+                    <div className="bg-gray-50 p-8 rounded-[2rem] border border-gray-100">
+                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 block">Deployment Scope *</label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                             {VISIBILITY_SCOPES.map(scope => (
-                                <label key={scope.value} className="flex items-center p-3 border rounded cursor-pointer hover:bg-gray-50">
-                                    <input
-                                        type="radio"
-                                        name="visibility"
-                                        value={scope.value}
-                                        checked={formData.visibilityScope === scope.value}
-                                        onChange={(e) => handleInputChange('visibilityScope', e.target.value)}
-                                        className="mr-3"
-                                    />
-                                    <div>
-                                        <div className="font-semibold">{scope.label}</div>
-                                        <div className="text-sm text-gray-600">{scope.description}</div>
+                                <label key={scope.value} className={`relative flex flex-col p-6 border-2 rounded-2xl cursor-pointer transition-all ${formData.visibilityScope === scope.value ? 'border-gray-900 bg-white shadow-md' : 'border-gray-200 bg-transparent hover:border-gray-300'}`}>
+                                    <div className="flex items-center mb-2">
+                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mr-3 ${formData.visibilityScope === scope.value ? 'border-gray-900' : 'border-gray-300'}`}>
+                                            {formData.visibilityScope === scope.value && <div className="w-2.5 h-2.5 rounded-full bg-gray-900"></div>}
+                                        </div>
+                                        <span className={`font-black ${formData.visibilityScope === scope.value ? 'text-gray-900' : 'text-gray-600'}`}>{scope.label}</span>
                                     </div>
+                                    <span className="text-sm font-medium text-gray-500 ml-8">{scope.description}</span>
                                 </label>
                             ))}
                         </div>
-                        {errors.visibilityScope && <span className="text-red-600 text-sm">{errors.visibilityScope}</span>}
+
+                        {formData.visibilityScope === 'GroupSpecific' && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="pt-4 border-t border-gray-200">
+                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 block">Target Groups</label>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-2">
+                                    {groups.length === 0 ? (
+                                        <div className="text-gray-500 font-medium italic">No targetable groups available.</div>
+                                    ) : groups.map(group => (
+                                        <label key={group.id} className="flex items-center p-4 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-gray-900 transition">
+                                            <input
+                                                type="checkbox"
+                                                checked={formData.groupIds.includes(group.id)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) handleInputChange('groupIds', [...formData.groupIds, group.id]);
+                                                    else handleInputChange('groupIds', formData.groupIds.filter(id => id !== group.id));
+                                                }}
+                                                className="w-5 h-5 rounded border-gray-300 text-gray-900 focus:ring-gray-900 mr-3"
+                                            />
+                                            <span className="font-bold text-gray-700">{group.name}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                                {errors.groupIds && <span className="text-rose-600 text-xs font-bold mt-2 block">{errors.groupIds}</span>}
+                            </motion.div>
+                        )}
                     </div>
 
-                    {/* Department Selection */}
-                    {formData.visibilityScope === 'DEPARTMENT' && (
-                        <div>
-                            <label className="block font-semibold mb-2">Select Departments *</label>
-                            <div className="space-y-2">
-                                {departments.map(dept => (
-                                    <label key={dept.id} className="flex items-center p-2 border rounded">
-                                        <input
-                                            type="checkbox"
-                                            checked={formData.departmentIds.includes(dept.id)}
-                                            onChange={(e) => {
-                                                if (e.target.checked) {
-                                                    handleInputChange('departmentIds', [...formData.departmentIds, dept.id]);
-                                                } else {
-                                                    handleInputChange('departmentIds', formData.departmentIds.filter(id => id !== dept.id));
-                                                }
-                                            }}
-                                            className="mr-2"
-                                        />
-                                        <span>{dept.name}</span>
-                                    </label>
-                                ))}
-                            </div>
-                            {errors.departmentIds && <span className="text-red-600 text-sm">{errors.departmentIds}</span>}
-                        </div>
-                    )}
-
-                    {/* Group Selection */}
-                    {formData.visibilityScope === 'GROUP' && (
-                        <div>
-                            <label className="block font-semibold mb-2">Select Groups *</label>
-                            <div className="space-y-2">
-                                {groups.map(group => (
-                                    <label key={group.id} className="flex items-center p-2 border rounded">
-                                        <input
-                                            type="checkbox"
-                                            checked={formData.groupIds.includes(group.id)}
-                                            onChange={(e) => {
-                                                if (e.target.checked) {
-                                                    handleInputChange('groupIds', [...formData.groupIds, group.id]);
-                                                } else {
-                                                    handleInputChange('groupIds', formData.groupIds.filter(id => id !== group.id));
-                                                }
-                                            }}
-                                            className="mr-2"
-                                        />
-                                        <div>
-                                            <span className="font-semibold">{group.name}</span>
-                                            <span className="text-sm text-gray-600 ml-2">({group.members.length} members)</span>
-                                        </div>
-                                    </label>
-                                ))}
-                            </div>
-                            {errors.groupIds && <span className="text-red-600 text-sm">{errors.groupIds}</span>}
-                        </div>
-                    )}
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-4 pt-6">
-                        <button
-                            onClick={() => setStep(2)}
-                            className="px-6 py-2 border border-gray-300 rounded hover:bg-gray-50"
-                        >
-                            Back
-                        </button>
+                    {/* Actions */}
+                    <div className="flex gap-4 pt-6 border-t border-gray-100">
                         <button
                             onClick={handleSubmit}
                             disabled={loading}
-                            className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
+                            className="flex-1 py-5 bg-gray-900 text-white rounded-[1.5rem] font-black text-lg hover:bg-black disabled:bg-gray-200 disabled:text-gray-400 transition shadow-xl"
                         >
-                            {loading ? 'Creating...' : 'Create Task'}
+                            {loading ? 'Processing Deployment...' : 'Deploy Assessment Task'}
                         </button>
                     </div>
                 </div>
-            </div>
+            </motion.div>
         );
     }
 

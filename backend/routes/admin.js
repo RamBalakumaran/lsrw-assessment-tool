@@ -11,6 +11,25 @@ const {
     formatProfileName,
 } = require('../utils/userProfile');
 
+// Helper to log audits locally
+async function logAudit(userId, action, entityType, entityId, changes, req) {
+    try {
+        await prisma.auditLog.create({
+            data: {
+                userId,
+                action,
+                entityType,
+                entityId,
+                changes: changes || {},
+                ipAddress: req?.ip || null,
+                userAgent: req?.get ? req.get('user-agent') : null
+            }
+        });
+    } catch (err) {
+        console.error('Audit log error in admin routes:', err);
+    }
+}
+
 const ADMIN_ACCESS_ROLES = ['SUPER_ADMIN', 'ADMIN', 'DEPT_ADMIN'];
 const ORGANIZATION_CONTROL_ROLES = ['SUPER_ADMIN', 'ADMIN'];
 const VALID_ROLES = new Set(['SUPER_ADMIN', 'ADMIN', 'DEPT_ADMIN', 'TEACHER', 'STUDENT']);
@@ -974,6 +993,9 @@ router.post('/departments', authMiddleware, authorize(ORGANIZATION_CONTROL_ROLES
             return department;
         });
 
+        // Log audit
+        await logAudit(req.user.id, 'DEPARTMENT_CREATED', 'Department', createdDepartment.id, { name: normalizedName }, req);
+
         const data = await loadAccessControlData(prisma, req.user);
         const created = data.departments.find((department) => department.id === createdDepartment.id);
         res.status(201).json(created);
@@ -1044,6 +1066,9 @@ router.patch('/departments/:id', authMiddleware, authorize(ADMIN_ACCESS_ROLES), 
             return department;
         });
 
+        // Log audit
+        await logAudit(req.user.id, 'DEPARTMENT_UPDATED', 'Department', updatedDepartment.id, { name: normalizedName }, req);
+
         const data = await loadAccessControlData(prisma, req.user);
         const updated = data.departments.find((department) => department.id === updatedDepartment.id);
         res.json(updated);
@@ -1066,23 +1091,61 @@ router.post('/users/invite', authMiddleware, authorize(ADMIN_ACCESS_ROLES), asyn
         groupMemberships,
         managedDepartmentId,
         password,
+        registrationNumber,
+        academicYear,
+        section,
+        studentEmail
     } = req.body;
 
     try {
-        const normalizedEmail = email.trim().toLowerCase();
-        const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-        if (existingUser) {
-            return res.status(400).json({ error: 'User with this email already exists' });
-        }
-
-        if (!password || password.trim() === '') {
-            return res.status(400).json({ error: 'Default password is required' });
-        }
-
         const normalizedRole = normalizeRole(role) || 'STUDENT';
         assertAssignableRole(req.user, normalizedRole);
 
         const organization = await resolveScopedOrganization(prisma, req.user, organizationId);
+        let normalizedEmail = email?.trim().toLowerCase();
+
+        let regNo = null;
+        let acYear = null;
+        let sec = null;
+        let optEmail = null;
+
+        if (normalizedRole === 'STUDENT') {
+            regNo = registrationNumber?.trim();
+            if (!regNo) {
+                return res.status(400).json({ error: 'Registration number is required for students.' });
+            }
+            acYear = academicYear?.trim();
+            if (!acYear) {
+                return res.status(400).json({ error: 'Academic year is required for students.' });
+            }
+            sec = section?.trim() || null;
+            optEmail = studentEmail?.trim() || null;
+
+            // Check duplicate registration number in this organization
+            const existingReg = await prisma.user.findFirst({
+                where: {
+                    organizationId: organization.id,
+                    registrationNumber: regNo
+                }
+            });
+            if (existingReg) {
+                return res.status(400).json({ error: 'Registration number already exists.' });
+            }
+
+            if (!normalizedEmail) {
+                normalizedEmail = `${regNo.toLowerCase()}@nec.edu.in`;
+            }
+        }
+
+        if (!normalizedEmail) {
+            return res.status(400).json({ error: 'Email or registration number is required.' });
+        }
+
+        const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+        if (existingUser) {
+            return res.status(400).json({ error: 'User with this email already exists.' });
+        }
+
         const targetDepartment = departmentId
             ? await prisma.department.findUnique({ where: { id: departmentId }, include: departmentInclude })
             : null;
@@ -1117,7 +1180,8 @@ router.post('/users/invite', authMiddleware, authorize(ADMIN_ACCESS_ROLES), asyn
         }
 
         const normalizedGroups = parseGroupMembershipsInput(groupMemberships);
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const defaultPassword = password?.trim() || '123456';
+        const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
         const newUser = await prisma.$transaction(async (db) => {
             const createdUser = await db.user.create({
@@ -1131,6 +1195,11 @@ router.post('/users/invite', authMiddleware, authorize(ADMIN_ACCESS_ROLES), asyn
                     password: hashedPassword,
                     department: targetDepartment?.name || targetManagedDepartment?.name || department?.trim() || null,
                     teacherId: normalizedRole === 'STUDENT' ? assignedTeacher?.id || null : null,
+                    registrationNumber: regNo,
+                    academicYear: acYear,
+                    section: sec,
+                    studentEmail: optEmail,
+                    forcePasswordReset: normalizedRole === 'STUDENT' ? true : false
                 },
             });
 
@@ -1149,6 +1218,9 @@ router.post('/users/invite', authMiddleware, authorize(ADMIN_ACCESS_ROLES), asyn
             });
         });
 
+        // Log audit
+        await logAudit(req.user.id, 'USER_CREATED', 'User', newUser.id, { role: normalizedRole }, req);
+
         res.status(201).json(buildUserProfile(newUser));
     } catch (error) {
         console.error('Invite error:', error);
@@ -1164,6 +1236,10 @@ router.patch('/users/:id/access', authMiddleware, authorize(ADMIN_ACCESS_ROLES),
         departmentId,
         managedDepartmentId,
         groupMemberships,
+        registrationNumber,
+        academicYear,
+        section,
+        studentEmail
     } = req.body;
 
     try {
@@ -1215,6 +1291,32 @@ router.patch('/users/:id/access', authMiddleware, authorize(ADMIN_ACCESS_ROLES),
             }
         }
 
+        let regNo = targetUser.registrationNumber;
+        let acYear = targetUser.academicYear;
+        let sec = targetUser.section;
+        let optEmail = targetUser.studentEmail;
+
+        if (normalizedRole === 'STUDENT') {
+            if (registrationNumber !== undefined) {
+                regNo = registrationNumber?.trim() || null;
+                if (regNo && regNo !== targetUser.registrationNumber) {
+                    const existingReg = await prisma.user.findFirst({
+                        where: {
+                            organizationId: targetUser.organizationId,
+                            registrationNumber: regNo,
+                            NOT: { id: targetUser.id }
+                        }
+                    });
+                    if (existingReg) {
+                        return res.status(400).json({ error: 'Registration number already exists.' });
+                    }
+                }
+            }
+            if (academicYear !== undefined) acYear = academicYear?.trim() || null;
+            if (section !== undefined) sec = section?.trim() || null;
+            if (studentEmail !== undefined) optEmail = studentEmail?.trim() || null;
+        }
+
         const normalizedGroups = Array.isArray(groupMemberships)
             ? parseGroupMembershipsInput(groupMemberships)
             : targetUser.groupsMemberships;
@@ -1226,6 +1328,10 @@ router.patch('/users/:id/access', authMiddleware, authorize(ADMIN_ACCESS_ROLES),
                     role: normalizedRole,
                     status: normalizedStatus,
                     teacherId: normalizedRole === 'STUDENT' ? assignedTeacher?.id || null : null,
+                    registrationNumber: regNo,
+                    academicYear: acYear,
+                    section: sec,
+                    studentEmail: optEmail
                 },
             });
 
@@ -1243,6 +1349,9 @@ router.patch('/users/:id/access', authMiddleware, authorize(ADMIN_ACCESS_ROLES),
                 include: userProfileInclude,
             });
         });
+
+        // Log audit
+        await logAudit(req.user.id, 'USER_UPDATED', 'User', updatedUser.id, { role: normalizedRole, status: normalizedStatus }, req);
 
         const data = await loadAccessControlData(prisma, req.user);
         const updated = data.users.find((user) => user.id === updatedUser.id);
@@ -1325,6 +1434,9 @@ router.delete('/users/:id', authMiddleware, authorize(ADMIN_ACCESS_ROLES), async
                 where: { id: targetUser.id }
             });
         });
+
+        // Log audit
+        await logAudit(req.user.id, 'USER_DELETED', 'User', targetUser.id, { email: targetUser.email }, req);
 
         res.json({ message: 'User deleted successfully' });
     } catch (error) {

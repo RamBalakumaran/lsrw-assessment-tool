@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import api from '../utils/api';
 
@@ -7,6 +7,7 @@ const ProtectedRoute = ({ children }) => {
     const token = localStorage.getItem('token');
     const [checkingSession, setCheckingSession] = useState(Boolean(token));
     const [sessionInvalid, setSessionInvalid] = useState(false);
+    const location = useLocation();
 
     useEffect(() => {
         let isActive = true;
@@ -66,6 +67,14 @@ const ProtectedRoute = ({ children }) => {
             </div>
         );
     }
+
+    // Force password reset: redirect to /reset-password if flag is set and user is not already there
+    try {
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        if (storedUser.forcePasswordReset && location.pathname !== '/reset-password') {
+            return <Navigate to="/reset-password" replace />;
+        }
+    } catch (_) {}
 
     return children ? children : <Outlet />;
 };

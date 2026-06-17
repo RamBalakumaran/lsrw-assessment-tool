@@ -9,7 +9,8 @@ import {
     Shield,
     BarChart,
     Layers,
-    Activity
+    Activity,
+    Upload
 } from 'lucide-react';
 
 const Sidebar = ({ role }) => {
@@ -23,19 +24,16 @@ const Sidebar = ({ role }) => {
 
     const adminLinks = [
         { title: "Overview", icon: <LayoutDashboard />, link: "/admin/dashboard" },
-        { title: "Organizations", icon: <Layers />, link: "/admin/organizations" },
         { title: "User Management", icon: <Users />, link: "/admin/users" },
+        { title: "Bulk Import", icon: <Upload />, link: "/admin/bulk-import" },
         { title: "Global Tasks", icon: <BookOpen />, link: "/admin/tasks" },
         { title: "System Health", icon: <Activity />, link: "/admin/health" },
-    ];
-
-    const deptAdminLinks = [
-        { title: "Access Control", icon: <Users />, link: "/admin/users" },
     ];
 
     const teacherLinks = [
         { title: "Overview", icon: <LayoutDashboard />, link: "/teacher/dashboard" },
         { title: "My Students", icon: <Users />, link: "/teacher/students" },
+        { title: "Bulk Import", icon: <Upload />, link: "/teacher/bulk-import" },
         { title: "LSRW Tasks", icon: <BookOpen />, link: "/teacher/tasks" },
         { title: "Performance", icon: <BarChart />, link: "/teacher/performance" },
     ];
@@ -46,13 +44,11 @@ const Sidebar = ({ role }) => {
         { title: "LSRW Modules", icon: <Layers />, link: "/dashboard" },
     ];
 
-    const links = role === 'SUPER_ADMIN' || role === 'ADMIN'
+    const links = role === 'ADMIN'
         ? adminLinks
-        : role === 'DEPT_ADMIN'
-            ? deptAdminLinks
-            : role === 'TEACHER'
-                ? teacherLinks
-                : studentLinks;
+        : role === 'TEACHER'
+            ? teacherLinks
+            : studentLinks;
 
     return (
         <div className="w-72 bg-white border-r border-gray-100 flex flex-col h-screen sticky top-0">

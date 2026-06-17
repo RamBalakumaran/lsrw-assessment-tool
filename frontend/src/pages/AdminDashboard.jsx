@@ -42,7 +42,6 @@ const statCardClass = {
 
 const AdminDashboard = () => {
     const currentUser = readStoredUser();
-    const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -65,22 +64,13 @@ const AdminDashboard = () => {
     };
 
     const statCards = useMemo(() => {
-        const baseCards = [
+        return [
             { label: 'Students', value: stats?.totalStudents || 0, icon: <Users />, color: 'sky' },
             { label: 'Teachers', value: stats?.totalTeachers || 0, icon: <AlertTriangle />, color: 'emerald' },
             { label: 'Curated Tasks', value: stats?.totalTasks || 0, icon: <BookOpen />, color: 'amber' },
             { label: 'Total Assessments', value: stats?.totalAttempts || 0, icon: <CheckCircle2 />, color: 'rose' },
         ];
-
-        if (!isSuperAdmin) {
-            return baseCards;
-        }
-
-        return [
-            { label: 'Organizations', value: stats?.totalOrganizations || 0, icon: <Building2 />, color: 'slate' },
-            ...baseCards,
-        ];
-    }, [isSuperAdmin, stats]);
+    }, [stats]);
 
     if (loading) {
         return (
@@ -101,19 +91,17 @@ const AdminDashboard = () => {
                 <header className="flex justify-between items-center mb-10">
                     <div>
                         <h1 className="text-4xl font-black text-gray-900 tracking-tight">
-                            {isSuperAdmin ? 'Platform Control' : 'Organization Control'}
+                            Platform Control
                         </h1>
                         <p className="text-gray-500 font-medium">
-                            {isSuperAdmin
-                                ? 'Global analytics for every organization, department, and learning program.'
-                                : 'Live performance and task oversight for your organization.'}
+                            Global analytics for the entire learning program.
                         </p>
                     </div>
 
                     <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2 px-6 py-3 bg-white border border-gray-100 rounded-2xl font-bold text-gray-600 shadow-sm">
                             <Globe size={18} />
-                            <span>{isSuperAdmin ? 'Scope: All Organizations' : 'Scope: My Organization'}</span>
+                            <span>Scope: NEC Global</span>
                         </div>
                         <button
                             onClick={navigateToCreate}
@@ -125,7 +113,7 @@ const AdminDashboard = () => {
                     </div>
                 </header>
 
-                <div className={`grid grid-cols-1 md:grid-cols-2 ${isSuperAdmin ? 'xl:grid-cols-5' : 'xl:grid-cols-4'} gap-6 mb-10`}>
+                <div className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-10`}>
                     {statCards.map((stat, i) => (
                         <motion.div
                             key={stat.label}
@@ -150,7 +138,7 @@ const AdminDashboard = () => {
                         <div className="flex justify-between items-center mb-10">
                             <h3 className="text-2xl font-black text-gray-900 flex items-center space-x-3">
                                 <TrendingUp className="text-primary-500" />
-                                <span>{isSuperAdmin ? 'Network Growth' : 'Student Growth'}</span>
+                                <span>Network Growth</span>
                             </h3>
                             <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-2 font-bold text-xs uppercase text-gray-500">
                                 Current Year
@@ -197,9 +185,7 @@ const AdminDashboard = () => {
                         </div>
 
                         <div className="mt-12 p-6 bg-primary-50 rounded-3xl border border-primary-100 italic text-sm text-primary-700 font-medium">
-                            {isSuperAdmin
-                                ? '"Across the platform, Speaking remains the most challenging module this quarter."'
-                                : '"Within this organization, Speaking remains the most challenging module this quarter."'}
+                            "Across the platform, Speaking remains the most challenging module this quarter."
                         </div>
                     </div>
                 </div>

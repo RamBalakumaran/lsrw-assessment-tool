@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from '../components/Sidebar';
+import TaskCreationForm from '../components/TaskCreationForm';
 import {
     BookOpen,
     Plus,
@@ -274,130 +275,26 @@ const GlobalTasks = () => {
                             initial={{ opacity: 0, y: 100, scale: 0.9 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 100, scale: 0.9 }}
-                            className="relative w-full max-w-3xl bg-white rounded-[3.5rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+                            className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-[3.5rem] shadow-2xl flex flex-col"
                         >
-                            <div className="p-10 pb-0 flex justify-between items-center">
-                                <div className="flex items-center space-x-4">
-                                    <div className="p-4 bg-primary-600 text-white rounded-3xl shadow-lg shadow-primary-500/30">
-                                        <BookOpen size={24} />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-3xl font-black text-gray-900">{editingTask ? 'Edit Master Task' : 'Create Master Task'}</h2>
-                                        <p className="text-gray-500 font-medium">Define standardized assessment parameters</p>
-                                    </div>
-                                </div>
+                            <div className="absolute top-6 right-6 z-10">
                                 <button
                                     onClick={() => setShowModal(false)}
-                                    className="p-3 hover:bg-gray-100 rounded-2xl transition text-gray-400 hover:text-gray-900"
+                                    className="p-3 hover:bg-gray-100 rounded-2xl transition text-gray-400 hover:text-gray-900 bg-white shadow"
                                 >
-                                    <X size={28} />
+                                    <X size={24} />
                                 </button>
                             </div>
-
-                            <form onSubmit={handleSubmit} className="p-10 overflow-y-auto space-y-8">
-                                <div className="grid grid-cols-2 gap-8">
-                                    <div className="space-y-3">
-                                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Task Title</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={taskData.title}
-                                            onChange={(e) => setTaskData({ ...taskData, title: e.target.value })}
-                                            className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-primary-100 transition font-bold text-gray-900"
-                                            placeholder="Cloud Computing Essentials"
-                                        />
-                                    </div>
-                                    <div className="space-y-3">
-                                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Assessment Type</label>
-                                        <select
-                                            value={taskData.type}
-                                            onChange={(e) => setTaskData({ ...taskData, type: e.target.value })}
-                                            className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-primary-100 transition font-bold appearance-none text-gray-900"
-                                        >
-                                            <option value="READING">READING</option>
-                                            <option value="LISTENING">LISTENING</option>
-                                            <option value="SPEAKING">SPEAKING</option>
-                                            <option value="WRITING">WRITING</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-3">
-                                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Description</label>
-                                    <textarea
-                                        rows="2"
-                                        value={taskData.description}
-                                        onChange={(e) => setTaskData({ ...taskData, description: e.target.value })}
-                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-primary-100 transition font-bold text-gray-900 resize-none"
-                                        placeholder="Brief summary of what this task assesses..."
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-8">
-                                    <div className="space-y-3">
-                                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Difficulty Level</label>
-                                        <select
-                                            value={taskData.difficulty}
-                                            onChange={(e) => setTaskData({ ...taskData, difficulty: e.target.value })}
-                                            className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-primary-100 transition font-bold appearance-none text-gray-900"
-                                        >
-                                            <option value="BEGINNER">BEGINNER</option>
-                                            <option value="INTERMEDIATE">INTERMEDIATE</option>
-                                            <option value="ADVANCED">ADVANCED</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Time Limit (Seconds)</label>
-                                        <input
-                                            type="number"
-                                            required
-                                            value={taskData.timeLimit}
-                                            onChange={(e) => setTaskData({ ...taskData, timeLimit: parseInt(e.target.value) })}
-                                            className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-primary-100 transition font-bold text-gray-900"
-                                            placeholder="1200"
-                                        />
-                                    </div>
-                                </div>
-
-                                {(taskData.type === 'READING' || taskData.type === 'WRITING') && (
-                                    <div className="space-y-3">
-                                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">
-                                            {taskData.type === 'READING' ? 'Reading Passage' : 'Writing Prompt'}
-                                        </label>
-                                        <textarea
-                                            rows="5"
-                                            value={taskData.passage}
-                                            onChange={(e) => setTaskData({ ...taskData, passage: e.target.value })}
-                                            className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-primary-100 transition font-bold text-gray-900"
-                                            placeholder={taskData.type === 'READING' ? "Enter the full text for students to read..." : "Enter the writing topic or prompt..."}
-                                        />
-                                    </div>
-                                )}
-
-                                {(taskData.type === 'LISTENING' || taskData.type === 'SPEAKING') && (
-                                    <div className="space-y-3">
-                                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">
-                                            {taskData.type === 'LISTENING' ? 'Audio Source URL' : 'Speaking Instructions'}
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={taskData.type === 'LISTENING' ? taskData.audioUrl : taskData.instructions}
-                                            onChange={(e) => taskData.type === 'LISTENING'
-                                                ? setTaskData({ ...taskData, audioUrl: e.target.value })
-                                                : setTaskData({ ...taskData, instructions: e.target.value })}
-                                            className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-primary-100 transition font-bold text-gray-900"
-                                            placeholder={taskData.type === 'LISTENING' ? "https://example.com/audio.mp3" : "Describe what the student should speak about..."}
-                                        />
-                                    </div>
-                                )}
-
-                                <button
-                                    type="submit"
-                                    className="w-full py-6 bg-primary-600 text-white rounded-[2.5rem] font-black text-xl hover:bg-primary-700 transition shadow-xl shadow-primary-500/20 mt-4 active:scale-[0.98] duration-200"
-                                >
-                                    {editingTask ? 'Update Global Asset' : 'Publish Master Task'}
-                                </button>
-                            </form>
+                            <div className="p-8">
+                                <TaskCreationForm 
+                                    onTaskCreated={(newTask) => {
+                                        setShowModal(false);
+                                        fetchTasks();
+                                    }} 
+                                    userRole={user?.role} 
+                                    userId={user?.id} 
+                                />
+                            </div>
                         </motion.div>
                     </div>
                 )}

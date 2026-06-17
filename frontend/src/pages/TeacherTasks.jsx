@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
+import TaskCreationForm from '../components/TaskCreationForm';
 import {
     BookOpen,
     Plus,
@@ -332,213 +333,27 @@ const TeacherTasks = () => {
 
                 {/* Create Task Modal */}
                 {isModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm">
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="bg-white w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-2xl"
+                            className="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-[3.5rem] shadow-2xl relative"
                         >
-                            <div className="p-10 border-b border-gray-50 flex justify-between items-center">
-                                <h2 className="text-3xl font-black text-gray-900">{editTaskId ? 'Edit' : 'New'} {newTask.type.charAt(0) + newTask.type.slice(1).toLowerCase()} Module</h2>
-                                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-900">
-                                    <Plus className="rotate-45" size={32} />
+                            <div className="absolute top-6 right-6 z-10">
+                                <button onClick={() => setIsModalOpen(false)} className="p-3 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-2xl bg-white shadow transition">
+                                    <Plus className="rotate-45" size={24} />
                                 </button>
                             </div>
-                            <form onSubmit={handleCreateTask} className="p-10 space-y-6 max-h-[70vh] overflow-y-auto">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Task Title</label>
-                                    <input
-                                        required
-                                        type="text"
-                                        placeholder="e.g. Advanced Business Communication"
-                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-gray-900 transition"
-                                        value={newTask.title}
-                                        onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Description</label>
-                                    <textarea
-                                        required
-                                        placeholder="Outline the learning objectives..."
-                                        className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-indigo-100 font-medium text-gray-700 transition min-h-[120px]"
-                                        value={newTask.description}
-                                        onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                                    ></textarea>
-                                </div>
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Module Type</label>
-                                        <select
-                                            className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-gray-700 transition appearance-none"
-                                            value={newTask.type}
-                                            onChange={(e) => setNewTask({ ...newTask, type: e.target.value })}
-                                        >
-                                            <option value="READING">Reading</option>
-                                            <option value="LISTENING">Listening</option>
-                                            <option value="SPEAKING">Speaking</option>
-                                            <option value="WRITING">Writing</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Difficulty</label>
-                                        <select
-                                            className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-gray-700 transition appearance-none"
-                                            value={newTask.difficulty}
-                                            onChange={(e) => setNewTask({ ...newTask, difficulty: e.target.value })}
-                                        >
-                                            <option value="BEGINNER">Beginner</option>
-                                            <option value="INTERMEDIATE">Intermediate</option>
-                                            <option value="ADVANCED">Advanced</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Time (Mins)</label>
-                                        <input
-                                            required
-                                            type="number"
-                                            className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-indigo-100 font-black text-gray-900 transition"
-                                            value={newTask.timeLimit}
-                                            onChange={(e) => setNewTask({ ...newTask, timeLimit: parseInt(e.target.value) })}
-                                        />
-                                    </div>
-                                </div>
-
-                                {(newTask.type === 'READING' || newTask.type === 'WRITING') && (
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Reading Passage / Prompt</label>
-                                        <textarea
-                                            required
-                                            placeholder="Paste the text passage here..."
-                                            className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-indigo-100 font-medium text-gray-700 transition min-h-[150px]"
-                                            value={newTask.passage}
-                                            onChange={(e) => setNewTask({ ...newTask, passage: e.target.value })}
-                                        ></textarea>
-                                    </div>
-                                )}
-
-                                {(newTask.type === 'LISTENING' || newTask.type === 'SPEAKING') && (
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest px-2 flex items-center space-x-2">
-                                            <Music size={14} />
-                                            <span>Audio Source URL</span>
-                                        </label>
-                                        <input
-                                            required
-                                            type="url"
-                                            placeholder="https://example.com/audio.mp3"
-                                            className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-indigo-100 font-medium text-gray-700 transition"
-                                            value={newTask.audioUrl}
-                                            onChange={(e) => setNewTask({ ...newTask, audioUrl: e.target.value })}
-                                        />
-                                        <p className="text-[10px] text-gray-400 px-2 italic font-medium">Provide a direct link to the reference audio or video file.</p>
-                                    </div>
-                                )}
-
-                                {/* Quiz Settings Section */}
-                                <div className="pt-8 border-t border-gray-100 space-y-6">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-3">
-                                            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
-                                                <Settings size={20} />
-                                            </div>
-                                            <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Quiz Configuration</h3>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={handleAutoGenerateQuiz}
-                                            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold text-xs hover:shadow-lg transition active:scale-95"
-                                        >
-                                            <Zap size={14} className="fill-current" />
-                                            <span>AI Auto-Generate Quiz</span>
-                                        </button>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        {newTask.questions.map((q, idx) => (
-                                            <div key={q.id} className="p-6 bg-gray-50 rounded-3xl border border-gray-100 relative group">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeQuestion(q.id)}
-                                                    className="absolute top-4 right-4 p-2 text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Question Type</label>
-                                                        <input
-                                                            type="text"
-                                                            value={q.type}
-                                                            onChange={(e) => updateQuestion(q.id, 'type', e.target.value)}
-                                                            className="w-full px-4 py-3 bg-white border-none rounded-xl focus:ring-2 focus:ring-indigo-200 font-bold text-gray-700 text-sm"
-                                                            placeholder="e.g. Main Idea"
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Time Limit (s)</label>
-                                                        <input
-                                                            type="number"
-                                                            value={q.time}
-                                                            onChange={(e) => updateQuestion(q.id, 'time', parseInt(e.target.value))}
-                                                            className="w-full px-4 py-3 bg-white border-none rounded-xl focus:ring-2 focus:ring-indigo-200 font-bold text-gray-700 text-sm"
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <div className="space-y-2 mb-4">
-                                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Question Text</label>
-                                                    <textarea
-                                                        value={q.questionText || q.text}
-                                                        onChange={(e) => updateQuestion(q.id, 'questionText', e.target.value)}
-                                                        className="w-full px-4 py-3 bg-white border-none rounded-xl focus:ring-2 focus:ring-indigo-200 font-medium text-gray-700 text-sm resize-none"
-                                                        rows="2"
-                                                        placeholder="Enter the question..."
-                                                    />
-                                                </div>
-
-                                                <div className="space-y-2">
-                                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Options & Correct Answer</label>
-                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                                        {(q.options || q.opts)?.map((opt, oIdx) => (
-                                                            <div key={oIdx} className="relative">
-                                                                <input
-                                                                    type="text"
-                                                                    value={opt}
-                                                                    onChange={(e) => updateQuestionOption(q.id, oIdx, e.target.value)}
-                                                                    className={`w-full px-4 py-3 bg-white border-none rounded-xl focus:ring-2 focus:ring-indigo-200 font-bold text-xs ${opt === q.correctAnswer ? 'ring-2 ring-emerald-400' : ''}`}
-                                                                    placeholder={`Option ${oIdx + 1}`}
-                                                                />
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => updateQuestion(q.id, 'correctAnswer', opt)}
-                                                                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md transition ${opt && opt === q.correctAnswer ? 'text-emerald-500 bg-emerald-50' : 'text-gray-200 hover:text-gray-400'}`}
-                                                                >
-                                                                    <CheckCircle2 size={14} />
-                                                                </button>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-
-                                        <button
-                                            type="button"
-                                            onClick={addManualQuestion}
-                                            className="w-full py-4 border-2 border-dashed border-gray-200 rounded-3xl text-gray-400 font-bold text-sm hover:border-indigo-200 hover:text-indigo-400 transition flex items-center justify-center space-x-2"
-                                        >
-                                            <Plus size={16} />
-                                            <span>Add Manual Question</span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black text-lg shadow-xl shadow-indigo-500/30 hover:bg-indigo-700 transition transform hover:-translate-y-1">
-                                    {editTaskId ? 'Update Active Module' : 'Publish Active Module'}
-                                </button>
-                            </form>
+                            <div className="p-8">
+                                <TaskCreationForm 
+                                    onTaskCreated={(newTask) => {
+                                        setIsModalOpen(false);
+                                        fetchTasks();
+                                    }} 
+                                    userRole={user?.role} 
+                                    userId={user?.id} 
+                                />
+                            </div>
                         </motion.div>
                     </div>
                 )}

@@ -18,8 +18,7 @@ const Login = () => {
             if (userStr) {
                 try {
                     const user = JSON.parse(userStr);
-                    if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') navigate('/admin/dashboard', { replace: true });
-                    else if (user.role === 'DEPT_ADMIN') navigate('/admin/users', { replace: true });
+                    if (user.role === 'ADMIN') navigate('/admin/dashboard', { replace: true });
                     else if (user.role === 'TEACHER') navigate('/teacher/dashboard', { replace: true });
                     else navigate('/dashboard', { replace: true });
                 } catch (e) {
@@ -48,9 +47,14 @@ const Login = () => {
                 localStorage.removeItem('organizationId');
             }
 
+            // Force password reset for newly imported/invited students
+            if (user.forcePasswordReset) {
+                navigate('/reset-password');
+                return;
+            }
+
             // Redirect based on role
-            if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') navigate('/admin/dashboard');
-            else if (user.role === 'DEPT_ADMIN') navigate('/admin/users');
+            if (user.role === 'ADMIN') navigate('/admin/dashboard');
             else if (user.role === 'TEACHER') navigate('/teacher/dashboard');
             else navigate('/dashboard');
 

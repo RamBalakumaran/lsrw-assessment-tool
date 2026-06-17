@@ -8,13 +8,13 @@ import TeacherDashboard from './pages/TeacherDashboard';
 import HistoryPage from './pages/History';
 import Profile from './pages/Profile';
 import PasswordReset from './pages/PasswordReset';
-import OrganizationManagement from './pages/OrganizationManagement';
 import UserManagement from './pages/UserManagement';
 import GlobalTasks from './pages/GlobalTasks';
 import SystemHealth from './pages/SystemHealth';
 import TeacherStudents from './pages/TeacherStudents';
 import TeacherTasks from './pages/TeacherTasks';
 import TeacherPerformance from './pages/TeacherPerformance';
+import BulkImportPage from './pages/BulkImportPage';
 
 // Import the Video-Style Tests (The ones ending in 'Test.jsx')
 import TestInterface from './pages/TestInterface'; // Speaking
@@ -35,13 +35,14 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/organizations" element={<OrganizationManagement />} />
           <Route path="/admin/users" element={<UserManagement />} />
+          <Route path="/admin/bulk-import" element={<BulkImportPage />} />
           <Route path="/admin/tasks" element={<GlobalTasks />} />
           <Route path="/admin/health" element={<SystemHealth />} />
 
           <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
           <Route path="/teacher/students" element={<TeacherStudents />} />
+          <Route path="/teacher/bulk-import" element={<BulkImportPage />} />
           <Route path="/teacher/tasks" element={<TeacherTasks />} />
           <Route path="/teacher/performance" element={<TeacherPerformance />} />
 

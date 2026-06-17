@@ -1,240 +1,202 @@
 import React from 'react';
 import BulkImportComponent from '../components/BulkImportComponent';
+import { Users, GraduationCap, Link2, Download, AlertTriangle, FileSpreadsheet, Info } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const BulkImportPage = () => {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
-            <div className="container mx-auto">
+        <div className="min-h-screen bg-gray-50 py-12 px-6 font-sans">
+            <div className="max-w-6xl mx-auto">
                 {/* Header */}
-                <div className="mb-12 text-center">
-                    <h1 className="text-4xl font-bold text-gray-900 mb-4">Bulk Import Management</h1>
-                    <p className="text-xl text-gray-600">
-                        Efficiently add hundreds of students and teachers in one go
+                <div className="mb-12">
+                    <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">Bulk Import Management</h1>
+                    <p className="text-gray-500 font-medium">
+                        Efficiently add hundreds of students and teachers in one go, and map them instantly.
                     </p>
                 </div>
 
                 {/* Quick Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <div className="flex items-center">
-                            <div className="text-4xl mr-4">👥</div>
-                            <div>
-                                <p className="text-gray-600">Bulk Students</p>
-                                <p className="text-2xl font-bold">Add 100s</p>
-                            </div>
+                    <motion.div whileHover={{ y: -4 }} className="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-8 flex items-center gap-6">
+                        <div className="w-16 h-16 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center shadow-inner">
+                            <Users size={32} />
                         </div>
-                    </div>
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <div className="flex items-center">
-                            <div className="text-4xl mr-4">🎓</div>
-                            <div>
-                                <p className="text-gray-600">Bulk Teachers</p>
-                                <p className="text-2xl font-bold">Add 20+</p>
-                            </div>
+                        <div>
+                            <p className="text-gray-400 font-black text-xs uppercase tracking-widest mb-1">Bulk Students</p>
+                            <p className="text-2xl font-black text-gray-900">Add 100s</p>
                         </div>
-                    </div>
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <div className="flex items-center">
-                            <div className="text-4xl mr-4">🔗</div>
-                            <div>
-                                <p className="text-gray-600">Map Relations</p>
-                                <p className="text-2xl font-bold">Auto Assign</p>
-                            </div>
+                    </motion.div>
+                    
+                    <motion.div whileHover={{ y: -4 }} className="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-8 flex items-center gap-6">
+                        <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-inner">
+                            <GraduationCap size={32} />
                         </div>
-                    </div>
+                        <div>
+                            <p className="text-gray-400 font-black text-xs uppercase tracking-widest mb-1">Bulk Teachers</p>
+                            <p className="text-2xl font-black text-gray-900">Add 20+</p>
+                        </div>
+                    </motion.div>
+                    
+                    <motion.div whileHover={{ y: -4 }} className="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-8 flex items-center gap-6">
+                        <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-inner">
+                            <Link2 size={32} />
+                        </div>
+                        <div>
+                            <p className="text-gray-400 font-black text-xs uppercase tracking-widest mb-1">Map Relations</p>
+                            <p className="text-2xl font-black text-gray-900">Auto Assign</p>
+                        </div>
+                    </motion.div>
                 </div>
 
                 {/* Main Component */}
                 <BulkImportComponent />
 
                 {/* Help Section */}
-                <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">📖 Getting Started</h3>
-                        <ol className="space-y-3 text-gray-700">
-                            <li className="flex">
-                                <span className="font-bold text-blue-600 mr-3">1.</span>
-                                <span>Download the template for Students/Teachers</span>
-                            </li>
-                            <li className="flex">
-                                <span className="font-bold text-blue-600 mr-3">2.</span>
-                                <span>Fill in the data with your student/teacher information</span>
-                            </li>
-                            <li className="flex">
-                                <span className="font-bold text-blue-600 mr-3">3.</span>
-                                <span>Upload the file using the form above</span>
-                            </li>
-                            <li className="flex">
-                                <span className="font-bold text-blue-600 mr-3">4.</span>
-                                <span>Review success/error results</span>
-                            </li>
-                            <li className="flex">
-                                <span className="font-bold text-blue-600 mr-3">5.</span>
-                                <span>Repeat for Teachers, then do Mapping</span>
-                            </li>
+                <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-10">
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                                <Info size={24} />
+                            </div>
+                            <h3 className="text-2xl font-black text-gray-900 tracking-tight">Getting Started</h3>
+                        </div>
+                        <ol className="space-y-4">
+                            {[
+                                "Download the template for Students/Teachers",
+                                "Fill in the data with your user information",
+                                "Upload the file using the form above",
+                                "Review success/error results",
+                                "Repeat for Teachers, then do Mapping"
+                            ].map((step, idx) => (
+                                <li key={idx} className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                                    <div className="w-8 h-8 rounded-lg bg-white text-gray-900 font-black flex items-center justify-center shadow-sm">
+                                        {idx + 1}
+                                    </div>
+                                    <span className="font-bold text-gray-700">{step}</span>
+                                </li>
+                            ))}
                         </ol>
                     </div>
 
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">⚠️ Important Notes</h3>
-                        <ul className="space-y-3 text-gray-700">
-                            <li className="flex items-start">
-                                <span className="text-red-500 mr-3">•</span>
-                                <span>Email must be unique for each user</span>
-                            </li>
-                            <li className="flex items-start">
-                                <span className="text-red-500 mr-3">•</span>
-                                <span>First Name is required for all users</span>
-                            </li>
-                            <li className="flex items-start">
-                                <span className="text-red-500 mr-3">•</span>
-                                <span>Import Students & Teachers BEFORE mapping</span>
-                            </li>
-                            <li className="flex items-start">
-                                <span className="text-red-500 mr-3">•</span>
-                                <span>Use .xlsx or .xls format only</span>
-                            </li>
-                            <li className="flex items-start">
-                                <span className="text-red-500 mr-3">•</span>
-                                <span>Max 500 records per file for best performance</span>
-                            </li>
+                    <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-10">
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                                <AlertTriangle size={24} />
+                            </div>
+                            <h3 className="text-2xl font-black text-gray-900 tracking-tight">Important Notes</h3>
+                        </div>
+                        <ul className="space-y-4">
+                            {[
+                                "Email must be unique for each user",
+                                "First Name is required for all users",
+                                "Import Students & Teachers BEFORE mapping",
+                                "Use .xlsx or .xls format only",
+                                "Max 500 records per file for best performance"
+                            ].map((note, idx) => (
+                                <li key={idx} className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                                    <div className="w-2 h-2 rounded-full bg-rose-500"></div>
+                                    <span className="font-bold text-gray-700">{note}</span>
+                                </li>
+                            ))}
                         </ul>
                     </div>
                 </div>
 
                 {/* Excel Format Guide */}
-                <div className="mt-12 bg-white rounded-lg shadow p-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-8">📊 Excel Format Guide</h2>
+                <div className="mt-12 bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-10">
+                    <div className="flex items-center gap-4 mb-10">
+                        <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                            <FileSpreadsheet size={28} />
+                        </div>
+                        <div>
+                            <h2 className="text-3xl font-black text-gray-900 tracking-tight">Excel Format Guide</h2>
+                            <p className="text-gray-500 font-medium mt-1">Structure your data perfectly for seamless importing.</p>
+                        </div>
+                    </div>
                     
-                    {/* Students Format */}
-                    <div className="mb-12">
-                        <h3 className="text-lg font-bold text-blue-600 mb-4">Students Excel Format</h3>
-                        <p className="text-gray-700 mb-4">Required columns: email, firstName</p>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-gray-700">
-                                <thead className="bg-blue-50">
-                                    <tr>
-                                        <th className="px-4 py-2 text-left">email</th>
-                                        <th className="px-4 py-2 text-left">firstName</th>
-                                        <th className="px-4 py-2 text-left">lastName</th>
-                                        <th className="px-4 py-2 text-left">department</th>
-                                        <th className="px-4 py-2 text-left">password</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr className="border-b">
-                                        <td className="px-4 py-2">student1@example.com</td>
-                                        <td className="px-4 py-2">John</td>
-                                        <td className="px-4 py-2">Doe</td>
-                                        <td className="px-4 py-2">Engineering</td>
-                                        <td className="px-4 py-2"></td>
-                                    </tr>
-                                    <tr className="border-b">
-                                        <td className="px-4 py-2">student2@example.com</td>
-                                        <td className="px-4 py-2">Jane</td>
-                                        <td className="px-4 py-2">Smith</td>
-                                        <td className="px-4 py-2">Science</td>
-                                        <td className="px-4 py-2"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                        {/* Students Format */}
+                        <div className="bg-gray-50 rounded-3xl p-6 border border-gray-100">
+                            <h3 className="text-lg font-black text-blue-600 mb-2">Students Format</h3>
+                            <p className="text-gray-500 text-sm font-medium mb-6">Required: email, firstName</p>
+                            <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="bg-blue-50 text-blue-900 font-black">
+                                        <tr>
+                                            <th className="px-4 py-3">email</th>
+                                            <th className="px-4 py-3">firstName</th>
+                                            <th className="px-4 py-3">department</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="font-medium text-gray-600 divide-y divide-gray-100">
+                                        <tr>
+                                            <td className="px-4 py-3">stu1@nec.edu</td>
+                                            <td className="px-4 py-3">John</td>
+                                            <td className="px-4 py-3">CS</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="px-4 py-3">stu2@nec.edu</td>
+                                            <td className="px-4 py-3">Jane</td>
+                                            <td className="px-4 py-3">MECH</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Teachers Format */}
-                    <div className="mb-12">
-                        <h3 className="text-lg font-bold text-green-600 mb-4">Teachers Excel Format</h3>
-                        <p className="text-gray-700 mb-4">Required columns: email, firstName</p>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-gray-700">
-                                <thead className="bg-green-50">
-                                    <tr>
-                                        <th className="px-4 py-2 text-left">email</th>
-                                        <th className="px-4 py-2 text-left">firstName</th>
-                                        <th className="px-4 py-2 text-left">lastName</th>
-                                        <th className="px-4 py-2 text-left">department</th>
-                                        <th className="px-4 py-2 text-left">password</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr className="border-b">
-                                        <td className="px-4 py-2">teacher1@example.com</td>
-                                        <td className="px-4 py-2">Dr. Michael</td>
-                                        <td className="px-4 py-2">Johnson</td>
-                                        <td className="px-4 py-2">Engineering</td>
-                                        <td className="px-4 py-2"></td>
-                                    </tr>
-                                    <tr className="border-b">
-                                        <td className="px-4 py-2">teacher2@example.com</td>
-                                        <td className="px-4 py-2">Prof. Sarah</td>
-                                        <td className="px-4 py-2">Williams</td>
-                                        <td className="px-4 py-2">Science</td>
-                                        <td className="px-4 py-2"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        {/* Teachers Format */}
+                        <div className="bg-gray-50 rounded-3xl p-6 border border-gray-100">
+                            <h3 className="text-lg font-black text-emerald-600 mb-2">Teachers Format</h3>
+                            <p className="text-gray-500 text-sm font-medium mb-6">Required: email, firstName</p>
+                            <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="bg-emerald-50 text-emerald-900 font-black">
+                                        <tr>
+                                            <th className="px-4 py-3">email</th>
+                                            <th className="px-4 py-3">firstName</th>
+                                            <th className="px-4 py-3">department</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="font-medium text-gray-600 divide-y divide-gray-100">
+                                        <tr>
+                                            <td className="px-4 py-3">dr1@nec.edu</td>
+                                            <td className="px-4 py-3">Dr. Mike</td>
+                                            <td className="px-4 py-3">CS</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="px-4 py-3">dr2@nec.edu</td>
+                                            <td className="px-4 py-3">Prof. Sarah</td>
+                                            <td className="px-4 py-3">MECH</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Mapping Format */}
-                    <div>
-                        <h3 className="text-lg font-bold text-purple-600 mb-4">Student-Teacher Mapping Format</h3>
-                        <p className="text-gray-700 mb-4">Required columns: studentEmail, teacherEmail</p>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-gray-700">
-                                <thead className="bg-purple-50">
-                                    <tr>
-                                        <th className="px-4 py-2 text-left">studentEmail</th>
-                                        <th className="px-4 py-2 text-left">teacherEmail</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr className="border-b">
-                                        <td className="px-4 py-2">student1@example.com</td>
-                                        <td className="px-4 py-2">teacher1@example.com</td>
-                                    </tr>
-                                    <tr className="border-b">
-                                        <td className="px-4 py-2">student2@example.com</td>
-                                        <td className="px-4 py-2">teacher1@example.com</td>
-                                    </tr>
-                                    <tr className="border-b">
-                                        <td className="px-4 py-2">student3@example.com</td>
-                                        <td className="px-4 py-2">teacher2@example.com</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                {/* FAQ Section */}
-                <div className="mt-12 bg-white rounded-lg shadow p-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-8">❓ FAQ</h2>
-                    
-                    <div className="space-y-6">
-                        <div>
-                            <h4 className="font-bold text-gray-900 mb-2">Q: What if I leave password empty?</h4>
-                            <p className="text-gray-700">A: A temporary password will be auto-generated. You can share this with users. They should change it on first login.</p>
-                        </div>
-                        
-                        <div>
-                            <h4 className="font-bold text-gray-900 mb-2">Q: Can I import CSV instead of Excel?</h4>
-                            <p className="text-gray-700">A: Currently only .xlsx and .xls formats are supported. You can convert CSV to Excel in Microsoft Excel or Google Sheets.</p>
-                        </div>
-                        
-                        <div>
-                            <h4 className="font-bold text-gray-900 mb-2">Q: How many records can I upload at once?</h4>
-                            <p className="text-gray-700">A: Recommended max 500 records per file. Larger files may take longer but should still work.</p>
-                        </div>
-                        
-                        <div>
-                            <h4 className="font-bold text-gray-900 mb-2">Q: What happens if there are errors?</h4>
-                            <p className="text-gray-700">A: Successful records are created anyway. You'll see detailed error messages for failed records with row numbers.</p>
-                        </div>
-                        
-                        <div>
-                            <h4 className="font-bold text-gray-900 mb-2">Q: Can I map multiple students to one teacher?</h4>
-                            <p className="text-gray-700">A: Yes! One teacher can have many students. Just add multiple rows with the same teacher email.</p>
+                        {/* Mapping Format */}
+                        <div className="bg-gray-50 rounded-3xl p-6 border border-gray-100">
+                            <h3 className="text-lg font-black text-purple-600 mb-2">Mapping Format</h3>
+                            <p className="text-gray-500 text-sm font-medium mb-6">Required: studentEmail, teacherEmail</p>
+                            <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="bg-purple-50 text-purple-900 font-black">
+                                        <tr>
+                                            <th className="px-4 py-3">studentEmail</th>
+                                            <th className="px-4 py-3">teacherEmail</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="font-medium text-gray-600 divide-y divide-gray-100">
+                                        <tr>
+                                            <td className="px-4 py-3">stu1@nec.edu</td>
+                                            <td className="px-4 py-3">dr1@nec.edu</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="px-4 py-3">stu2@nec.edu</td>
+                                            <td className="px-4 py-3">dr1@nec.edu</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>

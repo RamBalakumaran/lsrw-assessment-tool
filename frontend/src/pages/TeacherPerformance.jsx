@@ -12,11 +12,21 @@ import { motion } from 'framer-motion';
 import api from '../utils/api';
 
 const TeacherPerformance = () => {
-    const [stats, setStats] = useState({ avg: 72, peak: 94, totalAttempts: 156 });
+    const [stats, setStats] = useState({ avg: 0, peak: 0, totalAttempts: 0, skillProficiency: [] });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        setTimeout(() => setLoading(false), 800);
+        const fetchAnalytics = async () => {
+            try {
+                const res = await api.get('/analytics/teacher');
+                setStats(res.data);
+            } catch (error) {
+                console.error("Failed to fetch analytics:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchAnalytics();
     }, []);
 
     if (loading) return (
@@ -76,11 +86,7 @@ const TeacherPerformance = () => {
                     <div className="bg-white p-12 rounded-[3.5rem] border border-gray-100 shadow-sm">
                         <h3 className="text-2xl font-black text-gray-900 mb-8">Weakness Correlation</h3>
                         <div className="space-y-8">
-                            {[
-                                { skill: "Grammar Coherence", val: 45, color: "rose" },
-                                { skill: "Phonetic Fluency", val: 82, color: "emerald" },
-                                { skill: "Lexical Variety", val: 68, color: "amber" }
-                            ].map((s, i) => (
+                            {(stats.skillProficiency || []).map((s, i) => (
                                 <div key={i}>
                                     <div className="flex justify-between items-end mb-3">
                                         <span className="font-bold text-gray-700 text-sm uppercase tracking-widest">{s.skill}</span>
