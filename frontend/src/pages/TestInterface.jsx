@@ -24,6 +24,7 @@ const TestInterface = () => {
     const [selectedTopic, setSelectedTopic] = useState(null);
     const [loading, setLoading] = useState(false);
     const [report, setReport] = useState(null);
+    const [timeLeft, setTimeLeft] = useState(null);
 
     const createZeroReport = (errorMsg) => ({
         score: 0,
@@ -114,6 +115,26 @@ const TestInterface = () => {
         onStop: onStop
     });
 
+    useEffect(() => {
+        let timer;
+        if (status === 'recording' && selectedTopic?.timeLimit) {
+            setTimeLeft(selectedTopic.timeLimit);
+            timer = setInterval(() => {
+                setTimeLeft((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(timer);
+                        stopRecording();
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        } else {
+            setTimeLeft(null);
+        }
+        return () => clearInterval(timer);
+    }, [status, selectedTopic, stopRecording]);
+
     const [topics, setTopics] = useState([]);
 
     useEffect(() => {
@@ -197,6 +218,14 @@ const TestInterface = () => {
 
                     {/* Recording Side */}
                     <div className="md:w-7/12 p-12 flex flex-col items-center justify-center relative bg-white">
+                        {status === 'recording' && timeLeft !== null && (
+                            <div className="absolute top-8 right-8 bg-rose-50 border border-rose-100 px-4 py-2 rounded-xl flex items-center space-x-2 text-rose-500 font-black tracking-widest shadow-sm">
+                                <Clock size={16} />
+                                <span>
+                                    {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                                </span>
+                            </div>
+                        )}
                         <AnimatePresence mode="wait">
                             {loading ? (
                                 <motion.div
