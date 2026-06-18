@@ -46,7 +46,7 @@ const Dashboard = () => {
 
   const getModuleLink = (task) => {
     if (!task) return "/";
-    const type = task.type?.toLowerCase();
+    const type = (task.lsrwComponent || task.type)?.toLowerCase();
     if (type === 'listening') return `/listening-test/${task.id}`;
     if (type === 'reading') return `/reading-test/${task.id}`;
     if (type === 'writing') return `/writing-test/${task.id}`;
@@ -103,7 +103,7 @@ const Dashboard = () => {
               <div className="text-[10px] font-black uppercase text-gray-400 mt-1 tracking-widest">{user.plan}</div>
             </div>
             <div className="w-14 h-14 rounded-2xl bg-primary-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-primary-500/30">
-              {user.firstName[0]}{user.lastName[0]}
+              {user?.firstName?.[0] || ''}{user?.lastName?.[0] || ''}
             </div>
           </div>
         </header>
@@ -169,7 +169,7 @@ const Dashboard = () => {
                 >
                   <div className="flex items-center space-x-6">
                     <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center font-black text-2xl border border-white/20">
-                      {assignment.task?.type[0]}
+                      {assignment.task?.type?.[0] || assignment.task?.lsrwComponent?.[0] || 'T'}
                     </div>
                     <div>
                       <div className="text-xs font-black text-primary-200 uppercase tracking-widest leading-none mb-1">Teacher Assigned</div>
