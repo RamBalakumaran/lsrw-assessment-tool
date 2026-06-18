@@ -46,6 +46,8 @@ const TestInterface = () => {
         formData.append('audio', blob, 'test.wav');
         if (selectedTopic && selectedTopic.id) {
             formData.append('taskId', selectedTopic.id);
+            formData.append('topicTitle', selectedTopic.title || '');
+            formData.append('topicDesc', selectedTopic.desc || '');
         }
 
         try {
@@ -79,7 +81,7 @@ const TestInterface = () => {
                     { label: "Estimated WPM", value: data.wpm || 0 },
                     { label: "Fluency Score", value: `${fluency9.toFixed(1)}/9.0` },
                     { label: "Vocabulary Richness", value: `${vocab9.toFixed(1)}/9.0` },
-                    { label: "Filler Words", value: metrics.filler_count || 0 }
+                    { label: "Number of Pauses", value: metrics.pause_count || 0 }
                 ],
                 criteria: {
                     "Pronunciation": (metrics.pronunciation || 0) * 10,
@@ -87,14 +89,14 @@ const TestInterface = () => {
                     "Grammar": (metrics.grammar || 0) * 10,
                     "Vocabulary": (metrics.vocabulary || 0) * 10,
                     "Confidence": (metrics.fluency || 0) > 7 ? 90 : 60,
-                    "Relevance": data.overall_score > 6 ? 100 : 50
+                    "Relevance": (metrics.relevance || 0) * 10
                 },
                 mistakes: data.mistakes || [],
                 recommendations: [
-                    `Speaking tempo detected at ${data.wpm || 0} vocabulary words per minute.`,
+                    `Speaking tempo detected at ${data.wpm || 0} vocabulary words per minute with ${metrics.pause_count || 0} distinct pauses.`,
                     (metrics.fluency || 0) < 6 ? "Work on reducing pauses between sentences." : "Strong natural cadence and flow.",
-                    (metrics.filler_count || 0) > 3 ? "Try to eliminate vocal fillers like 'um' and 'ah'." : "Excellent clarity with minimal filler usage.",
-                    ...(data.mistakes?.length > 0 ? [`Identified ${data.mistakes.length} points for grammatical refinement.`] : ["Grammatical structure is highly consistent."])
+                    (metrics.relevance || 0) < 6 ? "Ensure your answer directly addresses the provided topic prompt." : "Excellent topical relevance.",
+                    ...(data.mistakes?.length > 0 ? [`Identified ${data.mistakes.length} structural points for refinement.`] : ["Structure is highly consistent."])
                 ]
             });
             setPhase('report');

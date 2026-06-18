@@ -22,7 +22,9 @@ router.post('/assess-speaking', authMiddleware, upload.single('audio'), async (r
     }
 
     const pythonScript = path.resolve(__dirname, '../../ai-engine/full_assessment.py');
-    const pythonProcess = spawn('python', [pythonScript, audioPath]);
+    const topicTitle = req.body.topicTitle || "Speaking Task";
+    const topicDesc = req.body.topicDesc || "General speech";
+    const pythonProcess = spawn('python', [pythonScript, audioPath, topicTitle, topicDesc]);
 
     let dataString = '';
     pythonProcess.stdout.on('data', (data) => { dataString += data.toString(); });
