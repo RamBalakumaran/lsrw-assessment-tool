@@ -136,9 +136,7 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
         
         try {
             setLoading(true);
-            const res = await api.post('/tasks/upload-image', uploadData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            const res = await api.post('/tasks/upload-image', uploadData);
             handleInputChange('imageUrl', res.data.url);
         } catch (error) {
             console.error('Image upload failed:', error);
