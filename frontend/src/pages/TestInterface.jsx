@@ -194,6 +194,13 @@ const TestInterface = () => {
                             <Mic size={32} />
                         </div>
                         <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">{selectedTopic.title}</h2>
+                        
+                        {selectedTopic.imageUrl && (
+                            <div className="mb-6 rounded-2xl overflow-hidden shadow-sm border border-gray-100 bg-white p-2">
+                                <img src={selectedTopic.imageUrl} alt="Topic Visual" className="w-full h-auto rounded-xl object-contain max-h-[250px]" />
+                            </div>
+                        )}
+
                         <p className="text-gray-500 text-lg font-medium leading-relaxed">
                             {selectedTopic.desc}
                         </p>

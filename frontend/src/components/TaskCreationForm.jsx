@@ -23,7 +23,7 @@ const TASK_CONFIG = {
         border: 'border-indigo-100',
         subtypes: {
             SELF_INTRODUCTION: { label: 'Self-Introduction', fields: ['instructions', 'timeLimit', 'evaluationRubric'] },
-            PICTURE_DESCRIPTION: { label: 'Picture Description', fields: ['instructions', 'timeLimit', 'evaluationRubric'] },
+            PICTURE_DESCRIPTION: { label: 'Picture Description', fields: ['instructions', 'imageUrl', 'timeLimit', 'evaluationRubric'] },
             ONE_MINUTE_ASSESSMENT: { label: 'One Minute Assessment', fields: ['instructions', 'timeLimit', 'evaluationRubric'] },
             REPEAT_SENTENCES: { label: 'Repeat Sentences', fields: ['audioUrl', 'evaluationRubric'] }
         }
@@ -74,6 +74,7 @@ const TaskCreationForm = ({ onTaskCreated, userRole }) => {
         visibilityScope: 'Global',
         groupIds: [],
         audioUrl: '',
+        imageUrl: '',
         passage: '',
         instructions: '',
         timeLimit: 120,
@@ -148,7 +149,7 @@ const TaskCreationForm = ({ onTaskCreated, userRole }) => {
                 setStep(1);
                 setFormData({
                     title: '', description: '', difficultyLevel: 'Beginner', visibilityScope: 'Global', groupIds: [],
-                    audioUrl: '', passage: '', instructions: '', timeLimit: 120, maxAttempts: 1, passingScore: 60,
+                    audioUrl: '', imageUrl: '', passage: '', instructions: '', timeLimit: 120, maxAttempts: 1, passingScore: 60,
                     startDate: '', endDate: '', questions: [], showAnswers: false, evaluationRubric: null
                 });
                 setSuccess(false);
@@ -350,6 +351,13 @@ const TaskCreationForm = ({ onTaskCreated, userRole }) => {
                                     className={`w-full px-5 py-4 bg-white border ${errors.audioUrl ? 'border-rose-300 focus:ring-rose-100' : 'border-gray-200 focus:ring-primary-100'} rounded-2xl font-bold focus:outline-none focus:ring-4 transition`}
                                 />
                                 {errors.audioUrl && <span className="text-rose-600 text-xs font-bold mt-2 block">{errors.audioUrl}</span>}
+                            </div>
+                        )}
+
+                        {config.fields.includes('imageUrl') && (
+                            <div>
+                                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Image URL *</label>
+                                <input type="text" value={formData.imageUrl} onChange={(e) => handleInputChange('imageUrl', e.target.value)} className="w-full p-4 border-2 rounded-2xl bg-gray-50 focus:bg-white transition-all outline-none border-gray-100 focus:border-primary-500" placeholder="https://example.com/image.jpg" />
                             </div>
                         )}
 
