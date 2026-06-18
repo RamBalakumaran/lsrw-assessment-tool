@@ -63,11 +63,11 @@ const VISIBILITY_SCOPES = [
     { value: 'GroupSpecific', label: 'Group-Specific', description: 'Visible to selected groups only.' }
 ];
 
-const TaskCreationForm = ({ onTaskCreated, userRole }) => {
+const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
     const [step, setStep] = useState(1);
     const [taskType, setTaskType] = useState(null);
     const [subType, setSubType] = useState(null);
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState(initialData || {
         title: '',
         description: '',
         difficultyLevel: 'Beginner',
@@ -106,6 +106,48 @@ const TaskCreationForm = ({ onTaskCreated, userRole }) => {
         fetchGroups();
     }, [userRole]);
 
+    useEffect(() => {
+        if (initialData) {
+            setFormData(initialData);
+            if (initialData.lsrwComponent && initialData.assessmentType) {
+                const mappedTaskType = initialData.lsrwComponent.toUpperCase();
+                setTaskType(mappedTaskType);
+                
+                const typeConfig = TASK_CONFIG[mappedTaskType];
+                if (typeConfig) {
+                    const mappedSubType = Object.keys(typeConfig.subtypes).find(
+                        key => typeConfig.subtypes[key].label === initialData.assessmentType
+                    );
+                    if (mappedSubType) {
+                        setSubType(mappedSubType);
+                        setStep(3); // Jump to step 3 for editing
+                    }
+                }
+            }
+        }
+    }, [initialData]);
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const uploadData = new FormData();
+        uploadData.append('image', file);
+        
+        try {
+            setLoading(true);
+            const res = await api.post('/tasks/upload-image', uploadData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            handleInputChange('imageUrl', res.data.url);
+        } catch (error) {
+            console.error('Image upload failed:', error);
+            setErrors(prev => ({ ...prev, imageUrl: 'Failed to upload image' }));
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleInputChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         if (errors[field]) setErrors(prev => ({ ...prev, [field]: null }));
@@ -141,7 +183,12 @@ const TaskCreationForm = ({ onTaskCreated, userRole }) => {
             if (!payload.endDate) delete payload.endDate;
             if (payload.visibilityScope !== 'GroupSpecific') payload.groupIds = [];
 
-            const response = await api.post('/tasks', payload);
+            let response;
+            if (initialData && initialData.id) {
+                response = await api.put(`/tasks/${initialData.id}`, payload);
+            } else {
+                response = await api.post('/tasks', payload);
+            }
             setSuccess(true);
             setTimeout(() => {
                 setTaskType(null);
@@ -356,8 +403,15 @@ const TaskCreationForm = ({ onTaskCreated, userRole }) => {
 
                         {config.fields.includes('imageUrl') && (
                             <div>
-                                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Image URL *</label>
-                                <input type="text" value={formData.imageUrl} onChange={(e) => handleInputChange('imageUrl', e.target.value)} className="w-full p-4 border-2 rounded-2xl bg-gray-50 focus:bg-white transition-all outline-none border-gray-100 focus:border-primary-500" placeholder="https://example.com/image.jpg" />
+                                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Image URL or File Upload *</label>
+                                <div className="flex space-x-2">
+                                    <input type="text" value={formData.imageUrl || ''} onChange={(e) => handleInputChange('imageUrl', e.target.value)} className="w-full p-4 border-2 rounded-2xl bg-gray-50 focus:bg-white transition-all outline-none border-gray-100 focus:border-primary-500" placeholder="https://example.com/image.jpg" />
+                                    <label className="flex-shrink-0 cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-4 px-6 rounded-2xl transition flex items-center">
+                                        <Plus size={20} className="mr-2" /> Upload
+                                        <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                                    </label>
+                                </div>
+                                {errors.imageUrl && <p className="text-rose-500 text-sm mt-2">{errors.imageUrl}</p>}
                             </div>
                         )}
 
@@ -444,13 +498,12 @@ const TaskCreationForm = ({ onTaskCreated, userRole }) => {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-4 pt-6 border-t border-gray-100">
-                        <button
-                            onClick={handleSubmit}
-                            disabled={loading}
-                            className="flex-1 py-5 bg-gray-900 text-white rounded-[1.5rem] font-black text-lg hover:bg-black disabled:bg-gray-200 disabled:text-gray-400 transition shadow-xl"
-                        >
-                            {loading ? 'Processing Deployment...' : 'Deploy Assessment Task'}
+                    <div className="flex gap-4 pt-6">
+                        <button type="button" onClick={() => setStep(2)} disabled={loading} className="px-8 py-4 bg-gray-50 text-gray-500 font-bold rounded-2xl hover:bg-gray-100 transition-colors w-1/3">
+                            Back
+                        </button>
+                        <button type="button" onClick={handleSubmit} disabled={loading} className="flex-1 bg-gray-900 text-white font-bold py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                            {loading ? 'Processing...' : initialData ? 'Save Changes' : 'Deploy Assessment Task'}
                         </button>
                     </div>
                 </div>

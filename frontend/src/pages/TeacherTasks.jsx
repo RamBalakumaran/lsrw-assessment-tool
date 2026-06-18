@@ -44,7 +44,8 @@ const TeacherTasks = () => {
     const [viewingQuizId, setViewingQuizId] = useState(null);
 
     const getIcon = (type) => {
-        switch (type) {
+        const t = (type || '').toUpperCase();
+        switch (t) {
             case 'LISTENING': return <Headphones size={28} />;
             case 'SPEAKING': return <Mic size={28} />;
             case 'READING': return <BookOpen size={28} />;
@@ -54,7 +55,8 @@ const TeacherTasks = () => {
     };
 
     const getTypeColor = (type) => {
-        switch (type) {
+        const t = (type || '').toUpperCase();
+        switch (t) {
             case 'LISTENING': return 'text-blue-600 bg-blue-50';
             case 'SPEAKING': return 'text-purple-600 bg-purple-50';
             case 'READING': return 'text-emerald-600 bg-emerald-50';
@@ -97,17 +99,7 @@ const TeacherTasks = () => {
 
     const handleEditTask = (task) => {
         setEditTaskId(task.id);
-        setNewTask({
-            title: task.title || '',
-            description: task.description || '',
-            type: task.type || 'READING',
-            difficulty: task.difficulty || 'INTERMEDIATE',
-            timeLimit: task.timeLimit || 30,
-            passage: task.passage || '',
-            audioUrl: task.audioUrl || '',
-            instructions: task.instructions || '',
-            questions: task.questions || []
-        });
+        setNewTask(task);
         setIsModalOpen(true);
     };
 
@@ -226,14 +218,14 @@ const TeacherTasks = () => {
                                 className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex items-center justify-between group hover:shadow-xl transition-all"
                             >
                                 <div className="flex items-center space-x-8">
-                                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black group-hover:scale-110 transition-transform ${getTypeColor(task.type)}`}>
-                                        {getIcon(task.type)}
+                                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black group-hover:scale-110 transition-transform ${getTypeColor(task.lsrwComponent || task.type)}`}>
+                                        {getIcon(task.lsrwComponent || task.type)}
                                     </div>
                                     <div className="max-w-md">
                                         <div className="flex items-center space-x-3 mb-1">
                                             <h3 className="text-2xl font-black text-gray-900">{task.title}</h3>
-                                            <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border italic ${getTypeColor(task.type)} border-current/10`}>
-                                                {task.type}
+                                            <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border italic ${getTypeColor(task.lsrwComponent || task.type)} border-current/10`}>
+                                                {task.lsrwComponent || task.type}
                                             </span>
                                         </div>
                                         <p className="text-gray-500 font-medium line-clamp-1">{task.description}</p>
@@ -351,7 +343,8 @@ const TeacherTasks = () => {
                                         fetchTasks();
                                     }} 
                                     userRole={user?.role} 
-                                    userId={user?.id} 
+                                    userId={user?.id}
+                                    initialData={editTaskId ? { ...newTask, id: editTaskId } : null}
                                 />
                             </div>
                         </motion.div>
