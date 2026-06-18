@@ -114,6 +114,16 @@ const TeacherTasks = () => {
         }
     };
 
+    const handleToggleStatus = async (task) => {
+        const newStatus = task.status === 'Published' ? 'Draft' : 'Published';
+        try {
+            await api.put(`/tasks/${task.id}`, { status: newStatus });
+            fetchTasks();
+        } catch (error) {
+            console.error("Failed to update status:", error);
+        }
+    };
+
     const handleAutoGenerateQuiz = () => {
         // Mocking AI Quiz Generation based on title/description/type
         const mockQuestions = [
@@ -237,8 +247,15 @@ const TeacherTasks = () => {
                                         <div className="mb-px">{task.difficulty}</div>
                                         <div>{task.timeLimit} MINS</div>
                                     </div>
-                                    {task.createdById === user?.id ? (
+                                    {task.createdById === user?.id || user?.role === 'ADMIN' || user?.role === 'TEACHER' ? (
                                         <div className="flex items-center space-x-2">
+                                            <button
+                                                onClick={() => handleToggleStatus(task)}
+                                                className={`p-3 rounded-2xl transition shadow-sm ${task.status === 'Published' ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
+                                                title={task.status === 'Published' ? 'Click to Deactivate' : 'Click to Activate'}
+                                            >
+                                                <Zap size={20} />
+                                            </button>
                                             <button
                                                 onClick={() => setViewingQuizId(viewingQuizId === task.id ? null : task.id)}
                                                 className={`p-3 rounded-2xl transition shadow-sm ${viewingQuizId === task.id ? 'bg-indigo-600 text-white' : 'bg-gray-50 text-gray-400 hover:bg-indigo-50'}`}
