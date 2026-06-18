@@ -4,7 +4,7 @@ const multer = require('multer');
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
-const prisma = require('../config/prisma');
+const db = require('../src/models');
 const { authMiddleware } = require('../middleware/auth');
 
 const upload = multer({ dest: 'uploads/' });
@@ -36,14 +36,11 @@ router.post('/assess-speaking', authMiddleware, upload.single('audio'), async (r
 
             // Save attempt if user is authenticated
             if (req.user) {
-                await prisma.attempt.create({
-                    data: {
-                        userId: req.user.id,
-                        taskId: req.body.taskId || null, // Optional Task ID
-                        score: Math.round((result.overall_score || 0) * 10),
-                        aiResults: result,
-                        status: 'COMPLETED'
-                    }
+                await db.Response.create({
+                    userId: req.user.id,
+                    taskId: req.body.taskId || '00000000-0000-0000-0000-000000000000', // Sequelize expects UUID format or similar. If no taskId, maybe skip?
+                    score: Math.round((result.overall_score || 0) * 10),
+                    feedback: JSON.stringify(result)
                 });
             }
 
