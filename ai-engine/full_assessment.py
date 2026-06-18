@@ -51,9 +51,9 @@ def analyze_audio(audio_path, topic_title, topic_desc):
         audio = AudioSegment.from_wav(wav_path)
         chunks = split_on_silence(
             audio,
-            min_silence_len=700, # minimum 700ms silence
-            silence_thresh=audio.dBFS-14, # relative silence threshold
-            keep_silence=300 # keep some silence for natural flow
+            min_silence_len=1000, # minimum 1000ms silence to avoid chopping words
+            silence_thresh=audio.dBFS-16, # slightly stricter silence threshold
+            keep_silence=500 # keep 500ms silence to help Google SR context
         )
 
         recognizer = sr.Recognizer()
@@ -62,6 +62,9 @@ def analyze_audio(audio_path, topic_title, topic_desc):
 
         # Transcribe each chunk
         for i, chunk in enumerate(chunks):
+            # Skip extremely short noisy chunks (< 1 second)
+            if len(chunk) < 1000:
+                continue
             chunk_path = f"{wav_path}_chunk{i}.wav"
             chunk.export(chunk_path, format="wav")
             with sr.AudioFile(chunk_path) as source:
@@ -86,26 +89,26 @@ def analyze_audio(audio_path, topic_title, topic_desc):
         word_count = len(text.split())
         wpm = (word_count / duration_sec) * 60 if duration_sec > 0 else 0
         
-        # Fluency: Max 10. Penalize for too many pauses (> 12 per min) and low/high wpm.
+        # Fluency: Scaled more strictly. 150+ WPM = 10.0. 116 WPM = ~7.7
         pauses_per_min = (pause_count / duration_sec) * 60 if duration_sec > 0 else 0
-        fluency_wpm_score = min((wpm / 110) * 10, 10.0) if wpm < 160 else max(10.0 - ((wpm - 160)/10), 5.0)
-        pause_penalty = max((pauses_per_min - 12) * 0.2, 0)
+        fluency_wpm_score = min((wpm / 150) * 10, 10.0) if wpm < 160 else max(10.0 - ((wpm - 160)/10), 5.0)
+        pause_penalty = max((pauses_per_min - 8) * 0.4, 0) # penalize heavily after 8 pauses/min
         fluency_score = max(min(fluency_wpm_score - pause_penalty, 10.0), 1.0)
 
-        # Vocabulary
+        # Vocabulary: Need ~25 unique words per minute for a perfect score
         blob = TextBlob(text)
         unique_words = set(blob.words.lower())
-        vocab_score = min((len(unique_words) / max(15, duration_sec/4)) * 10, 10.0)
+        vocab_score = min((len(unique_words) / max(15, duration_sec / 2.5)) * 10, 10.0)
 
         # Fast Grammar Heuristic
-        grammar_score = min(8.0 + (len(unique_words) / 50.0), 10.0)
+        grammar_score = min(7.0 + (len(unique_words) / 60.0), 10.0)
 
-        # Relevance
+        # Relevance: Strict. Must match at least 30% of the topic words or 5 words for a perfect 10
         topic_words = set(TextBlob(topic_title + " " + topic_desc).words.lower())
         relevance_matches = len(unique_words.intersection(topic_words))
-        # Simple heuristic: at least 3 matching meaningful words gives a good score
-        relevance_score = min((relevance_matches / 3.0) * 10, 10.0)
-        if len(unique_words) < 5: relevance_score = 1.0
+        required_matches = max(5.0, len(topic_words) * 0.3)
+        relevance_score = min((relevance_matches / required_matches) * 10, 10.0)
+        if len(unique_words) < 10: relevance_score = 1.0
 
         mistakes = []
         # Filler Words Detection

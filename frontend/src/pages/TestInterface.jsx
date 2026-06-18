@@ -11,7 +11,8 @@ import {
     Activity,
     ShieldCheck,
     Loader2,
-    RefreshCw
+    RefreshCw,
+    Clock
 } from 'lucide-react';
 import TopicSelection from '../components/TopicSelection';
 import DetailedReport from '../components/DetailedReport';
@@ -177,6 +178,12 @@ const TestInterface = () => {
                         </p>
 
                         <div className="mt-12 space-y-4">
+                            {selectedTopic.timeLimit && (
+                                <div className="flex items-center space-x-3 text-sm font-bold text-gray-400">
+                                    <Clock size={18} className="text-blue-500" />
+                                    <span>Time Limit: {selectedTopic.timeLimit} seconds</span>
+                                </div>
+                            )}
                             <div className="flex items-center space-x-3 text-sm font-bold text-gray-400">
                                 <ShieldCheck size={18} className="text-emerald-500" />
                                 <span>Noise suppression active</span>
