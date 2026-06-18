@@ -50,13 +50,20 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/reset-password" element={<PasswordReset />} />
 
-          {/* Speaking Module (Dynamic ID for Food, Family, etc.) */}
+          {/* Speaking Module */}
           <Route path="/test/:id" element={<TestInterface />} />
+          <Route path="/speaking-test/:id" element={<TestInterface />} />
+          <Route path="/speaking" element={<TestInterface />} />
 
           {/* Other Modules */}
           <Route path="/listening" element={<ListeningTest />} />
+          <Route path="/listening-test/:id" element={<ListeningTest />} />
+          
           <Route path="/reading" element={<ReadingTest />} />
+          <Route path="/reading-test/:id" element={<ReadingTest />} />
+          
           <Route path="/writing" element={<WritingTest />} />
+          <Route path="/writing-test/:id" element={<WritingTest />} />
         </Route>
       </Routes>
     </BrowserRouter>
