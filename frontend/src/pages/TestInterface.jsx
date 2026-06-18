@@ -120,20 +120,20 @@ const TestInterface = () => {
         if (status === 'recording' && selectedTopic?.timeLimit) {
             setTimeLeft(selectedTopic.timeLimit);
             timer = setInterval(() => {
-                setTimeLeft((prev) => {
-                    if (prev <= 1) {
-                        clearInterval(timer);
-                        stopRecording();
-                        return 0;
-                    }
-                    return prev - 1;
-                });
+                setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
             }, 1000);
         } else {
             setTimeLeft(null);
         }
         return () => clearInterval(timer);
-    }, [status, selectedTopic, stopRecording]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [status, selectedTopic]);
+
+    useEffect(() => {
+        if (timeLeft === 0 && status === 'recording') {
+            stopRecording();
+        }
+    }, [timeLeft, status, stopRecording]);
 
     const [topics, setTopics] = useState([]);
 
