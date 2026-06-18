@@ -11,8 +11,8 @@ import {
   FileText
 } from 'lucide-react';
 
-const DetailedReport = ({ title, score, metrics, mistakes, criteria, recommendations, transcript, onRetry, onHome }) => {
-  const isPass = score >= 60;
+const DetailedReport = ({ title, score, isPass: isPassProp, metrics, mistakes, criteria, recommendations, transcript, onRetry, onHome }) => {
+  const isPass = isPassProp !== undefined ? isPassProp : (typeof score === 'number' ? score >= 60 : parseFloat(score) >= 60);
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-12">

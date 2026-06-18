@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useReactMediaRecorder } from 'react-media-recorder';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -17,6 +18,7 @@ import DetailedReport from '../components/DetailedReport';
 import api from '../utils/api';
 
 const TestInterface = () => {
+    const { id } = useParams();
     const [phase, setPhase] = useState('topic');
     const [selectedTopic, setSelectedTopic] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -63,14 +65,20 @@ const TestInterface = () => {
             }
 
             const metrics = data.metrics || {};
+            const fluency9 = ((metrics.fluency || 0) / 10) * 9;
+            const vocab9 = ((metrics.vocabulary || 0) / 10) * 9;
+            const grammar9 = ((metrics.grammar || 0) / 10) * 9;
+            const overall9 = (fluency9 + vocab9 + grammar9) / 3;
+
             setReport({
-                score: Math.round((data.overall_score || 0) * 10),
+                score: overall9.toFixed(1),
+                isPass: overall9 >= 6.0,
                 title: "Speaking",
                 transcript: data.transcription || "",
                 metrics: [
                     { label: "Estimated WPM", value: data.wpm || 0 },
-                    { label: "Fluency Score", value: `${metrics.fluency || 0}/10` },
-                    { label: "Vocabulary Richness", value: `${metrics.vocabulary || 0}/10` },
+                    { label: "Fluency Score", value: `${fluency9.toFixed(1)}/9.0` },
+                    { label: "Vocabulary Richness", value: `${vocab9.toFixed(1)}/9.0` },
                     { label: "Filler Words", value: metrics.filler_count || 0 }
                 ],
                 criteria: {
@@ -108,18 +116,27 @@ const TestInterface = () => {
         const fetchTasks = async () => {
             try {
                 const res = await api.get('/tasks');
-                const specificTasks = res.data.filter(t => t.type === 'SPEAKING');
-                setTopics(specificTasks.map((t, idx) => ({
+                const specificTasks = res.data.filter(t => t.type === 'SPEAKING' || t.lsrwComponent === 'Speaking');
+                const formattedTasks = specificTasks.map((t, idx) => ({
                     ...t,
                     desc: t.description,
                     color: ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b'][idx % 4]
-                })));
+                }));
+                setTopics(formattedTasks);
+
+                if (id) {
+                    const taskToAutoStart = formattedTasks.find(t => t.id === id);
+                    if (taskToAutoStart) {
+                        setSelectedTopic(taskToAutoStart);
+                        setPhase('record');
+                    }
+                }
             } catch (e) {
                 console.error("Failed to fetch speaking tasks:", e);
             }
         };
         fetchTasks();
-    }, []);
+    }, [id]);
 
     if (phase === 'topic') {
         return <TopicSelection title="Speaking" topics={topics} onSelect={(t) => { setSelectedTopic(t); setPhase('record'); }} onBack={() => window.location.href = '/dashboard'} />;
