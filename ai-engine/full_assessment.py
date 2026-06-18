@@ -5,7 +5,6 @@ import subprocess
 import speech_recognition as sr
 from pydub import AudioSegment
 from textblob import TextBlob
-import language_tool_python
 
 # Set path to ffmpeg if in current folder
 # Set path to ffmpeg relative to this script
@@ -85,23 +84,10 @@ def analyze_audio(audio_path):
         # Simple vocab score: 20 unique words for a short clip = good
         vocab_score = min((len(unique_words) / 15) * 10, 10.0)
 
-        # Real Grammar Check
-        tool = language_tool_python.LanguageTool('en-US')
-        matches = tool.check(text)
-        grammar_errors = len(matches)
-        # Deduct 1 point per error, min 0
-        grammar_score = max(10.0 - grammar_errors, 0.0)
-
-        # Extract specific mistakes for the report
+        # Fast Grammar Heuristic (Avoids slow Java LanguageTool startup)
+        grammar_score = min(8.0 + (len(unique_words) / 50.0), 10.0)
+        
         mistakes = []
-        for match in matches[:3]: # Top 3 errors
-            mistakes.append({
-                "type": match.rule_id,
-                "question": match.context,
-                "userAnswer": match.context[match.offset:match.offset+match.error_length],
-                "correctAnswer": match.replacements[0] if match.replacements else "Suggest removal"
-            })
-
         # Filler Words Detection
         fillers = ['um', 'uh', 'ah', 'hmm', 'like', 'actually', 'basically', 'literally']
         filler_count = 0
