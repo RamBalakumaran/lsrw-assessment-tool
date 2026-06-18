@@ -21,7 +21,8 @@ const Dashboard = () => {
   const [user, setUser] = useState({
     firstName: "Student",
     lastName: "",
-    plan: "Standard Plan"
+    plan: "Standard Plan",
+    groups: []
   });
   const [stats, setStats] = useState([]);
   const [assignedTasks, setAssignedTasks] = useState([]);
@@ -130,6 +131,28 @@ const Dashboard = () => {
             </motion.div>
           ))}
         </div>
+
+        {/* My Groups Section */}
+        {user.groups && user.groups.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-8">My Groups</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {user.groups.map((group, idx) => (
+                <motion.div
+                  key={group.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.1 * idx }}
+                  className="bg-white p-6 rounded-[2rem] border-2 border-primary-100 shadow-sm flex flex-col"
+                >
+                  <h3 className="text-xl font-black text-gray-900 mb-2">{group.name}</h3>
+                  <p className="text-sm font-medium text-gray-500 mb-4 flex-1">Check your specific assigned tasks below.</p>
+                  <div className="text-xs font-bold text-primary-600 bg-primary-50 px-3 py-1.5 rounded-lg w-max">Active</div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Prioritized Path Section */}
         {assignedTasks.length > 0 && (

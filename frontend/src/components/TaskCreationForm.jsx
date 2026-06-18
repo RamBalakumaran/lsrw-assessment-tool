@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle2, X, Plus, Trash2, ChevronDown, ChevronLeft, Headphones, Mic, BookOpen, PenTool, LayoutTemplate, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
+import QuestionBuilder from './QuestionBuilder';
 
 const TASK_CONFIG = {
     LISTENING: {
@@ -12,11 +13,7 @@ const TASK_CONFIG = {
         subtypes: {
             MCQ_AUDIO: { label: 'Multiple Choice from Audio', fields: ['audioUrl', 'questions'] },
             FILL_BLANKS_AUDIO: { label: 'Fill Blanks from Audio', fields: ['audioUrl', 'questions'] },
-            NOTE_TAKING: { label: 'Note-Taking from Lecture', fields: ['audioUrl', 'instructions'] },
-            LISTENING_GIST: { label: 'Listening for Main Idea', fields: ['audioUrl', 'questions'] },
-            LISTENING_DETAILS: { label: 'Listening for Specific Details', fields: ['audioUrl', 'questions'] },
-            DICTATION: { label: 'Dictation Exercise', fields: ['audioUrl', 'questions'] },
-            MATCHING_AUDIO: { label: 'Matching Audio to Responses', fields: ['audioUrl', 'questions'] }
+            DICTATION: { label: 'Dictation Exercise', fields: ['audioUrl', 'questions'] }
         }
     },
     SPEAKING: {
@@ -27,8 +24,7 @@ const TASK_CONFIG = {
         subtypes: {
             SELF_INTRODUCTION: { label: 'Self-Introduction', fields: ['instructions', 'timeLimit', 'evaluationRubric'] },
             PICTURE_DESCRIPTION: { label: 'Picture Description', fields: ['instructions', 'timeLimit', 'evaluationRubric'] },
-            READ_ALOUD: { label: 'Read Aloud Passage', fields: ['passage', 'timeLimit', 'evaluationRubric'] },
-            ANSWER_QUESTIONS: { label: 'Answer Questions', fields: ['instructions', 'timeLimit', 'evaluationRubric'] },
+            ONE_MINUTE_ASSESSMENT: { label: 'One Minute Assessment', fields: ['instructions', 'timeLimit', 'evaluationRubric'] },
             REPEAT_SENTENCES: { label: 'Repeat Sentences', fields: ['audioUrl', 'evaluationRubric'] }
         }
     },
@@ -38,12 +34,10 @@ const TASK_CONFIG = {
         bg: 'bg-emerald-50',
         border: 'border-emerald-100',
         subtypes: {
+            READ_ALOUD: { label: 'Read Aloud Passage', fields: ['passage', 'timeLimit', 'evaluationRubric'] },
             COMPREHENSION_MCQ: { label: 'Reading Comprehension (MCQ)', fields: ['passage', 'questions'] },
             TRUE_FALSE: { label: 'True/False Questions', fields: ['passage', 'questions'] },
             FILL_BLANKS: { label: 'Fill in the Blanks', fields: ['passage', 'questions'] },
-            MATCHING_HEADINGS: { label: 'Matching Headings', fields: ['passage', 'questions'] },
-            SKIMMING: { label: 'Skimming (Main Idea)', fields: ['passage', 'instructions', 'questions'] },
-            SCANNING: { label: 'Scanning (Specific Info)', fields: ['passage', 'instructions', 'questions'] },
             VOCABULARY: { label: 'Vocabulary from Context', fields: ['passage', 'questions'] }
         }
     },
@@ -387,6 +381,16 @@ const TaskCreationForm = ({ onTaskCreated, userRole }) => {
                             </div>
                         )}
                     </div>
+
+                    {/* Question Builder */}
+                    {config.fields.includes('questions') && (
+                        <div className="pt-4 border-t border-gray-100">
+                            <QuestionBuilder 
+                                questions={formData.questions} 
+                                onChange={(newQuestions) => handleInputChange('questions', newQuestions)} 
+                            />
+                        </div>
+                    )}
 
                     {/* Visibility & Assignments */}
                     <div className="bg-gray-50 p-8 rounded-[2rem] border border-gray-100">

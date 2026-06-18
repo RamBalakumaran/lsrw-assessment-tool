@@ -37,10 +37,21 @@ exports.getGroupById = async (req, res) => {
 
 // POST /api/groups
 exports.createGroup = async (req, res) => {
-  const { name } = req.body;
+  const { name, creatorId } = req.body;
   if (!name) return res.status(400).json({ error: 'Group name required' });
   try {
     const newGroup = await db.Group.create({ name });
+    
+    // Add the creator
+    if (creatorId) {
+      const user = await db.User.findByPk(creatorId);
+      if (user) await newGroup.addAdmin(user);
+    }
+    
+    // Automatically add admin@nec.edu.in
+    const rootAdmin = await db.User.findOne({ where: { email: 'admin@nec.edu.in' } });
+    if (rootAdmin) await newGroup.addAdmin(rootAdmin);
+    
     return res.status(201).json(newGroup);
   } catch (err) {
     console.error('Error creating group:', err);

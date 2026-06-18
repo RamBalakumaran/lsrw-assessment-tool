@@ -56,7 +56,8 @@ exports.getMe = async (req, res) => {
     
     const user = await db.User.findByPk(decoded.id, {
       include: [
-        { model: db.Group, as: 'groupMemberships' }
+        { model: db.Group, as: 'groupMemberships' },
+        { model: db.Group, as: 'administeredGroups' }
       ]
     });
     

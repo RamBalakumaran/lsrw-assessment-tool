@@ -9,6 +9,7 @@ const responseRoutes = require('./routes/responses');
 const bulkImportRoutes = require('./routes/bulkImport');
 const analyticsRoutes = require('./routes/analytics');
 const userRoutes = require('./routes/users');
+const dashboardRoutes = require('./routes/dashboard');
 
 const app = express();
 app.use(cors());
@@ -22,6 +23,7 @@ app.use('/api/groups', groupRoutes);
 app.use('/api/responses', responseRoutes);
 app.use('/api/bulk-import', bulkImportRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Backend listening on port ${PORT}`));

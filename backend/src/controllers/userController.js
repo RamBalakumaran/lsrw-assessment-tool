@@ -41,8 +41,7 @@ exports.inviteUser = async (req, res) => {
       role,
       passwordHash,
       status: 'ACTIVE',
-      forcePasswordReset: true,
-      assignedTeacherId: teacherId || null
+      forcePasswordReset: true
     });
 
     if (groupId && role === 'STUDENT') {
@@ -65,7 +64,7 @@ exports.inviteUser = async (req, res) => {
 // PATCH /api/users/:id
 exports.updateUser = async (req, res) => {
   const { id } = req.params;
-  const { status, role, assignedTeacherId } = req.body;
+  const { status, role } = req.body;
 
   try {
     const user = await db.User.findByPk(id);
@@ -73,7 +72,6 @@ exports.updateUser = async (req, res) => {
 
     if (status) user.status = status;
     if (role) user.role = role;
-    if (assignedTeacherId !== undefined) user.assignedTeacherId = assignedTeacherId;
 
     await user.save();
 

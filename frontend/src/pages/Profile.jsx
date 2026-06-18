@@ -92,28 +92,37 @@ const Profile = () => {
         );
     }
 
-    const universityName = user.university?.name || user.organization?.name || 'Not assigned';
-    const groupMemberships = Array.isArray(user.groupMemberships) ? user.groupMemberships : [];
+    const fullName = `${user.firstName} ${user.lastName}`;
+    const universityName = 'National Engineering College Kovilpatti (NEC)';
+    
+    // Combine memberships and administered groups
+    const members = Array.isArray(user.groupMemberships) ? user.groupMemberships.map(g => ({ ...g, roleInGroup: 'Member' })) : [];
+    const admins = Array.isArray(user.administeredGroups) ? user.administeredGroups.map(g => ({ ...g, roleInGroup: 'Admin' })) : [];
+    
+    // Remove duplicates if a user is both (they shouldn't be, but just in case)
+    const combinedGroupsMap = new Map();
+    [...members, ...admins].forEach(g => {
+        if (!combinedGroupsMap.has(g.id)) {
+            combinedGroupsMap.set(g.id, g);
+        } else if (g.roleInGroup === 'Admin') {
+            combinedGroupsMap.set(g.id, g); // Prefer 'Admin' label
+        }
+    });
+    const groupMemberships = Array.from(combinedGroupsMap.values());
+
     const cards = [
         {
             title: 'University',
             value: universityName,
-            helper: user.university?.subdomain ? `${user.university.subdomain}.portal` : 'Organization linked to this login',
+            helper: 'National Engineering College',
             icon: <Building2 size={18} className="text-primary-500" />,
         },
         {
-            title: 'Department',
-            value: user.department || 'Not assigned',
-            helper: 'Academic unit for this account',
-            icon: <GraduationCap size={18} className="text-primary-500" />,
+            title: 'Groups Linked',
+            value: groupMemberships.length,
+            helper: 'Classes or sections you belong to',
+            icon: <Users size={18} className="text-primary-500" />,
         },
-        // Only show "Assigned Teacher" card for non-teacher roles
-        ...(user.role !== 'TEACHER' ? [{
-            title: 'Assigned Teacher',
-            value: user.assignedTeacher?.profileName || 'Not assigned',
-            helper: user.assignedTeacher?.email || 'No teacher has been linked yet',
-            icon: <UserCheck size={18} className="text-primary-500" />,
-        }] : []),
         {
             title: 'Member Since',
             value: formatDate(user.createdAt),
@@ -158,7 +167,7 @@ const Profile = () => {
 
                             <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
                                 <div>
-                                    <h2 className="text-3xl font-black text-gray-900 tracking-tight">{user.profileName}</h2>
+                                    <h2 className="text-3xl font-black text-gray-900 tracking-tight">{fullName}</h2>
                                     <div className="flex flex-wrap items-center gap-3 mt-3 text-sm font-medium text-gray-500">
                                         <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-50 text-primary-600 font-black text-xs uppercase tracking-widest">
                                             <Shield size={14} />
@@ -172,10 +181,10 @@ const Profile = () => {
                                 </div>
 
                                 <div className="bg-gray-50 rounded-[2rem] border border-gray-100 px-6 py-5 min-w-[260px]">
-                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Primary Summary</div>
+                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Organization</div>
                                     <div className="text-lg font-bold text-gray-900">{universityName}</div>
                                     <div className="text-sm text-gray-500 font-medium mt-1">
-                                        {user.department || 'Department pending'}{user.assignedTeacher?.profileName ? ` | Mentored by ${user.assignedTeacher.profileName}` : ''}
+                                        Active {user.role.toLowerCase()}
                                     </div>
                                 </div>
                             </div>
@@ -225,9 +234,9 @@ const Profile = () => {
                                     {groupMemberships.map((group, index) => (
                                         <div key={`${group.name}-${index}`} className="p-5 rounded-[1.75rem] bg-gray-50 border border-gray-100">
                                             <div className="text-lg font-black text-gray-900">{group.name}</div>
-                                            <div className="text-sm text-primary-600 font-semibold mt-1">{group.role || 'Member'}</div>
+                                            <div className="text-sm text-primary-600 font-semibold mt-1">{group.roleInGroup}</div>
                                             <p className="text-sm text-gray-500 font-medium mt-3">
-                                                {group.description || 'Group membership recorded for this account.'}
+                                                {group.roleInGroup === 'Admin' ? 'Managing this group as an admin.' : 'Member of this specific group.'}
                                             </p>
                                         </div>
                                     ))}
@@ -244,26 +253,16 @@ const Profile = () => {
                             <div className="space-y-5">
                                 <div>
                                     <div className="text-sm text-gray-400 font-medium mb-1">Profile Name</div>
-                                    <div className="text-xl font-black">{user.profileName}</div>
+                                    <div className="text-xl font-black">{fullName}</div>
                                 </div>
                                 <div>
                                     <div className="text-sm text-gray-400 font-medium mb-1">University</div>
                                     <div className="text-lg font-bold">{universityName}</div>
                                 </div>
                                 <div>
-                                    <div className="text-sm text-gray-400 font-medium mb-1">Department</div>
-                                    <div className="text-lg font-bold">{user.department || 'Not assigned'}</div>
+                                    <div className="text-sm text-gray-400 font-medium mb-1">Role</div>
+                                    <div className="text-lg font-bold uppercase">{user.role}</div>
                                 </div>
-                                {/* Only show "Assigned Teacher" in checklist for non-teacher roles */}
-                                {user.role !== 'TEACHER' && (
-                                    <div>
-                                        <div className="text-sm text-gray-400 font-medium mb-1">Assigned Teacher</div>
-                                        <div className="text-lg font-bold">{user.assignedTeacher?.profileName || 'Not assigned'}</div>
-                                        {user.assignedTeacher?.email && (
-                                            <div className="text-sm text-primary-300 font-medium mt-1">{user.assignedTeacher.email}</div>
-                                        )}
-                                    </div>
-                                )}
                                 <div>
                                     <div className="text-sm text-gray-400 font-medium mb-1">Groups Linked</div>
                                     <div className="text-lg font-bold">{groupMemberships.length}</div>

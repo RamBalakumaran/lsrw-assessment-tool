@@ -11,9 +11,9 @@ import PasswordReset from './pages/PasswordReset';
 import UserManagement from './pages/UserManagement';
 import GlobalTasks from './pages/GlobalTasks';
 import SystemHealth from './pages/SystemHealth';
-import TeacherStudents from './pages/TeacherStudents';
 import TeacherTasks from './pages/TeacherTasks';
 import TeacherPerformance from './pages/TeacherPerformance';
+import TeacherGroups from './pages/TeacherGroups';
 import BulkImportPage from './pages/BulkImportPage';
 
 // Import the Video-Style Tests (The ones ending in 'Test.jsx')
@@ -41,7 +41,7 @@ function App() {
           <Route path="/admin/health" element={<SystemHealth />} />
 
           <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-          <Route path="/teacher/students" element={<TeacherStudents />} />
+          <Route path="/teacher/groups" element={<TeacherGroups />} />
           <Route path="/teacher/bulk-import" element={<BulkImportPage />} />
           <Route path="/teacher/tasks" element={<TeacherTasks />} />
           <Route path="/teacher/performance" element={<TeacherPerformance />} />

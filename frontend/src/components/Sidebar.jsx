@@ -32,7 +32,7 @@ const Sidebar = ({ role }) => {
 
     const teacherLinks = [
         { title: "Overview", icon: <LayoutDashboard />, link: "/teacher/dashboard" },
-        { title: "My Students", icon: <Users />, link: "/teacher/students" },
+        { title: "My Groups", icon: <Layers />, link: "/teacher/groups" },
         { title: "Bulk Import", icon: <Upload />, link: "/teacher/bulk-import" },
         { title: "LSRW Tasks", icon: <BookOpen />, link: "/teacher/tasks" },
         { title: "Performance", icon: <BarChart />, link: "/teacher/performance" },

@@ -31,6 +31,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.ENUM('Global', 'GroupSpecific'),
       defaultValue: 'Global',
     },
+    questions: {
+      type: DataTypes.JSON,
+      comment: 'Array of question objects for assessment',
+    },
     // Foreign key to creator (admin or staff)
     creatorId: { type: DataTypes.UUID, allowNull: false },
   }, {

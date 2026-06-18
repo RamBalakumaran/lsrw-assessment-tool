@@ -111,7 +111,7 @@ const UserManagement = () => {
     const handleCreateGroup = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/groups', groupForm);
+            await api.post('/groups', { ...groupForm, creatorId: currentUser.id });
             setShowGroupModal(false);
             setGroupForm({ name: '' });
             fetchData();
