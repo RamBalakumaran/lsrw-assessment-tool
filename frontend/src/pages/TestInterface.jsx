@@ -100,7 +100,8 @@ const TestInterface = () => {
             setPhase('report');
         } catch (e) {
             console.error(e);
-            alert("Analysis pipeline disrupted. Check server connectivity.");
+            const serverError = e.response?.data?.raw || e.response?.data?.error || e.message;
+            alert("Analysis pipeline disrupted: " + serverError.substring(0, 200));
         }
         setLoading(false);
     };
