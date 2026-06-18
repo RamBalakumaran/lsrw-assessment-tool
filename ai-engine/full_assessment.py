@@ -47,24 +47,37 @@ def analyze_audio(audio_path, topic_title, topic_desc):
         except Exception as e:
              duration_sec = 0.0
 
+        from pydub.utils import make_chunks
+
         # 3. Chunk audio on silence for long audio transcription
         audio = AudioSegment.from_wav(wav_path)
-        chunks = split_on_silence(
+        
+        # Detect natural pauses (600ms is standard for a full stop or breath)
+        silence_chunks = split_on_silence(
             audio,
-            min_silence_len=1000, # minimum 1000ms silence to avoid chopping words
-            silence_thresh=audio.dBFS-16, # slightly stricter silence threshold
-            keep_silence=500 # keep 500ms silence to help Google SR context
+            min_silence_len=600, 
+            silence_thresh=audio.dBFS-16, 
+            keep_silence=300 
         )
+
+        if not silence_chunks:
+            silence_chunks = [audio]
+
+        # Enforce maximum chunk length of 45 seconds (Google API drops audio after ~1 min)
+        chunks = []
+        for c in silence_chunks:
+            if len(c) > 45000: # 45 seconds
+                sub_chunks = make_chunks(c, 45000)
+                chunks.extend(sub_chunks)
+            elif len(c) >= 1000: # Skip micro-chunks < 1s
+                chunks.append(c)
 
         recognizer = sr.Recognizer()
         full_text = []
-        pause_count = max(0, len(chunks) - 1)
+        pause_count = max(0, len(silence_chunks) - 1)
 
         # Transcribe each chunk
         for i, chunk in enumerate(chunks):
-            # Skip extremely short noisy chunks (< 1 second)
-            if len(chunk) < 1000:
-                continue
             chunk_path = f"{wav_path}_chunk{i}.wav"
             chunk.export(chunk_path, format="wav")
             with sr.AudioFile(chunk_path) as source:
@@ -108,6 +121,13 @@ def analyze_audio(audio_path, topic_title, topic_desc):
         relevance_matches = len(unique_words.intersection(topic_words))
         required_matches = max(5.0, len(topic_words) * 0.3)
         relevance_score = min((relevance_matches / required_matches) * 10, 10.0)
+        
+        # Self Intro Professional Vocabulary Bonus
+        professional_keywords = {"experience", "skills", "manage", "project", "degree", "team", "goal", "background", "university", "career", "development", "professional", "opportunity", "passionate", "motivated", "achieve", "success", "leadership", "growth"}
+        if "self intro" in topic_title.lower() or "yourself" in topic_title.lower():
+            prof_matches = len(unique_words.intersection(professional_keywords))
+            relevance_score = min(relevance_score + (prof_matches * 1.5), 10.0) # Huge boost for using professional words in self-intro
+
         if len(unique_words) < 10: relevance_score = 1.0
 
         mistakes = []
