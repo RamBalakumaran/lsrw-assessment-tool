@@ -15,6 +15,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const evaluateRoutes = require('../routes/evaluate');
+const writingRoutes = require('../routes/writing');
+const attemptsRoutes = require('../routes/attempts');
+
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin/users', userRoutes); // alias for backwards compatibility
@@ -24,6 +28,9 @@ app.use('/api/responses', responseRoutes);
 app.use('/api/bulk-import', bulkImportRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/evaluate', evaluateRoutes);
+app.use('/api/writing', writingRoutes);
+app.use('/api/attempts', attemptsRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Backend listening on port ${PORT}`));
