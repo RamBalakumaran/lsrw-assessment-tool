@@ -26,6 +26,8 @@ app.use('/uploads', express.static(uploadsDir));
 const evaluateRoutes = require('../routes/evaluate');
 const writingRoutes = require('../routes/writing');
 const attemptsRoutes = require('../routes/attempts');
+const readingRoutes = require('../routes/reading');
+const assessmentReadingRoutes = require('../routes/assessmentReading');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -39,6 +41,8 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/evaluate', evaluateRoutes);
 app.use('/api/writing', writingRoutes);
 app.use('/api/attempts', attemptsRoutes);
+app.use('/api/reading', readingRoutes);
+app.use('/api/assessment/reading', assessmentReadingRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Backend listening on port ${PORT}`));

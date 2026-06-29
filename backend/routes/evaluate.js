@@ -9,6 +9,28 @@ const { authMiddleware } = require('../middleware/auth');
 
 const upload = multer({ dest: 'uploads/' });
 
+// POST /api/evaluate/route
+// Accepts routing from Evaluation-Routing Engine (113)
+// Body: { attempt_id, tenant_id, user_id, assessment_type_identifier }
+router.post('/route', async (req, res) => {
+    const { attempt_id, tenant_id, user_id, assessment_type_identifier } = req.body;
+    if (!attempt_id || !tenant_id || !assessment_type_identifier) return res.status(400).json({ error: 'attempt_id, tenant_id and assessment_type_identifier required' });
+    try {
+        if (assessment_type_identifier === 'READING') {
+            // route to reading evaluate endpoint
+            const reading = require('./reading');
+            // call internal route handler
+            req.body.attempt_id = attempt_id;
+            req.body.tenant_id = tenant_id;
+            return require('../src/controllers/readingController').triggerEvaluation(req, res);
+        }
+        return res.status(400).json({ error: 'Unsupported assessment_type_identifier' });
+    } catch (e) {
+        console.error('Routing error', e);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 router.post('/assess-speaking', authMiddleware, upload.single('audio'), async (req, res) => {
     let audioPath = path.resolve(req.file.path);
 

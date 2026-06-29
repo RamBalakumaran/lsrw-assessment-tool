@@ -1,5 +1,6 @@
 // src/models/index.js
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 const { Sequelize } = require('sequelize');
 
 const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
@@ -18,6 +19,13 @@ db.Group = require('./group')(sequelize, Sequelize);
 db.Task = require('./task')(sequelize, Sequelize);
 db.Response = require('./response')(sequelize, Sequelize);
 
+// Reading module models
+db.ReadingPassage = require('./reading_passage')(sequelize, Sequelize);
+db.ReadingQuestion = require('./reading_question')(sequelize, Sequelize);
+db.ReadingAttempt = require('./reading_attempt')(sequelize, Sequelize);
+db.ReadingResponse = require('./reading_response')(sequelize, Sequelize);
+db.TenantConfig = require('./tenant_config')(sequelize, Sequelize);
+
 db.Group.belongsToMany(db.User, { through: 'GroupMembers', as: 'members' });
 db.User.belongsToMany(db.Group, { through: 'GroupMembers', as: 'groupMemberships' });
 
@@ -26,6 +34,18 @@ db.User.belongsToMany(db.Group, { through: 'GroupAdmins', as: 'administeredGroup
 
 db.Task.belongsToMany(db.Group, { through: 'TaskGroups', as: 'targetGroups' });
 db.Group.belongsToMany(db.Task, { through: 'TaskGroups', as: 'tasks' });
+
+// Reading associations
+db.ReadingPassage.hasMany(db.ReadingQuestion, { foreignKey: 'passageId' });
+db.ReadingQuestion.belongsTo(db.ReadingPassage, { foreignKey: 'passageId' });
+
+db.ReadingAttempt.belongsTo(db.ReadingPassage, { foreignKey: 'passageId' });
+db.ReadingAttempt.hasMany(db.ReadingResponse, { foreignKey: 'attemptId' });
+
+db.ReadingResponse.belongsTo(db.ReadingAttempt, { foreignKey: 'attemptId' });
+db.ReadingResponse.belongsTo(db.ReadingQuestion, { foreignKey: 'questionId' });
+
+// TenantConfig belongs to tenant concept via tenantId but no Tenant model exists; it's standalone
 
 db.sequelize.sync({ alter: true })
   .then(() => console.log('Database synced'))
