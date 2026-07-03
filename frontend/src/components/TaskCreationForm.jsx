@@ -163,14 +163,14 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
 
     const validateForm = () => {
         const newErrors = {};
-        if (!formData.title.trim()) newErrors.title = 'Title is required';
+        if (!formData.title?.trim()) newErrors.title = 'Title is required';
         const config = TASK_CONFIG[taskType]?.subtypes[subType];
         if (config) {
-            if (config.fields.includes('audioUrl') && !formData.audioUrl.trim()) newErrors.audioUrl = 'Audio URL is required for this task';
-            if (config.fields.includes('passage') && !formData.passage.trim()) newErrors.passage = 'Passage is required for this task';
-            if (config.fields.includes('instructions') && !formData.instructions.trim()) newErrors.instructions = 'Instructions are required for this task';
+            if (config.fields.includes('audioUrl') && !formData.audioUrl?.trim()) newErrors.audioUrl = 'Audio URL is required for this task';
+            if (config.fields.includes('passage') && !formData.passage?.trim()) newErrors.passage = 'Passage is required for this task';
+            if (config.fields.includes('instructions') && !formData.instructions?.trim()) newErrors.instructions = 'Instructions are required for this task';
         }
-        if (formData.visibilityScope === 'GroupSpecific' && formData.groupIds.length === 0) {
+        if (formData.visibilityScope === 'GroupSpecific' && (!formData.groupIds || formData.groupIds.length === 0)) {
             newErrors.groupIds = 'Select at least one group';
         }
         setErrors(newErrors);

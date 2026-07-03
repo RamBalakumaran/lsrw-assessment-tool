@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { spawn } = require('child_process');
 const path = require('path');
-const prisma = require('../config/prisma');
+const db = require('../src/models');
 const { authMiddleware } = require('../middleware/auth');
 
 router.post('/analyze', authMiddleware, async (req, res) => {
@@ -31,14 +31,13 @@ router.post('/analyze', authMiddleware, async (req, res) => {
 
             // Save attempt if user is authenticated
             if (req.user) {
-                await prisma.attempt.create({
-                    data: {
-                        userId: req.user.id,
-                        taskId: taskId || null,
-                        score: result.score,
-                        aiResults: result,
-                        status: 'COMPLETED'
-                    }
+                await db.Response.create({
+                    userId: req.user.id,
+                    taskId: taskId || null,
+                    score: result.score,
+                    aiResults: result,
+                    status: 'COMPLETED',
+                    submittedAt: new Date()
                 });
             }
 

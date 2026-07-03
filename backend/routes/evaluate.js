@@ -58,13 +58,14 @@ router.post('/assess-speaking', authMiddleware, upload.single('audio'), async (r
         try {
             const result = JSON.parse(dataString);
 
-            // Save attempt if user is authenticated
-            if (req.user) {
+            // Save attempt if user is authenticated and taskId is provided
+            if (req.user && req.body.taskId && req.body.taskId !== '00000000-0000-0000-0000-000000000000') {
                 await db.Response.create({
                     userId: req.user.id,
-                    taskId: req.body.taskId || '00000000-0000-0000-0000-000000000000', // Sequelize expects UUID format or similar. If no taskId, maybe skip?
+                    taskId: req.body.taskId,
                     score: Math.round((result.overall_score || 0) * 10),
-                    feedback: JSON.stringify(result)
+                    feedback: JSON.stringify(result),
+                    submittedAt: new Date()
                 });
             }
 

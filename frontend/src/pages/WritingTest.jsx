@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Clock,
@@ -14,6 +15,7 @@ import DetailedReport from '../components/DetailedReport';
 import api from '../utils/api';
 
 const WritingTest = () => {
+  const { id } = useParams();
   const [phase, setPhase] = useState('topic');
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [text, setText] = useState("");
@@ -27,19 +29,28 @@ const WritingTest = () => {
     const fetchTasks = async () => {
       try {
         const res = await api.get('/tasks');
-        const specificTasks = res.data.filter(t => t.type === 'WRITING');
-        setTopics(specificTasks.map((t, idx) => ({
+        const specificTasks = res.data.filter(t => t.type === 'WRITING' || t.lsrwComponent === 'Writing');
+        const formattedTasks = specificTasks.map((t, idx) => ({
           ...t,
           desc: t.description,
           prompt: t.passage,
           color: ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b'][idx % 4]
-        })));
+        }));
+        setTopics(formattedTasks);
+
+        if (id) {
+          const taskToAutoStart = formattedTasks.find(t => t.id === id);
+          if (taskToAutoStart) {
+            setSelectedTopic(taskToAutoStart);
+            setPhase('write');
+          }
+        }
       } catch (e) {
         console.error("Failed to fetch writing tasks:", e);
       }
     };
     fetchTasks();
-  }, []);
+  }, [id]);
 
   useEffect(() => {
     let timerId;

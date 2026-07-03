@@ -16,6 +16,9 @@ module.exports = (sequelize, DataTypes) => {
     score: { type: DataTypes.FLOAT },
     // Optional feedback from AI
     feedback: { type: DataTypes.TEXT },
+    studentAnswers: { type: DataTypes.JSON },
+    aiResults: { type: DataTypes.JSON },
+    status: { type: DataTypes.STRING, defaultValue: 'COMPLETED' },
     // Timestamp of submission
     submittedAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
   }, {

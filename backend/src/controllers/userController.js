@@ -22,8 +22,8 @@ exports.getUsers = async (req, res) => {
 exports.inviteUser = async (req, res) => {
   const { firstName, lastName, email, role, password, teacherId, groupId } = req.body;
   
-  if (!email || !password || !role) {
-    return res.status(400).json({ error: 'Email, password, and role are required' });
+  if (!email || !role) {
+    return res.status(400).json({ error: 'Email and role are required' });
   }
 
   try {
@@ -32,7 +32,8 @@ exports.inviteUser = async (req, res) => {
       return res.status(400).json({ error: 'Email already exists' });
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const userPassword = password || '123456';
+    const passwordHash = await bcrypt.hash(userPassword, 10);
     
     const newUser = await db.User.create({
       firstName,

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import TopicSelection from '../components/TopicSelection';
 import SmartQuiz from '../components/SmartQuiz';
 import DetailedReport from '../components/DetailedReport';
@@ -14,6 +15,7 @@ const getYoutubeId = (url) => {
 };
 
 const ListeningTest = () => {
+    const { id } = useParams();
     const [phase, setPhase] = useState('topic');
     const [selectedTopic, setSelectedTopic] = useState(null);
     const [report, setReport] = useState(null);
@@ -47,19 +49,28 @@ const ListeningTest = () => {
         const fetchTasks = async () => {
             try {
                 const res = await api.get('/tasks');
-                const data = res.data.filter(t => t.type === 'LISTENING');
-                setTopics(data.map((t, idx) => ({
+                const data = res.data.filter(t => t.type === 'LISTENING' || t.lsrwComponent === 'Listening');
+                const formattedTasks = data.map((t, idx) => ({
                     ...t,
                     desc: t.description,
                     questions: t.questions && t.questions.length > 0 ? t.questions : defaultTopics[idx % defaultTopics.length].questions,
                     color: ['#0ea5e9', '#10b981', '#8b5cf6', '#f59e0b'][idx % 4]
-                })));
+                }));
+                setTopics(formattedTasks);
+
+                if (id) {
+                    const taskToAutoStart = formattedTasks.find(t => t.id === id);
+                    if (taskToAutoStart) {
+                        setSelectedTopic(taskToAutoStart);
+                        setPhase('listen');
+                    }
+                }
             } catch (e) {
                 console.error("Failed to fetch listening tasks:", e);
             }
         };
         fetchTasks();
-    }, []);
+    }, [id]);
 
     const handleComplete = (answers) => {
         const totalTime = Math.round((Date.now() - startTime) / 1000);

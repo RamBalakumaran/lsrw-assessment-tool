@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen,
@@ -15,6 +16,7 @@ import DetailedReport from '../components/DetailedReport';
 import api from '../utils/api';
 
 const ReadingTest = () => {
+  const { id } = useParams();
   const [phase, setPhase] = useState('topic');
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [report, setReport] = useState(null);
@@ -46,19 +48,29 @@ const ReadingTest = () => {
     const fetchTasks = async () => {
       try {
         const res = await api.get('/tasks');
-        const data = res.data.filter(t => t.type === 'READING');
-        setTopics(data.map((t, idx) => ({
+        const data = res.data.filter(t => t.type === 'READING' || t.lsrwComponent === 'Reading');
+        const formattedTasks = data.map((t, idx) => ({
           ...t,
           desc: t.description,
           questions: t.questions && t.questions.length > 0 ? t.questions : defaultTopics[idx % defaultTopics.length].questions,
           color: ['#3b82f6', '#d946ef', '#10b981', '#f59e0b'][idx % 4]
-        })));
+        }));
+        setTopics(formattedTasks);
+
+        if (id) {
+          const taskToAutoStart = formattedTasks.find(t => t.id === id);
+          if (taskToAutoStart) {
+            setSelectedTopic(taskToAutoStart);
+            setPhase('read');
+            setReadStartTime(Date.now());
+          }
+        }
       } catch (e) {
         console.error("Failed to fetch reading tasks:", e);
       }
     };
     fetchTasks();
-  }, []);
+  }, [id]);
 
   const startReading = () => {
     setPhase('read');
@@ -92,7 +104,7 @@ const ReadingTest = () => {
     });
 
     const score = Math.round((correct / selectedTopic.questions.length) * 100);
-    const wordCount = selectedTopic.passage.split(/\s+/).length;
+    const wordCount = (selectedTopic.passage || '').split(/\s+/).filter(Boolean).length;
     const wpm = Math.round((wordCount / (readTime / 60)) || 0);
 
     const reportData = {
@@ -164,14 +176,14 @@ const ReadingTest = () => {
             <h2 className="text-3xl font-black text-gray-900 mb-8 border-b border-gray-100 pb-6">{selectedTopic.title}</h2>
 
             <div className="text-xl text-gray-800 leading-relaxed font-medium mb-12 space-y-4">
-              {selectedTopic.passage}
+              {selectedTopic.passage || "No passage text available."}
             </div>
 
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-10 border-t border-gray-100">
               <div className="flex items-center space-x-6">
                 <div className="flex flex-col">
                   <span className="text-xs font-bold text-gray-400 uppercase">Estimated Length</span>
-                  <span className="text-lg font-black text-gray-900">{selectedTopic.passage.split(' ').length} Words</span>
+                  <span className="text-lg font-black text-gray-900">{(selectedTopic.passage || '').split(/\s+/).filter(Boolean).length} Words</span>
                 </div>
                 <div className="h-8 w-px bg-gray-100"></div>
                 <div className="flex flex-col">

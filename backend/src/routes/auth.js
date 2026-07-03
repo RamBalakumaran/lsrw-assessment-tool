@@ -3,11 +3,13 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 
+const { authMiddleware } = require('../../middleware/auth');
+
 // Login endpoint (no signup as per requirements)
 router.post('/login', authController.login);
 
 // Reset password endpoint
-router.post('/reset-password', authController.resetPassword);
+router.post('/reset-password', authMiddleware, authController.resetPassword);
 
 // Get current user endpoint
 router.get('/me', authController.getMe);

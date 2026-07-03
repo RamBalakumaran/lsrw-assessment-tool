@@ -24,6 +24,8 @@ module.exports = (sequelize, DataTypes) => {
     passingScore: { type: DataTypes.FLOAT },
     startDate: { type: DataTypes.DATE },
     endDate: { type: DataTypes.DATE },
+    passage: { type: DataTypes.TEXT },
+    audioUrl: { type: DataTypes.STRING },
     status: {
       type: DataTypes.ENUM('Draft', 'Published', 'Archived'),
       defaultValue: 'Draft',
