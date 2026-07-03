@@ -247,7 +247,7 @@ const TeacherTasks = () => {
                                         <div className="mb-px">{task.difficulty}</div>
                                         <div>{task.timeLimit} MINS</div>
                                     </div>
-                                    {task.createdById === user?.id || user?.role === 'ADMIN' || user?.role === 'TEACHER' ? (
+                                    {task.creatorId === user?.id || user?.role === 'ADMIN' ? (
                                         <div className="flex items-center space-x-2">
                                             <button
                                                 onClick={() => handleToggleStatus(task)}
