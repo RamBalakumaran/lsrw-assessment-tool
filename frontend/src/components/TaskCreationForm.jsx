@@ -108,21 +108,31 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
 
     useEffect(() => {
         if (initialData) {
-            setFormData(initialData);
-            if (initialData.lsrwComponent && initialData.assessmentType) {
-                const mappedTaskType = initialData.lsrwComponent.toUpperCase();
+            setFormData(prev => ({
+                ...prev,
+                ...initialData,
+            }));
+
+            const mappedTaskType = initialData.type
+                ? initialData.type.toUpperCase()
+                : initialData.lsrwComponent?.toUpperCase();
+            const typeConfig = mappedTaskType ? TASK_CONFIG[mappedTaskType] : null;
+
+            let mappedSubType = initialData.subType;
+            if (!mappedSubType && typeConfig && initialData.assessmentType) {
+                mappedSubType = Object.keys(typeConfig.subtypes).find(
+                    key => typeConfig.subtypes[key].label === initialData.assessmentType
+                );
+            }
+
+            if (mappedTaskType) {
                 setTaskType(mappedTaskType);
-                
-                const typeConfig = TASK_CONFIG[mappedTaskType];
-                if (typeConfig) {
-                    const mappedSubType = Object.keys(typeConfig.subtypes).find(
-                        key => typeConfig.subtypes[key].label === initialData.assessmentType
-                    );
-                    if (mappedSubType) {
-                        setSubType(mappedSubType);
-                        setStep(3); // Jump to step 3 for editing
-                    }
-                }
+            }
+            if (mappedSubType) {
+                setSubType(mappedSubType);
+            }
+            if (mappedTaskType && mappedSubType) {
+                setStep(3); // Jump to step 3 for editing
             }
         }
     }, [initialData]);
@@ -173,6 +183,9 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
         try {
             const payload = {
                 ...formData,
+                type: taskType,
+                subType,
+                difficulty: formData.difficultyLevel || formData.difficulty,
                 lsrwComponent: taskType.charAt(0).toUpperCase() + taskType.slice(1).toLowerCase(),
                 assessmentType: TASK_CONFIG[taskType].subtypes[subType].label,
                 status: 'Draft'

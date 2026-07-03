@@ -4,9 +4,84 @@ const db = require('../models');
 // GET /api/tasks
 exports.getAllTasks = async (req, res) => {
   try {
-    const tasks = await db.Task.findAll({
-      order: [['createdAt', 'DESC']]
-    });
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    
+    let tasks;
+    
+    if (userRole === 'STUDENT') {
+      // Students see Global tasks or tasks assigned to groups they are members of
+      const studentGroups = await db.Group.findAll({
+        include: [{
+          model: db.User,
+          as: 'members',
+          where: { id: userId },
+          attributes: []
+        }],
+        attributes: ['id']
+      });
+      const groupIds = studentGroups.map(g => g.id);
+      
+      tasks = await db.Task.findAll({
+        include: [{
+          model: db.Group,
+          as: 'targetGroups',
+          required: false
+        }],
+        order: [['createdAt', 'DESC']]
+      });
+      
+      tasks = tasks.filter(task => {
+        if (task.visibilityScope === 'Global') return true;
+        if (task.visibilityScope === 'GroupSpecific') {
+          return task.targetGroups && task.targetGroups.some(g => groupIds.includes(g.id));
+        }
+        return false;
+      });
+      
+    } else if (userRole === 'TEACHER') {
+      // Teachers see tasks they created, Global tasks, or tasks assigned to groups they administer
+      const teacherGroups = await db.Group.findAll({
+        include: [{
+          model: db.User,
+          as: 'admins',
+          where: { id: userId },
+          attributes: []
+        }],
+        attributes: ['id']
+      });
+      const groupIds = teacherGroups.map(g => g.id);
+      
+      tasks = await db.Task.findAll({
+        include: [{
+          model: db.Group,
+          as: 'targetGroups',
+          required: false
+        }],
+        order: [['createdAt', 'DESC']]
+      });
+      
+      tasks = tasks.filter(task => {
+        if (task.creatorId === userId) return true;
+        if (task.visibilityScope === 'Global') return true;
+        if (task.visibilityScope === 'GroupSpecific') {
+          return task.targetGroups && task.targetGroups.some(g => groupIds.includes(g.id));
+        }
+        return false;
+      });
+      
+    } else {
+      // ADMIN or SUPER_ADMIN sees all tasks
+      tasks = await db.Task.findAll({
+        include: [{
+          model: db.Group,
+          as: 'targetGroups',
+          required: false
+        }],
+        order: [['createdAt', 'DESC']]
+      });
+    }
+    
     return res.json(tasks);
   } catch (err) {
     console.error('Error fetching tasks:', err);
@@ -19,11 +94,8 @@ exports.createTask = async (req, res) => {
   try {
     const { groupIds, ...taskData } = req.body;
     
-    // In production, creatorId would be req.user.id. Mocking for now if not provided.
-    if (!taskData.creatorId) {
-      const firstAdmin = await db.User.findOne({ where: { role: 'ADMIN' }});
-      taskData.creatorId = firstAdmin ? firstAdmin.id : '00000000-0000-0000-0000-000000000000';
-    }
+    // Set creatorId to the logged-in user's id
+    taskData.creatorId = req.user.id;
 
     const task = await db.Task.create(taskData);
 
@@ -47,11 +119,16 @@ exports.updateTask = async (req, res) => {
     const task = await db.Task.findByPk(id);
     if (!task) return res.status(404).json({ error: 'Task not found' });
 
+    // Auth check: only the creator of the task or an ADMIN/SUPER_ADMIN can modify it
+    if (task.creatorId !== req.user.id && req.user.role !== 'ADMIN' && req.user.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Only the task creator or an administrator can modify this task' });
+    }
+
     await task.update(taskData);
 
     if (taskData.visibilityScope === 'GroupSpecific' && groupIds) {
       await task.setTargetGroups(groupIds);
-    } else if (taskData.visibilityScope !== 'GroupSpecific') {
+    } else if (taskData.visibilityScope !== 'GroupSpecific' && taskData.visibilityScope) {
       await task.setTargetGroups([]);
     }
 
@@ -68,6 +145,11 @@ exports.deleteTask = async (req, res) => {
     const { id } = req.params;
     const task = await db.Task.findByPk(id);
     if (!task) return res.status(404).json({ error: 'Task not found' });
+
+    // Auth check: only the creator of the task or an ADMIN/SUPER_ADMIN can delete it
+    if (task.creatorId !== req.user.id && req.user.role !== 'ADMIN' && req.user.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Only the task creator or an administrator can delete this task' });
+    }
 
     await task.destroy();
     return res.json({ success: true });

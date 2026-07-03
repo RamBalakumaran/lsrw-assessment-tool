@@ -35,6 +35,12 @@ db.User.belongsToMany(db.Group, { through: 'GroupAdmins', as: 'administeredGroup
 db.Task.belongsToMany(db.Group, { through: 'TaskGroups', as: 'targetGroups' });
 db.Group.belongsToMany(db.Task, { through: 'TaskGroups', as: 'tasks' });
 
+db.Response.belongsTo(db.User, { foreignKey: 'userId', as: 'user' });
+db.User.hasMany(db.Response, { foreignKey: 'userId', as: 'responses' });
+
+db.Response.belongsTo(db.Task, { foreignKey: 'taskId', as: 'task' });
+db.Task.hasMany(db.Response, { foreignKey: 'taskId', as: 'responses' });
+
 // Reading associations
 db.ReadingPassage.hasMany(db.ReadingQuestion, { foreignKey: 'passageId' });
 db.ReadingQuestion.belongsTo(db.ReadingPassage, { foreignKey: 'passageId' });

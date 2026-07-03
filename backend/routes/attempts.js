@@ -57,23 +57,49 @@ router.post('/submit', authMiddleware, async (req, res) => {
 // Get attempts for a teacher's students
 router.get('/student-attempts/:studentId', authMiddleware, async (req, res) => {
     try {
-        // Teachers can see their students' attempts
-        if (req.user.role === 'TEACHER') {
-            const student = await prisma.user.findFirst({
-                where: { id: req.params.studentId, teacherId: req.user.id }
+        const studentId = req.params.studentId;
+        const requesterId = req.user.id;
+        const requesterRole = req.user.role;
+
+        if (requesterRole === 'TEACHER') {
+            // Check direct assignment
+            const directStudent = await prisma.user.findFirst({
+                where: { id: studentId, teacherId: requesterId }
             });
-            if (!student) return res.status(403).json({ error: 'Unauthorized to view this student' });
-        } else if (req.user.role !== 'ADMIN') {
+
+            if (!directStudent) {
+                // Check if teacher is owner/collaborator of a group the student is in
+                const sharedGroup = await prisma.groupMembership.findFirst({
+                    where: {
+                        userId: requesterId,
+                        role: { in: ['OWNER', 'COLLABORATOR'] },
+                        group: {
+                            members: {
+                                some: {
+                                    userId: studentId,
+                                    role: 'MEMBER'
+                                }
+                            }
+                        }
+                    }
+                });
+
+                if (!sharedGroup) {
+                    return res.status(403).json({ error: 'Unauthorized to view this student' });
+                }
+            }
+        } else if (!['ADMIN', 'SUPER_ADMIN', 'DEPT_ADMIN'].includes(requesterRole)) {
             return res.status(403).json({ error: 'Forbidden' });
         }
 
         const attempts = await prisma.attempt.findMany({
-            where: { userId: req.params.studentId },
+            where: { userId: studentId },
             include: { task: true },
             orderBy: { submittedAt: 'desc' }
         });
         res.json(attempts);
     } catch (error) {
+        console.error('Fetch student attempts error:', error);
         res.status(500).json({ error: 'Failed to fetch student attempts' });
     }
 });

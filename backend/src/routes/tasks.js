@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const taskController = require('../controllers/taskController');
+const { authMiddleware } = require('../../middleware/auth');
 
 const multer = require('multer');
 const path = require('path');
@@ -17,10 +18,10 @@ const storage = multer.diskStorage({
 })
 const upload = multer({ storage: storage })
 
-router.get('/', taskController.getAllTasks);
-router.post('/', taskController.createTask);
-router.put('/:id', taskController.updateTask);
-router.delete('/:id', taskController.deleteTask);
-router.post('/upload-image', upload.single('image'), taskController.uploadTaskImage);
+router.get('/', authMiddleware, taskController.getAllTasks);
+router.post('/', authMiddleware, taskController.createTask);
+router.put('/:id', authMiddleware, taskController.updateTask);
+router.delete('/:id', authMiddleware, taskController.deleteTask);
+router.post('/upload-image', authMiddleware, upload.single('image'), taskController.uploadTaskImage);
 
 module.exports = router;

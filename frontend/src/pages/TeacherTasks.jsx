@@ -361,7 +361,7 @@ const TeacherTasks = () => {
                                     }} 
                                     userRole={user?.role} 
                                     userId={user?.id}
-                                    initialData={editTaskId ? { ...newTask, id: editTaskId } : null}
+                                    initialData={editTaskId ? newTask : null}
                                 />
                             </div>
                         </motion.div>
