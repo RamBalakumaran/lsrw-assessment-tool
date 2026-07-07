@@ -15,7 +15,11 @@ import {
     FileText,
     Mic,
     Headphones,
-    PenTool
+    PenTool,
+    Zap,
+    Eye,
+    Brain,
+    CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
@@ -26,6 +30,7 @@ const GlobalTasks = () => {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeFilter, setActiveFilter] = useState('ALL');
+    const [viewingQuizId, setViewingQuizId] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
     const [taskData, setTaskData] = useState({
@@ -121,6 +126,16 @@ const GlobalTasks = () => {
         }
     };
 
+    const handleToggleStatus = async (task) => {
+        const newStatus = task.status === 'Published' ? 'Draft' : 'Published';
+        try {
+            await api.put(`/tasks/${task.id}`, { status: newStatus });
+            fetchTasks();
+        } catch (error) {
+            console.error("Failed to update status:", error);
+        }
+    };
+
     const getTypeIcon = (type) => {
         switch (type) {
             case 'READING': return <FileText size={24} />;
@@ -188,73 +203,169 @@ const GlobalTasks = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-10">
+                <div className="space-y-6 max-w-5xl">
                     <AnimatePresence mode='popLayout'>
                         {filteredTasks.map((task) => (
-                            <motion.div
-                                key={task.id}
-                                layout
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.9 }}
-                                className="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all group relative"
-                            >
-                                <div className="flex justify-between items-start mb-8">
-                                    <div className="w-16 h-16 bg-gray-50 rounded-[1.5rem] flex items-center justify-center text-primary-600 group-hover:scale-110 group-hover:bg-primary-50 transition-all duration-500">
-                                        {getTypeIcon(task.type)}
-                                    </div>
-                                    {task.createdByRole === 'ADMIN' ? (
-                                        <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 duration-300">
-                                            <button
-                                                onClick={() => handleOpenModal(task)}
-                                                className="p-3 bg-white shadow-lg border border-gray-50 text-gray-400 hover:text-primary-600 rounded-2xl transition-all hover:scale-110"
-                                            >
-                                                <Edit2 size={18} />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(task.id)}
-                                                className="p-3 bg-white shadow-lg border border-gray-50 text-gray-400 hover:text-rose-600 rounded-2xl transition-all hover:scale-110"
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
+                            <React.Fragment key={task.id}>
+                                <motion.div
+                                    key={task.id}
+                                    layout
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex items-center justify-between group hover:shadow-xl transition-all"
+                                >
+                                    <div className="flex items-center space-x-8">
+                                        <div className="w-16 h-16 bg-gray-50 rounded-[1.5rem] flex items-center justify-center text-primary-600 group-hover:scale-110 group-hover:bg-primary-50 transition-all duration-500">
+                                            {getTypeIcon(task.type)}
                                         </div>
-                                    ) : (
-                                        <div className="px-4 py-2 bg-gray-50 rounded-xl text-[10px] font-black tracking-widest uppercase text-gray-400 border border-gray-100 italic self-start mt-2">
-                                            Teacher Defined
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="space-y-4">
-                                    <span className="px-5 py-2 rounded-full bg-primary-50 text-primary-600 text-[10px] font-black uppercase tracking-[0.2em] border border-primary-100 inline-block shadow-sm">
-                                        {task.type} ASSESSMENT
-                                    </span>
-
-                                    <h3 className="text-2xl font-black text-gray-900 leading-tight group-hover:text-primary-600 transition-colors">
-                                        {task.title}
-                                    </h3>
-                                    <p className="text-gray-500 font-medium text-sm line-clamp-2 leading-relaxed">
-                                        {task.description || "No description provided for this curriculum asset."}
-                                    </p>
-                                </div>
-
-                                <div className="flex items-center justify-between pt-8 mt-8 border-t border-gray-50">
-                                    <div className="flex items-center space-x-6">
-                                        <div className="flex items-center space-x-2.5 text-gray-400">
-                                            <div className="p-1.5 bg-gray-50 rounded-lg">
-                                                <Clock size={14} className="text-gray-400" />
+                                        <div className="max-w-md">
+                                            <div className="flex items-center space-x-3 mb-1">
+                                                <h3 className="text-2xl font-black text-gray-900">{task.title}</h3>
+                                                <span className="px-5 py-1.5 rounded-full bg-primary-50 text-primary-600 text-[10px] font-black uppercase tracking-[0.2em] border border-primary-100 inline-block shadow-sm">
+                                                    {task.type}
+                                                </span>
                                             </div>
-                                            <span className="text-[11px] font-black tracking-widest uppercase">{task.timeLimit}s</span>
-                                        </div>
-                                        <div className="flex items-center space-x-2.5 text-gray-400">
-                                            <div className="p-1.5 bg-gray-50 rounded-lg">
-                                                <BarChart size={14} className="text-gray-400" />
-                                            </div>
-                                            <span className="text-[11px] font-black tracking-widest uppercase">{task.difficulty}</span>
+                                            <p className="text-gray-500 font-medium text-sm line-clamp-1 leading-relaxed">
+                                                {task.description || "No description provided for this curriculum asset."}
+                                            </p>
                                         </div>
                                     </div>
-                                </div>
-                            </motion.div>
+
+                                    <div className="flex items-center space-x-12">
+                                        <div className="text-right hidden md:block text-xs font-black text-gray-400 uppercase tracking-widest leading-none font-sans">
+                                            <div className="mb-px">{task.difficultyLevel}</div>
+                                            <div>{task.timeLimit >= 60 ? `${Math.round(task.timeLimit / 60)} MINS` : `${task.timeLimit} SECS`}</div>
+                                        </div>
+                                        {task.creatorId === user?.id || user?.role === 'ADMIN' || user?.role === 'TEACHER' ? (
+                                            <div className="flex items-center space-x-2">
+                                                <button
+                                                    onClick={() => handleToggleStatus(task)}
+                                                    className={`p-3 rounded-2xl transition shadow-sm ${task.status === 'Published' ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
+                                                    title={task.status === 'Published' ? 'Click to Deactivate' : 'Click to Activate'}
+                                                >
+                                                    <Zap size={20} />
+                                                </button>
+                                                <button
+                                                    onClick={() => setViewingQuizId(viewingQuizId === task.id ? null : task.id)}
+                                                    className={`p-3 rounded-2xl transition shadow-sm ${viewingQuizId === task.id ? 'bg-indigo-600 text-white' : 'bg-gray-50 text-gray-400 hover:bg-indigo-50'}`}
+                                                    title="Preview Task Content"
+                                                >
+                                                    <Eye size={20} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleOpenModal(task)}
+                                                    className="p-3 bg-gray-50 text-gray-400 rounded-2xl hover:bg-indigo-600 hover:text-white transition shadow-sm"
+                                                    title="Edit Task"
+                                                >
+                                                    <Edit2 size={20} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(task.id)}
+                                                    className="p-3 bg-gray-50 text-gray-400 rounded-2xl hover:bg-rose-600 hover:text-white transition shadow-sm"
+                                                    title="Delete Task"
+                                                >
+                                                    <Trash2 size={20} />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="px-4 py-2 bg-gray-50 rounded-xl text-[10px] font-black tracking-widest uppercase text-gray-400 border border-gray-100 italic">
+                                                Teacher Defined
+                                            </div>
+                                        )}
+                                    </div>
+                                </motion.div>
+
+                                {/* Collapsible Task Preview */}
+                                {viewingQuizId === task.id && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        className="bg-gray-50/50 rounded-[2rem] p-8 -mt-4 mb-6 border border-gray-100 mx-4 space-y-6"
+                                    >
+                                        <div className="flex items-center justify-between border-b border-gray-200/60 pb-4">
+                                            <div className="flex items-center space-x-3">
+                                                <Brain className="text-indigo-600" size={24} />
+                                                <h4 className="text-xl font-black text-gray-800">Task Preview</h4>
+                                            </div>
+                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-white border border-gray-100 px-3 py-1 rounded-full">
+                                                {task.visibilityScope === 'Global' ? 'Public / Global' : `Group Specific (${task.targetGroups?.map(g => g.name).join(', ') || 'No groups assigned'})`}
+                                            </span>
+                                        </div>
+
+                                        {/* Task Core Metadata */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-6 rounded-2xl border border-gray-100/80">
+                                            <div>
+                                                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Description</div>
+                                                <p className="text-sm font-medium text-gray-700">{task.description || "No description provided."}</p>
+                                            </div>
+                                            <div>
+                                                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Settings</div>
+                                                <div className="text-xs font-bold text-gray-600 space-y-1">
+                                                    <div>Max Attempts: <span className="font-black text-gray-900">{task.maxAttempts}</span></div>
+                                                    <div>Passing Score: <span className="font-black text-gray-900">{task.passingScore}%</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Task Contents */}
+                                        {(task.passage || task.instructions || task.audioUrl || task.imageUrl) && (
+                                            <div className="bg-white p-6 rounded-2xl border border-gray-100/80 space-y-4">
+                                                {task.instructions && (
+                                                    <div>
+                                                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Instructions</div>
+                                                        <p className="text-sm font-bold text-gray-800 whitespace-pre-wrap">{task.instructions}</p>
+                                                    </div>
+                                                )}
+                                                {task.passage && (
+                                                    <div>
+                                                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Passage / Prompt</div>
+                                                        <p className="text-sm font-bold text-gray-800 bg-gray-50 p-4 rounded-xl border border-gray-100/50 whitespace-pre-wrap leading-relaxed">{task.passage}</p>
+                                                    </div>
+                                                )}
+                                                {task.audioUrl && (
+                                                    <div>
+                                                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Audio Source</div>
+                                                        <audio controls src={task.audioUrl} className="w-full max-w-md h-10 rounded-xl" />
+                                                    </div>
+                                                )}
+                                                {task.imageUrl && (
+                                                    <div>
+                                                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Reference Image</div>
+                                                        <img src={task.imageUrl} alt="Task Reference" className="max-w-md max-h-48 rounded-xl object-contain border border-gray-100" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Questions */}
+                                        {task.questions && task.questions.length > 0 && (
+                                            <div className="space-y-4">
+                                                <div className="text-xs font-black text-gray-400 uppercase tracking-widest">Questions ({task.questions.length})</div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    {task.questions.map((q, idx) => (
+                                                        <div key={idx} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100/80">
+                                                            <div className="flex items-center space-x-2 mb-2">
+                                                                <span className="w-6 h-6 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center text-xs font-black">{idx + 1}</span>
+                                                                <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest bg-gray-50 px-2 py-0.5 rounded-md">{q.type}</span>
+                                                            </div>
+                                                            <p className="text-sm font-bold text-gray-700 mb-3">{q.questionText || q.text}</p>
+                                                            <div className="space-y-1.5">
+                                                                {(q.options || q.opts)?.map((opt, oIdx) => (
+                                                                    <div key={oIdx} className={`text-[11px] px-3 py-1.5 rounded-lg flex items-center space-x-2 ${opt === q.correctAnswer ? 'bg-emerald-50 text-emerald-700 font-bold border border-emerald-100' : 'bg-gray-50 text-gray-500'}`}>
+                                                                        {opt === q.correctAnswer && <CheckCircle2 size={12} />}
+                                                                        <span>{opt}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                )}
+                            </React.Fragment>
                         ))}
                     </AnimatePresence>
                 </div>

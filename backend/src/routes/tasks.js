@@ -23,5 +23,6 @@ router.post('/', authMiddleware, taskController.createTask);
 router.put('/:id', authMiddleware, taskController.updateTask);
 router.delete('/:id', authMiddleware, taskController.deleteTask);
 router.post('/upload-image', authMiddleware, upload.single('image'), taskController.uploadTaskImage);
+router.post('/upload-media', authMiddleware, upload.single('media'), taskController.uploadTaskImage);
 
 module.exports = router;

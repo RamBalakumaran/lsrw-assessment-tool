@@ -107,9 +107,9 @@ exports.getAllTasks = async (req, res) => {
     const formattedTasks = tasks.map(t => {
       const tJson = typeof t.toJSON === 'function' ? t.toJSON() : t;
       tJson.createdByRole = t.creator ? t.creator.role : (t.createdByRole || 'TEACHER');
+      tJson.groupIds = t.targetGroups ? t.targetGroups.map(g => g.id) : [];
       return tJson;
     });
-    
     return res.json(formattedTasks);
   } catch (err) {
     console.error('Error fetching tasks:', err);
@@ -132,6 +132,7 @@ exports.createTask = async (req, res) => {
     }
 
     const taskJson = task.toJSON();
+    taskJson.groupIds = taskData.visibilityScope === 'GroupSpecific' ? (groupIds || []) : [];
     taskJson.createdByRole = req.user.role;
 
     return res.status(201).json(taskJson);
@@ -164,6 +165,7 @@ exports.updateTask = async (req, res) => {
     }
 
     const taskJson = task.toJSON();
+    taskJson.groupIds = taskData.visibilityScope === 'GroupSpecific' ? (groupIds || []) : [];
     const creator = await db.User.findByPk(task.creatorId);
     taskJson.createdByRole = creator ? creator.role : 'TEACHER';
 

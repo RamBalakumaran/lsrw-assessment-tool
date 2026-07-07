@@ -54,10 +54,25 @@ db.ReadingAttempt.hasMany(db.ReadingResponse, { foreignKey: 'attemptId' });
 db.ReadingResponse.belongsTo(db.ReadingAttempt, { foreignKey: 'attemptId' });
 db.ReadingResponse.belongsTo(db.ReadingQuestion, { foreignKey: 'questionId' });
 
-// TenantConfig belongs to tenant concept via tenantId but no Tenant model exists; it's standalone
+// Response & User / Task associations
+db.Response.belongsTo(db.Task, { foreignKey: 'taskId' });
+db.Task.hasMany(db.Response, { foreignKey: 'taskId' });
 
-db.sequelize.sync({ alter: true })
-  .then(() => console.log('Database synced'))
+db.Response.belongsTo(db.User, { foreignKey: 'userId' });
+db.User.hasMany(db.Response, { foreignKey: 'userId' });
+
+db.sequelize.sync()
+  .then(async () => {
+    console.log('Database synced');
+    try {
+      await db.sequelize.query("ALTER TABLE `users` ADD COLUMN `yearOfStudy` VARCHAR(255) NULL;");
+      console.log('Added yearOfStudy column to users table');
+    } catch (e) {}
+    try {
+      await db.sequelize.query("ALTER TABLE `groups` ADD COLUMN `status` VARCHAR(255) DEFAULT 'ACTIVE';");
+      console.log('Added status column to groups table');
+    } catch (e) {}
+  })
   .catch(err => console.error('DB sync error:', err));
 
 module.exports = db;

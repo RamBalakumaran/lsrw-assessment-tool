@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import {
     Users,
@@ -14,9 +15,10 @@ import api from '../utils/api';
 import { Loader2 } from 'lucide-react';
 
 const TeacherDashboard = () => {
+    const navigate = useNavigate();
     const [students, setStudents] = useState([]);
     const [originalStudents, setOriginalStudents] = useState([]);
-    const [stats, setStats] = useState({ studentCount: 0, tasksAssigned: 0, pendingReports: 0 });
+    const [stats, setStats] = useState({ studentCount: 0, tasksAssigned: 0, pendingReports: 0, groupsCount: 0, groupActivities: [] });
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('All');
@@ -24,6 +26,7 @@ const TeacherDashboard = () => {
     const [isAssigning, setIsAssigning] = useState(false);
     const [availableTasks, setAvailableTasks] = useState([]);
     const [assignLoading, setAssignLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState('students'); // 'students' or 'groups'
 
     useEffect(() => {
         const fetchTeacherData = async () => {
@@ -32,7 +35,9 @@ const TeacherDashboard = () => {
                 setStats({
                     studentCount: res.data.studentCount,
                     tasksAssigned: res.data.tasksAssigned,
-                    pendingReports: res.data.pendingReports
+                    pendingReports: res.data.pendingReports,
+                    groupsCount: res.data.groupsCount || 0,
+                    groupActivities: res.data.groupActivities || []
                 });
 
                 const mappedStudents = res.data.students.map(s => {
@@ -141,82 +146,169 @@ const TeacherDashboard = () => {
                     </div>
                 </header>
 
-                <div className="grid lg:grid-cols-3 gap-10">
-                    {/* Student List */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-2xl font-black text-gray-900">Assigned Students</h3>
-                            <div className="flex items-center space-x-2">
-                                <Filter size={16} className="text-gray-400" />
-                                <select
-                                    className="bg-transparent border-none text-primary-600 font-bold text-sm focus:ring-0 cursor-pointer"
-                                    value={filterStatus}
-                                    onChange={(e) => setFilterStatus(e.target.value)}
-                                >
-                                    <option value="All">All Status</option>
-                                    <option value="Active">Active</option>
-                                    <option value="Pending">Pending</option>
-                                    <option value="Needs Review">Needs Review</option>
-                                </select>
-                            </div>
-                        </div>
+                {/* Tabs */}
+                <div className="flex gap-6 mb-8 border-b border-gray-200">
+                    <button
+                        onClick={() => setActiveTab('students')}
+                        className={`pb-4 px-2 font-black uppercase text-xs tracking-wider border-b-2 transition ${
+                            activeTab === 'students' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-400 hover:text-gray-900'
+                        }`}
+                    >
+                        Assigned Students
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('groups')}
+                        className={`pb-4 px-2 font-black uppercase text-xs tracking-wider border-b-2 transition ${
+                            activeTab === 'groups' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-400 hover:text-gray-900'
+                        }`}
+                    >
+                        Group Reports
+                    </button>
+                </div>
 
-                        <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
-                            <table className="w-full text-left font-medium">
-                                <thead>
-                                    <tr className="bg-gray-50/50 border-b border-gray-50">
-                                        <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Student</th>
-                                        <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Avg. Score</th>
-                                        <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Status</th>
-                                        <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-50">
-                                    {students.length === 0 ? (
-                                        <tr>
-                                            <td colSpan="4" className="px-8 py-20 text-center text-gray-400 font-bold uppercase tracking-widest">
-                                                No students match your criteria
-                                            </td>
+                <div className="grid lg:grid-cols-3 gap-10">
+                    {activeTab === 'students' ? (
+                        /* Student List */
+                        <div className="lg:col-span-2 space-y-6">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-2xl font-black text-gray-900">Assigned Students</h3>
+                                <div className="flex items-center space-x-2">
+                                    <Filter size={16} className="text-gray-400" />
+                                    <select
+                                        className="bg-transparent border-none text-primary-600 font-bold text-sm focus:ring-0 cursor-pointer"
+                                        value={filterStatus}
+                                        onChange={(e) => setFilterStatus(e.target.value)}
+                                    >
+                                        <option value="All">All Status</option>
+                                        <option value="Active">Active</option>
+                                        <option value="Pending">Pending</option>
+                                        <option value="Needs Review">Needs Review</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+                                <table className="w-full text-left font-medium">
+                                    <thead>
+                                        <tr className="bg-gray-50/50 border-b border-gray-50">
+                                            <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Student</th>
+                                            <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Avg. Score</th>
+                                            <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Status</th>
+                                            <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none text-right">Actions</th>
                                         </tr>
-                                    ) : (
-                                        students.map((student) => (
-                                            <tr key={student.id} className="group hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => setSelectedStudent(student)}>
-                                                <td className="px-8 py-5">
-                                                    <div className="flex items-center space-x-4">
-                                                        <div className="w-12 h-12 rounded-2xl bg-primary-100 text-primary-600 font-black flex items-center justify-center border-2 border-white shadow-sm transition-transform group-hover:scale-110">
-                                                            {student.avatar}
-                                                        </div>
-                                                        <div>
-                                                            <div className="font-bold text-gray-900">{student.name}</div>
-                                                            <div className="text-xs text-gray-400">Activity: {student.lastActivity}</div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-8 py-5 font-black text-xl text-gray-700">
-                                                    {student.score}%
-                                                </td>
-                                                <td className="px-8 py-5">
-                                                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${student.status === 'Active'
-                                                        ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                                        : student.status === 'Needs Review'
-                                                            ? 'bg-rose-50 text-rose-600 border-rose-100'
-                                                            : 'bg-amber-50 text-amber-600 border-amber-100'
-                                                        }`}>
-                                                        {student.status}
-                                                    </span>
-                                                </td>
-                                                <td className="px-8 py-5 text-right">
-                                                    <button className="p-2 bg-gray-50 text-gray-400 rounded-xl group-hover:bg-primary-600 group-hover:text-white transition shadow-sm">
-                                                        <ChevronRight size={20} />
-                                                    </button>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {students.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="4" className="px-8 py-20 text-center text-gray-400 font-bold uppercase tracking-widest">
+                                                    No students match your criteria
                                                 </td>
                                             </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
+                                        ) : (
+                                            students.map((student) => (
+                                                <tr key={student.id} className="group hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => setSelectedStudent(student)}>
+                                                    <td className="px-8 py-5">
+                                                        <div className="flex items-center space-x-4">
+                                                            <div className="w-12 h-12 rounded-2xl bg-primary-100 text-primary-600 font-black flex items-center justify-center border-2 border-white shadow-sm transition-transform group-hover:scale-110">
+                                                                {student.avatar}
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-bold text-gray-900">{student.name}</div>
+                                                                <div className="text-xs text-gray-400">Activity: {student.lastActivity}</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-8 py-5 font-black text-xl text-gray-700">
+                                                        {student.score}%
+                                                    </td>
+                                                    <td className="px-8 py-5">
+                                                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${student.status === 'Active'
+                                                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                                            : student.status === 'Needs Review'
+                                                                ? 'bg-rose-50 text-rose-600 border-rose-100'
+                                                                : 'bg-amber-50 text-amber-600 border-amber-100'
+                                                            }`}>
+                                                            {student.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-8 py-5 text-right">
+                                                        <button className="p-2 bg-gray-50 text-gray-400 rounded-xl group-hover:bg-primary-600 group-hover:text-white transition shadow-sm">
+                                                            <ChevronRight size={20} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        /* Group Reports */
+                        <div className="lg:col-span-2 space-y-6">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-2xl font-black text-gray-900">Group Reports</h3>
+                                <span className="text-xs text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full font-bold">
+                                    {stats.groupsCount} groups managed
+                                </span>
+                            </div>
+
+                            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+                                <table className="w-full text-left font-medium">
+                                    <thead>
+                                        <tr className="bg-gray-50/50 border-b border-gray-50">
+                                            <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Group</th>
+                                            <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Students</th>
+                                            <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Submissions</th>
+                                            <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Avg. Score</th>
+                                            <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {stats.groupActivities.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="5" className="px-8 py-20 text-center text-gray-400 font-bold uppercase tracking-widest">
+                                                    No administered groups found
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            stats.groupActivities.map((g) => (
+                                                <tr key={g.groupId} className="group hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => navigate(`/groups/${g.groupId}/students`)}>
+                                                    <td className="px-8 py-5">
+                                                        <div className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors">{g.groupName}</div>
+                                                    </td>
+                                                    <td className="px-8 py-5 text-gray-500 font-bold">
+                                                        {g.studentCount} students
+                                                    </td>
+                                                    <td className="px-8 py-5 text-gray-500 font-bold">
+                                                        {g.attemptCount} submissions
+                                                    </td>
+                                                    <td className="px-8 py-5">
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="font-black text-lg text-gray-700">{g.avgScore}%</span>
+                                                            <div className="w-24 bg-gray-100 h-2 rounded-full overflow-hidden">
+                                                                <div 
+                                                                    className={`h-full rounded-full ${
+                                                                        g.avgScore > 75 ? 'bg-emerald-500' : g.avgScore > 50 ? 'bg-amber-500' : 'bg-rose-500'
+                                                                    }`}
+                                                                    style={{ width: `${g.avgScore}%` }}
+                                                                ></div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-8 py-5 text-right">
+                                                        <button className="text-xs font-black text-primary-600 hover:text-primary-700 bg-primary-50 px-3 py-1.5 rounded-xl transition">
+                                                            Details
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Sidebar Stats / Activity */}
                     <div className="space-y-8">
@@ -229,6 +321,10 @@ const TeacherDashboard = () => {
                                 <p className="text-indigo-200 font-medium mb-8">System auto-generated report</p>
 
                                 <div className="space-y-4">
+                                    <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10">
+                                        <span className="text-sm font-bold opacity-70 uppercase tracking-widest">Groups Managed</span>
+                                        <span className="text-2xl font-black text-emerald-400">{stats.groupsCount}</span>
+                                    </div>
                                     <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10">
                                         <span className="text-sm font-bold opacity-70 uppercase tracking-widest">Tasks Assigned</span>
                                         <span className="text-2xl font-black">{stats.tasksAssigned}</span>

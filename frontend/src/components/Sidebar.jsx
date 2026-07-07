@@ -25,15 +25,12 @@ const Sidebar = ({ role }) => {
     const adminLinks = [
         { title: "Overview", icon: <LayoutDashboard />, link: "/admin/dashboard" },
         { title: "User Management", icon: <Users />, link: "/admin/users" },
-        { title: "Bulk Import", icon: <Upload />, link: "/admin/bulk-import" },
         { title: "Global Tasks", icon: <BookOpen />, link: "/admin/tasks" },
-        { title: "System Health", icon: <Activity />, link: "/admin/health" },
     ];
 
     const teacherLinks = [
         { title: "Overview", icon: <LayoutDashboard />, link: "/teacher/dashboard" },
         { title: "My Groups", icon: <Layers />, link: "/teacher/groups" },
-        { title: "Bulk Import", icon: <Upload />, link: "/teacher/bulk-import" },
         { title: "LSRW Tasks", icon: <BookOpen />, link: "/teacher/tasks" },
         { title: "Performance", icon: <BarChart />, link: "/teacher/performance" },
     ];

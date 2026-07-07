@@ -16,10 +16,62 @@ exports.login = async (req, res) => {
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
     const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '8h' });
-    return res.json({ token, user: { id: user.id, email: user.email, role: user.role, forcePasswordReset: user.forcePasswordReset } });
+    return res.json({ token, user: { id: user.id, email: user.email, role: user.role, forcePasswordReset: user.forcePasswordReset, firstName: user.firstName, lastName: user.lastName } });
   } catch (err) {
     console.error('Login error:', err);
     return res.status(500).json({ error: 'Server error' });
+  }
+};
+
+// POST /api/auth/setup-profile
+exports.setupProfile = async (req, res) => {
+  const { userId, firstName, lastName, department, organization, newPassword, yearOfStudy } = req.body;
+  if (!userId || !firstName || !lastName || !newPassword) {
+    return res.status(400).json({ error: 'Missing required fields: userId, firstName, lastName, and newPassword are required.' });
+  }
+
+  try {
+    const user = await db.User.findByPk(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Update basic details
+    user.firstName = firstName.trim();
+    user.lastName = lastName.trim();
+    user.yearOfStudy = yearOfStudy ? String(yearOfStudy).trim() : null;
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    user.forcePasswordReset = false;
+    await user.save();
+
+    // Map department to a Group membership
+    if (department && department.trim()) {
+      const groupName = department.trim();
+      let group = await db.Group.findOne({ where: { name: groupName } });
+      if (!group) {
+        group = await db.Group.create({ name: groupName });
+      }
+      
+      if (user.role === 'STUDENT') {
+        await group.addMember(user);
+      } else if (user.role === 'TEACHER') {
+        await group.addAdmin(user);
+      }
+    }
+
+    return res.json({ 
+      success: true, 
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        role: user.role, 
+        firstName: user.firstName, 
+        lastName: user.lastName, 
+        yearOfStudy: user.yearOfStudy,
+        forcePasswordReset: false 
+      } 
+    });
+  } catch (err) {
+    console.error('Setup profile error:', err);
+    return res.status(500).json({ error: 'Server error: ' + err.message });
   }
 };
 
@@ -79,7 +131,12 @@ exports.getMe = async (req, res) => {
     
     const user = await db.User.findByPk(decoded.id, {
       include: [
-        { model: db.Group, as: 'groupMemberships' },
+        { 
+          model: db.Group, 
+          as: 'groupMemberships',
+          where: decoded.role === 'STUDENT' ? { status: 'ACTIVE' } : {},
+          required: false
+        },
         { model: db.Group, as: 'administeredGroups' }
       ]
     });
@@ -90,7 +147,11 @@ exports.getMe = async (req, res) => {
     
     return res.json({ user });
   } catch (err) {
-    console.error('getMe error:', err);
+    if (err.name === 'TokenExpiredError') {
+      console.error('getMe error: Token expired');
+    } else {
+      console.error('getMe error:', err);
+    }
     return res.status(401).json({ error: 'Invalid token' });
   }
 };

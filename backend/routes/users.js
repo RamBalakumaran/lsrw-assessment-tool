@@ -341,4 +341,84 @@ router.get('/:userId/roles', async (req, res) => {
   }
 });
 
+// GET /api/users/:userId/performance
+router.get('/:userId/performance', authMiddleware, async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const student = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, firstName: true, lastName: true, email: true, role: true, status: true, registrationNumber: true }
+    });
+    if (!student) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    const attempts = await prisma.attempt.findMany({
+      where: { userId, status: 'COMPLETED' },
+      include: { task: true },
+      orderBy: { submittedAt: 'desc' }
+    });
+
+    const responsesWithTasks = [];
+    let totalScore = 0;
+    let peak = 0;
+    
+    let listeningScores = [];
+    let speakingScores = [];
+    let readingScores = [];
+    let writingScores = [];
+
+    for (const attempt of attempts) {
+      const score = attempt.score || 0;
+      totalScore += score;
+      if (score > peak) peak = score;
+
+      const task = attempt.task;
+      const taskTitle = task ? task.title : 'Deleted Task';
+      const lsrwComponent = task ? task.type : 'UNKNOWN';
+
+      if (task) {
+        if (lsrwComponent === 'LISTENING') listeningScores.push(score);
+        if (lsrwComponent === 'SPEAKING') speakingScores.push(score);
+        if (lsrwComponent === 'READING') readingScores.push(score);
+        if (lsrwComponent === 'WRITING') writingScores.push(score);
+      }
+
+      responsesWithTasks.push({
+        id: attempt.id,
+        taskId: attempt.taskId,
+        taskTitle,
+        lsrwComponent,
+        score,
+        feedback: attempt.teacherFeedback || (attempt.aiResults ? JSON.stringify(attempt.aiResults) : ''),
+        submittedAt: attempt.submittedAt
+      });
+    }
+
+    const totalAttempts = attempts.length;
+    const avg = totalAttempts > 0 ? Math.round(totalScore / totalAttempts) : 0;
+    const avgList = (arr) => arr.length > 0 ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
+
+    return res.json({
+      student,
+      stats: {
+        avg,
+        peak,
+        totalAttempts,
+        skillProficiency: [
+          { skill: "Speaking", val: avgList(speakingScores), color: "rose" },
+          { skill: "Listening", val: avgList(listeningScores), color: "emerald" },
+          { skill: "Reading", val: avgList(readingScores), color: "amber" },
+          { skill: "Writing", val: avgList(writingScores), color: "indigo" }
+        ]
+      },
+      activities: responsesWithTasks
+    });
+
+  } catch (err) {
+    console.error('Error fetching student performance:', err);
+    return res.status(500).json({ error: 'Server error: ' + err.message });
+  }
+});
+
 module.exports = router;

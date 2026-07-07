@@ -1,18 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useReactMediaRecorder } from 'react-media-recorder';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Mic,
-    Square,
-    Play,
-    ArrowLeft,
-    Settings,
-    Activity,
-    ShieldCheck,
-    Loader2,
-    RefreshCw,
-    Clock
+    Mic, Square, Play, ArrowLeft, Settings, Activity, ShieldCheck, Loader2, RefreshCw, Clock
 } from 'lucide-react';
 import TopicSelection from '../components/TopicSelection';
 import DetailedReport from '../components/DetailedReport';
@@ -26,30 +17,48 @@ const TestInterface = () => {
     const [report, setReport] = useState(null);
     const [timeLeft, setTimeLeft] = useState(null);
 
+    // Sequential Assessment States
+    const [currentQIndex, setCurrentQIndex] = useState(0);
+    const [mediaPhase, setMediaPhase] = useState('play'); // 'play', 'record', 'evaluating'
+    
+    // Stable Refs for callbacks
+    const recordedBlobsRef = useRef([]);
+    const currentQIndexRef = useRef(0);
+    const selectedTopicRef = useRef(null);
+
+    useEffect(() => {
+        selectedTopicRef.current = selectedTopic;
+        if (selectedTopic) {
+            setCurrentQIndex(0);
+            currentQIndexRef.current = 0;
+            recordedBlobsRef.current = [];
+            
+            // Check if current question has media
+            const hasMedia = selectedTopic.questions && selectedTopic.questions[0] && selectedTopic.questions[0].audioUrl;
+            setMediaPhase(hasMedia ? 'play' : 'record');
+        }
+    }, [selectedTopic]);
+
+    const isMulti = selectedTopic?.questions && selectedTopic.questions.length > 0 && 
+                    (selectedTopic.type === 'SPEAKING' || selectedTopic.lsrwComponent === 'Speaking' || selectedTopic.assessmentType === 'Repeat Sentences');
+
     const createZeroReport = (errorMsg) => ({
-        score: 0,
-        title: "Speaking",
-        transcript: "",
-        metrics: [
-            { label: "Words Per Minute", value: 0 },
-            { label: "Fluency Rating", value: "0/10" },
-            { label: "Vocab Diversity", value: "0/10" }
-        ],
-        criteria: {
-            "Pronunciation": 0, "Fluency": 0, "Grammar": 0, "Vocabulary": 0, "Confidence": 0, "Relevance": 0
-        },
+        score: 0, title: "Speaking", transcript: "",
+        metrics: [ { label: "Words Per Minute", value: 0 }, { label: "Fluency Rating", value: "0/10" }, { label: "Vocab Diversity", value: "0/10" } ],
+        criteria: { "Pronunciation": 0, "Fluency": 0, "Grammar": 0, "Vocabulary": 0, "Confidence": 0, "Relevance": 0 },
         mistakes: [],
         recommendations: [`⚠️ ${errorMsg}`, "Ensure your device microphone is active and you are in a quiet environment."]
     });
 
-    const onStop = async (url, blob) => {
+    const evaluateSingle = async (blob, topic) => {
         setLoading(true);
         const formData = new FormData();
         formData.append('audio', blob, 'test.wav');
-        if (selectedTopic && selectedTopic.id) {
-            formData.append('taskId', selectedTopic.id);
-            formData.append('topicTitle', selectedTopic.title || '');
-            formData.append('topicDesc', selectedTopic.desc || '');
+        if (topic && topic.id) {
+            formData.append('taskId', topic.id);
+            formData.append('topicTitle', topic.title || '');
+            formData.append('topicDesc', topic.desc || '');
+            if (topic.imageUrl) formData.append('topicImageUrl', topic.imageUrl);
         }
 
         try {
@@ -72,20 +81,33 @@ const TestInterface = () => {
             const fluency9 = ((metrics.fluency || 0) / 10) * 9;
             const vocab9 = ((metrics.vocabulary || 0) / 10) * 9;
             const grammar9 = ((metrics.grammar || 0) / 10) * 9;
-            const overall9 = (fluency9 + vocab9 + grammar9) / 3;
+            const rel9 = ((metrics.relevance || 0) / 10) * 9;
+            
+            const isRepeatTask = topic?.assessmentType === 'Repeat Sentences' || topic?.title?.toLowerCase().includes('repeat');
+            const overall9 = isRepeatTask ? (fluency9 + rel9) / 2 : (fluency9 + vocab9 + grammar9 + rel9) / 4;
 
             setReport({
                 score: overall9.toFixed(1),
                 isPass: overall9 >= 6.0,
-                title: "Speaking",
+                title: isRepeatTask ? "Repeat Sentence" : "Speaking",
                 transcript: data.transcription || "",
-                metrics: [
+                metrics: isRepeatTask ? [
+                    { label: "Estimated WPM", value: data.wpm || 0 },
+                    { label: "Fluency Score", value: `${fluency9.toFixed(1)}/9.0` },
+                    { label: "Accuracy", value: `${Math.round((metrics.relevance || 0) * 10)}%` },
+                    { label: "Number of Pauses", value: metrics.pause_count || 0 }
+                ] : [
                     { label: "Estimated WPM", value: data.wpm || 0 },
                     { label: "Fluency Score", value: `${fluency9.toFixed(1)}/9.0` },
                     { label: "Vocabulary Richness", value: `${vocab9.toFixed(1)}/9.0` },
                     { label: "Number of Pauses", value: metrics.pause_count || 0 }
                 ],
-                criteria: {
+                criteria: isRepeatTask ? {
+                    "Pronunciation": (metrics.pronunciation || 0) * 10,
+                    "Fluency": (metrics.fluency || 0) * 10,
+                    "Accuracy": (metrics.relevance || 0) * 10,
+                    "Confidence": (metrics.fluency || 0) > 7 ? 90 : 60
+                } : {
                     "Pronunciation": (metrics.pronunciation || 0) * 10,
                     "Fluency": (metrics.fluency || 0) * 10,
                     "Grammar": (metrics.grammar || 0) * 10,
@@ -110,23 +132,139 @@ const TestInterface = () => {
         setLoading(false);
     };
 
+    const evaluateAll = async (blobs, topic) => {
+        setLoading(true);
+        let totals = { wpm: 0, fluency: 0, vocab: 0, grammar: 0, pauses: 0, relevance: 0, score: 0 };
+        let fullTranscript = [];
+        let allMistakes = [];
+        let valid = 0;
+
+        for (let i = 0; i < blobs.length; i++) {
+            const formData = new FormData();
+            formData.append('audio', blobs[i], `test_${i}.wav`);
+            formData.append('taskId', topic.id);
+            formData.append('topicTitle', "Repeat Sentence - Question " + (i+1));
+            // Send exact sentence for strict LLM checking
+            formData.append('topicDesc', "Sentence to repeat: " + topic.questions[i].text);
+
+            try {
+                const res = await api.post('/evaluate/assess-speaking', formData);
+                const data = res.data;
+                if (!data.error) {
+                    const metrics = data.metrics || {};
+                    totals.wpm += data.wpm || 0;
+                    totals.fluency += metrics.fluency || 0;
+                    totals.vocab += metrics.vocabulary || 0;
+                    totals.grammar += metrics.grammar || 0;
+                    totals.pauses += metrics.pause_count || 0;
+                    totals.relevance += metrics.relevance || 0;
+                    totals.score += data.overall_score || 0;
+                    fullTranscript.push(`[Sentence ${i+1}]: ${data.transcription}`);
+                    if (data.mistakes) allMistakes.push(...data.mistakes);
+                    valid++;
+                }
+            } catch (e) {
+                console.error("Error evaluating chunk", i, e);
+            }
+        }
+
+        if (valid === 0) {
+            setReport(createZeroReport("All recordings failed to process. Try speaking louder."));
+            setPhase('report');
+            setLoading(false);
+            return;
+        }
+
+        const avg = (val) => val / valid;
+        const fluency9 = (avg(totals.fluency) / 10) * 9;
+        const vocab9 = (avg(totals.vocab) / 10) * 9;
+        const grammar9 = (avg(totals.grammar) / 10) * 9;
+        const rel9 = (avg(totals.relevance) / 10) * 9;
+        
+        const isRepeatTask = topic?.assessmentType === 'Repeat Sentences' || topic?.title?.toLowerCase().includes('repeat');
+        const overall9 = isRepeatTask ? (fluency9 + rel9) / 2 : (fluency9 + vocab9 + grammar9 + rel9) / 4;
+
+        setReport({
+            score: overall9.toFixed(1),
+            isPass: overall9 >= 6.0,
+            title: isRepeatTask ? "Repeat Sentences" : "Speaking",
+            transcript: fullTranscript.join('\n\n'),
+            metrics: isRepeatTask ? [
+                { label: "Avg WPM", value: Math.round(avg(totals.wpm)) },
+                { label: "Avg Fluency Score", value: `${fluency9.toFixed(1)}/9.0` },
+                { label: "Accuracy", value: `${Math.round(avg(totals.relevance) * 10)}%` },
+                { label: "Total Pauses", value: totals.pauses }
+            ] : [
+                { label: "Avg WPM", value: Math.round(avg(totals.wpm)) },
+                { label: "Avg Fluency Score", value: `${fluency9.toFixed(1)}/9.0` },
+                { label: "Avg Vocab Richness", value: `${vocab9.toFixed(1)}/9.0` },
+                { label: "Total Pauses", value: totals.pauses }
+            ],
+            criteria: isRepeatTask ? {
+                "Pronunciation": 80,
+                "Fluency": avg(totals.fluency) * 10,
+                "Accuracy": avg(totals.relevance) * 10,
+                "Confidence": avg(totals.fluency) > 7 ? 90 : 60
+            } : {
+                "Pronunciation": 80,
+                "Fluency": avg(totals.fluency) * 10,
+                "Grammar": avg(totals.grammar) * 10,
+                "Vocabulary": avg(totals.vocab) * 10,
+                "Confidence": avg(totals.fluency) > 7 ? 90 : 60,
+                "Relevance": avg(totals.relevance) * 10
+            },
+            mistakes: allMistakes,
+            recommendations: [
+                `Successfully completed ${valid} out of ${blobs.length} sentences.`,
+                avg(totals.relevance) < 6 ? "Ensure you repeat the sentences exactly as requested." : "Excellent sentence repetition and accuracy."
+            ]
+        });
+        setPhase('report');
+        setLoading(false);
+    };
+
+    const handleStop = async (url, blob) => {
+        const topic = selectedTopicRef.current;
+        const _isMulti = topic?.questions && topic.questions.length > 0 && 
+                         (topic.type === 'SPEAKING' || topic.lsrwComponent === 'Speaking' || topic.assessmentType === 'Repeat Sentences');
+        
+        if (_isMulti) {
+            recordedBlobsRef.current.push(blob);
+            if (currentQIndexRef.current < topic.questions.length - 1) {
+                currentQIndexRef.current += 1;
+                setCurrentQIndex(currentQIndexRef.current);
+                const nextHasMedia = topic.questions[currentQIndexRef.current].audioUrl;
+                setMediaPhase(nextHasMedia ? 'play' : 'record');
+            } else {
+                setMediaPhase('evaluating');
+                await evaluateAll(recordedBlobsRef.current, topic);
+            }
+        } else {
+            await evaluateSingle(blob, topic);
+        }
+    };
+
     const { startRecording, stopRecording, status } = useReactMediaRecorder({
         audio: true,
-        onStop: onStop
+        onStop: handleStop
     });
 
     useEffect(() => {
         let timer;
-        if (status === 'recording' && selectedTopic?.timeLimit) {
-            setTimeLeft(selectedTopic.timeLimit);
-            timer = setInterval(() => {
-                setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
-            }, 1000);
+        if (status === 'recording') {
+            const limit = selectedTopic?.timeLimit || null; 
+            if (limit !== null) {
+                setTimeLeft(limit);
+                timer = setInterval(() => {
+                    setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+                }, 1000);
+            } else {
+                setTimeLeft(null); 
+            }
         } else {
             setTimeLeft(null);
         }
         return () => clearInterval(timer);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [status, selectedTopic]);
 
     useEffect(() => {
@@ -186,7 +324,7 @@ const TestInterface = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white rounded-[3rem] shadow-xl border border-gray-100 overflow-hidden flex flex-col md:flex-row h-[600px]"
+                    className="bg-white rounded-[3rem] shadow-xl border border-gray-100 overflow-hidden flex flex-col md:flex-row min-h-[600px]"
                 >
                     {/* Topic Side */}
                     <div className="md:w-5/12 bg-gray-50 p-12 border-r border-gray-100 flex flex-col justify-center">
@@ -195,17 +333,56 @@ const TestInterface = () => {
                         </div>
                         <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">{selectedTopic.title}</h2>
                         
-                        {selectedTopic.imageUrl && (
-                            <div className="mb-6 rounded-2xl overflow-hidden shadow-sm border border-gray-100 bg-white p-2">
-                                <img src={selectedTopic.imageUrl} alt="Topic Visual" className="w-full h-auto rounded-xl object-contain max-h-[250px]" />
+                        {isMulti ? (
+                            <div className="mb-6">
+                                <div className="inline-block px-3 py-1 bg-primary-100 text-primary-700 font-bold rounded-lg mb-4 text-xs tracking-widest uppercase">
+                                    Sentence {currentQIndex + 1} of {selectedTopic.questions.length}
+                                </div>
+                                <h3 className="font-bold text-gray-800 text-lg mb-2">Instructions</h3>
+                                <p className="text-gray-500 mb-6">{selectedTopic.desc || "Listen to the media carefully, then repeat exactly what you hear."}</p>
+                                
+                                {selectedTopic.questions[currentQIndex].text && (
+                                    <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm mb-6">
+                                        <p className="text-gray-700 font-medium italic">"{selectedTopic.questions[currentQIndex].text}"</p>
+                                    </div>
+                                )}
+
+                                {selectedTopic.questions[currentQIndex].audioUrl && (
+                                    <div className="p-4 bg-white rounded-2xl shadow-sm border border-gray-100">
+                                        {selectedTopic.questions[currentQIndex].audioUrl.match(/\.(mp4|webm|mkv)/i) ? (
+                                            <video 
+                                                controls 
+                                                src={selectedTopic.questions[currentQIndex].audioUrl} 
+                                                className="w-full rounded-xl"
+                                                onPlay={() => setMediaPhase('play')}
+                                                onEnded={() => setMediaPhase('record')}
+                                            />
+                                        ) : (
+                                            <audio 
+                                                controls 
+                                                src={selectedTopic.questions[currentQIndex].audioUrl} 
+                                                className="w-full"
+                                                onPlay={() => setMediaPhase('play')}
+                                                onEnded={() => setMediaPhase('record')}
+                                            />
+                                        )}
+                                    </div>
+                                )}
                             </div>
+                        ) : (
+                            <>
+                                {selectedTopic.imageUrl && (
+                                    <div className="mb-6 rounded-2xl overflow-hidden shadow-sm border border-gray-100 bg-white p-2">
+                                        <img src={selectedTopic.imageUrl} alt="Topic Visual" className="w-full h-auto rounded-xl object-contain max-h-[250px]" />
+                                    </div>
+                                )}
+                                <p className="text-gray-500 text-lg font-medium leading-relaxed">
+                                    {selectedTopic.desc}
+                                </p>
+                            </>
                         )}
 
-                        <p className="text-gray-500 text-lg font-medium leading-relaxed">
-                            {selectedTopic.desc}
-                        </p>
-
-                        <div className="mt-12 space-y-4">
+                        <div className="mt-8 space-y-4">
                             {selectedTopic.timeLimit && (
                                 <div className="flex items-center space-x-3 text-sm font-bold text-gray-400">
                                     <Clock size={18} className="text-blue-500" />
@@ -215,10 +392,6 @@ const TestInterface = () => {
                             <div className="flex items-center space-x-3 text-sm font-bold text-gray-400">
                                 <ShieldCheck size={18} className="text-emerald-500" />
                                 <span>Noise suppression active</span>
-                            </div>
-                            <div className="flex items-center space-x-3 text-sm font-bold text-gray-400">
-                                <Settings size={18} />
-                                <span>Auto-gain control calibrated</span>
                             </div>
                         </div>
                     </div>
@@ -234,7 +407,7 @@ const TestInterface = () => {
                             </div>
                         )}
                         <AnimatePresence mode="wait">
-                            {loading ? (
+                            {loading || mediaPhase === 'evaluating' ? (
                                 <motion.div
                                     key="loading"
                                     initial={{ opacity: 0 }}
@@ -276,8 +449,12 @@ const TestInterface = () => {
                                             <div className="w-32 h-32 rounded-full border-4 border-gray-50 flex items-center justify-center mx-auto mb-6 bg-gray-50/50">
                                                 <Mic size={48} className="text-gray-300" />
                                             </div>
-                                            <h3 className="text-xl font-bold text-gray-900">Ready to start?</h3>
-                                            <p className="text-gray-400">Press the button when you're ready to speak</p>
+                                            <h3 className="text-xl font-bold text-gray-900">
+                                                {isMulti ? (mediaPhase === 'play' ? "Watch/Listen First" : "Ready to start?") : "Ready to start?"}
+                                            </h3>
+                                            <p className="text-gray-400">
+                                                {isMulti ? (mediaPhase === 'play' ? "Please play the media on the left." : "Press the button and repeat the sentence.") : "Press the button when you're ready to speak"}
+                                            </p>
                                         </div>
                                     )}
 
@@ -285,12 +462,13 @@ const TestInterface = () => {
                                         {status !== 'recording' ? (
                                             <button
                                                 onClick={startRecording}
-                                                className="group flex flex-col items-center"
+                                                disabled={isMulti && mediaPhase === 'play'}
+                                                className={`group flex flex-col items-center ${isMulti && mediaPhase === 'play' ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             >
-                                                <div className="w-24 h-24 bg-primary-600 rounded-full flex items-center justify-center text-white shadow-2xl shadow-primary-500/40 hover:scale-110 active:scale-95 transition-all duration-300 group-hover:bg-primary-500">
+                                                <div className="w-24 h-24 bg-primary-600 rounded-full flex items-center justify-center text-white shadow-2xl shadow-primary-500/40 group-hover:scale-110 active:scale-95 transition-all duration-300 group-hover:bg-primary-500">
                                                     <Mic size={40} />
                                                 </div>
-                                                <span className="mt-4 font-black text-gray-900 uppercase tracking-tighter text-lg">Start Session</span>
+                                                <span className="mt-4 font-black text-gray-900 uppercase tracking-tighter text-lg">Start Recording</span>
                                             </button>
                                         ) : (
                                             <button
@@ -300,7 +478,9 @@ const TestInterface = () => {
                                                 <div className="w-24 h-24 bg-rose-600 rounded-full flex items-center justify-center text-white shadow-2xl shadow-rose-500/40 hover:scale-110 active:scale-95 transition-all duration-300">
                                                     <Square size={36} className="fill-current" />
                                                 </div>
-                                                <span className="mt-4 font-black text-rose-600 uppercase tracking-tighter text-lg">Finish Recognition</span>
+                                                <span className="mt-4 font-black text-rose-600 uppercase tracking-tighter text-lg">
+                                                    {isMulti && currentQIndex < selectedTopic.questions.length - 1 ? 'Next Sentence' : 'Finish Recognition'}
+                                                </span>
                                             </button>
                                         )}
                                     </div>

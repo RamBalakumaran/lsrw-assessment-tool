@@ -1,15 +1,37 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import api from '../utils/api';
 
 const QUESTION_TYPES = [
     { value: 'MCQ', label: 'Multiple Choice (Single Answer)' },
     { value: 'CHECKBOX', label: 'Checkboxes (Multiple Answers)' },
     { value: 'TRUE_FALSE', label: 'True / False' },
-    { value: 'FILL_BLANKS', label: 'Fill in the Blanks' }
+    { value: 'FILL_BLANKS', label: 'Fill in the Blanks' },
+    { value: 'REPEAT_SENTENCE', label: 'Repeat Sentence (Audio/Video)' }
 ];
 
 const QuestionBuilder = ({ questions, onChange }) => {
+    const [uploadingIndex, setUploadingIndex] = useState(null);
+
+    const handleMediaUpload = async (index, e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const uploadData = new FormData();
+        uploadData.append('media', file);
+        
+        try {
+            setUploadingIndex(index);
+            const res = await api.post('/tasks/upload-media', uploadData);
+            updateQuestion(index, 'audioUrl', res.data.url);
+        } catch (error) {
+            console.error('Media upload failed:', error);
+            alert('Failed to upload media');
+        } finally {
+            setUploadingIndex(null);
+        }
+    };
     
     const addQuestion = () => {
         const newQuestion = {
@@ -42,6 +64,10 @@ const QuestionBuilder = ({ questions, onChange }) => {
             } else if (value === 'FILL_BLANKS') {
                 updated[index].options = [];
                 updated[index].correctAnswer = '';
+            } else if (value === 'REPEAT_SENTENCE') {
+                updated[index].options = [];
+                updated[index].correctAnswer = '';
+                if (!updated[index].audioUrl) updated[index].audioUrl = '';
             }
         }
         
@@ -194,6 +220,32 @@ const QuestionBuilder = ({ questions, onChange }) => {
                             placeholder="Exact text or comma-separated for multiple acceptable answers"
                         />
                         <p className="text-xs text-gray-400 mt-2 font-medium">Use <code className="bg-gray-100 px-1 rounded">___</code> in the question text to indicate where the blank is.</p>
+                    </div>
+                );
+            case 'REPEAT_SENTENCE':
+                return (
+                    <div className="mt-4">
+                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Media Source (Audio/Video URL or File) *</label>
+                        <div className="flex space-x-2">
+                            <input
+                                type="url"
+                                value={q.audioUrl || ''}
+                                onChange={(e) => updateQuestion(index, 'audioUrl', e.target.value)}
+                                className="flex-1 px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition"
+                                placeholder="https://example.com/media.mp4 or .mp3"
+                            />
+                            <label className="flex-shrink-0 cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-4 px-6 rounded-2xl transition flex items-center">
+                                {uploadingIndex === index ? (
+                                    <span className="animate-pulse">Uploading...</span>
+                                ) : (
+                                    <>
+                                        <Plus size={20} className="mr-2" /> Upload PC Media
+                                        <input type="file" accept="audio/*,video/*" className="hidden" onChange={(e) => handleMediaUpload(index, e)} />
+                                    </>
+                                )}
+                            </label>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-2 font-medium">The student will watch/listen to this media and then repeat the sentence (Question Text).</p>
                     </div>
                 );
             default:

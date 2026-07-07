@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import { UserPlus, Search, Users, ChevronLeft, Trash2, Edit2, ShieldAlert, X, Plus, UserCheck } from 'lucide-react';
+import { UserPlus, Search, Users, ChevronLeft, Trash2, Edit2, ShieldAlert, X, Plus, UserCheck, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
+import BulkImportModal from '../components/BulkImportModal';
+import MultiSelectSearchList from '../components/MultiSelectSearchList';
+import StudentPerformanceModal from '../components/StudentPerformanceModal';
 
 const readStoredUser = () => {
     try {
@@ -15,6 +19,7 @@ const readStoredUser = () => {
 
 const UserManagement = () => {
     const currentUser = readStoredUser();
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('STUDENTS');
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -25,6 +30,9 @@ const UserManagement = () => {
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [showEditUserModal, setShowEditUserModal] = useState(false);
     const [showGroupModal, setShowGroupModal] = useState(false);
+    const [showBulkImport, setShowBulkImport] = useState(false);
+    const [showStudentList, setShowStudentList] = useState(false);
+    const [selectedStudentId, setSelectedStudentId] = useState(null);
     
     const [selectedUser, setSelectedUser] = useState(null);
     const [selectedGroup, setSelectedGroup] = useState(null); // Drilldown view state
@@ -132,6 +140,15 @@ const UserManagement = () => {
         }
     };
 
+    const handleAddMembersBulk = async (userIds) => {
+        try {
+            await api.post(`/groups/${selectedGroup.id}/members`, { userIds });
+            fetchData();
+        } catch (error) {
+            alert(error.response?.data?.error || "Error adding members");
+        }
+    };
+
     const handleRemoveMember = async (userId) => {
         try {
             await api.delete(`/groups/${selectedGroup.id}/members/${userId}`);
@@ -150,6 +167,15 @@ const UserManagement = () => {
             fetchData();
         } catch (error) {
             alert(error.response?.data?.error || "Error adding admin");
+        }
+    };
+
+    const handleAddAdminsBulk = async (userIds) => {
+        try {
+            await api.post(`/groups/${selectedGroup.id}/admins`, { userIds });
+            fetchData();
+        } catch (error) {
+            alert(error.response?.data?.error || "Error adding admins");
         }
     };
 
@@ -203,15 +229,15 @@ const UserManagement = () => {
                             {/* Admins Section */}
                             <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
                                 <h3 className="text-xl font-black text-gray-900 mb-6">Group Admins</h3>
-                                <form onSubmit={handleAddAdmin} className="flex gap-2 mb-6">
-                                    <select value={addAdminForm} onChange={e => setAddAdminForm(e.target.value)} className="flex-1 p-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-primary-100">
-                                        <option value="">Select a Teacher or Admin...</option>
-                                        {users.filter(u => ['TEACHER', 'ADMIN'].includes(u.role) && !selectedGroup.admins?.some(a => a.id === u.id)).map(u => (
-                                            <option key={u.id} value={u.id}>{u.firstName} {u.lastName} ({u.email})</option>
-                                        ))}
-                                    </select>
-                                    <button type="submit" className="px-4 py-2 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition">Add</button>
-                                </form>
+                                <div className="mb-6">
+                                    <MultiSelectSearchList 
+                                        items={users.filter(u => ['TEACHER', 'ADMIN'].includes(u.role) && !selectedGroup.admins?.some(a => a.id === u.id))}
+                                        placeholder="Search teachers or admins..."
+                                        buttonText="Add Selected Admins"
+                                        buttonColor="bg-gray-900 hover:bg-black"
+                                        onAddSelected={handleAddAdminsBulk}
+                                    />
+                                </div>
                                 <div className="space-y-3">
                                     {selectedGroup.admins?.map(admin => (
                                         <div key={admin.id} className="flex justify-between items-center p-3 border border-gray-100 rounded-xl bg-gray-50">
@@ -229,35 +255,67 @@ const UserManagement = () => {
                             </div>
 
                             {/* Members Section */}
-                            <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                                <h3 className="text-xl font-black text-gray-900 mb-6">Students</h3>
-                                <form onSubmit={handleAddMember} className="flex gap-2 mb-6">
-                                    <select value={addMemberForm} onChange={e => setAddMemberForm(e.target.value)} className="flex-1 p-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-primary-100">
-                                        <option value="">Select a Student...</option>
-                                        {users.filter(u => u.role === 'STUDENT' && !selectedGroup.members?.some(m => m.id === u.id)).map(u => (
-                                            <option key={u.id} value={u.id}>{u.firstName} {u.lastName} ({u.email})</option>
-                                        ))}
-                                    </select>
-                                    <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition shadow-lg shadow-primary-500/30">Add</button>
-                                </form>
-                                <div className="space-y-3">
-                                    {selectedGroup.members?.map(member => (
-                                        <div key={member.id} className="flex justify-between items-center p-3 border border-gray-100 rounded-xl bg-gray-50">
-                                            <div>
-                                                <div className="font-bold text-gray-900">{member.firstName} {member.lastName}</div>
-                                                <div className="flex gap-2 items-center">
-                                                    <span className="text-xs text-gray-500">{member.email}</span>
-                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${member.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>{member.status}</span>
-                                                </div>
-                                            </div>
-                                            <button onClick={() => handleRemoveMember(member.id)} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition">
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    ))}
-                                    {(!selectedGroup.members || selectedGroup.members.length === 0) && <p className="text-gray-400 text-sm">No students assigned.</p>}
-                                </div>
-                            </div>
+                             <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
+                                 <div className="flex justify-between items-center mb-6">
+                                     <div>
+                                         <h3 className="text-xl font-black text-gray-900 font-sans">Students</h3>
+                                         <p className="text-xs text-gray-400 font-bold mt-1">
+                                             {selectedGroup.members?.length || 0} students enrolled
+                                         </p>
+                                     </div>
+                                     <button 
+                                         onClick={() => setShowBulkImport(true)}
+                                         className="text-xs font-black text-primary-600 hover:text-primary-700 flex items-center gap-1 transition uppercase tracking-wider bg-primary-50 px-3 py-2 rounded-xl"
+                                     >
+                                         <Upload size={12} /> Bulk Import
+                                     </button>
+                                 </div>
+ 
+                                 <div className="space-y-3">
+                                     {(selectedGroup.members || []).slice(0, 3).map(member => {
+                                         return (
+                                             <div 
+                                                 key={member.id} 
+                                                 className="flex justify-between items-center p-4 border border-gray-100 rounded-2xl bg-gray-50/50 hover:bg-gray-50 cursor-pointer transition-all"
+                                                 onClick={() => setSelectedStudentId(member.id)}
+                                             >
+                                                 <div>
+                                                     <div className="font-bold text-gray-900 hover:text-primary-600 transition-colors font-sans">
+                                                         {member.firstName} {member.lastName}
+                                                     </div>
+                                                     <div className="flex gap-2 items-center mt-1">
+                                                         <span className="text-xs text-gray-400 font-medium">{member.email}</span>
+                                                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${member.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                                                             {member.status}
+                                                         </span>
+                                                     </div>
+                                                 </div>
+                                                 <button 
+                                                     onClick={(e) => { 
+                                                         e.stopPropagation(); 
+                                                         handleRemoveMember(member.id); 
+                                                     }} 
+                                                     className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
+                                                 >
+                                                     <Trash2 size={16} />
+                                                 </button>
+                                             </div>
+                                         );
+                                     })}
+                                     {(!selectedGroup.members || selectedGroup.members.length === 0) && (
+                                         <p className="text-gray-400 text-sm font-bold py-4 text-center">No students assigned.</p>
+                                     )}
+                                 </div>
+ 
+                                 <div className="mt-6 pt-4 border-t border-gray-100 flex justify-center">
+                                     <button 
+                                         onClick={() => navigate(`/groups/${selectedGroup.id}/students`)}
+                                         className="text-xs font-black text-gray-700 hover:text-black uppercase tracking-wider bg-gray-100 hover:bg-gray-200 px-6 py-3 rounded-2xl transition w-full text-center"
+                                     >
+                                         {selectedGroup.members?.length > 3 ? "Show More / Manage" : "Manage Group Students"}
+                                     </button>
+                                 </div>
+                             </div>
                         </div>
 
                         {/* Activity Section Placeholder */}
@@ -451,6 +509,23 @@ const UserManagement = () => {
                             </form>
                         </motion.div>
                     </div>
+                )}
+
+                {/* Bulk Import Modal */}
+                {showBulkImport && selectedGroup && (
+                    <BulkImportModal 
+                        groupId={selectedGroup.id} 
+                        onSuccess={fetchData} 
+                        onClose={() => setShowBulkImport(false)} 
+                    />
+                )}
+
+                {/* Student Performance Details Modal */}
+                {selectedStudentId && (
+                    <StudentPerformanceModal 
+                        studentId={selectedStudentId} 
+                        onClose={() => setSelectedStudentId(null)} 
+                    />
                 )}
             </AnimatePresence>
         </div>

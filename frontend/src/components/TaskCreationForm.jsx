@@ -25,7 +25,7 @@ const TASK_CONFIG = {
             SELF_INTRODUCTION: { label: 'Self-Introduction', fields: ['instructions', 'timeLimit', 'evaluationRubric'] },
             PICTURE_DESCRIPTION: { label: 'Picture Description', fields: ['instructions', 'imageUrl', 'timeLimit', 'evaluationRubric'] },
             ONE_MINUTE_ASSESSMENT: { label: 'One Minute Assessment', fields: ['instructions', 'timeLimit', 'evaluationRubric'] },
-            REPEAT_SENTENCES: { label: 'Repeat Sentences', fields: ['audioUrl', 'evaluationRubric'] }
+            REPEAT_SENTENCES: { label: 'Repeat Sentences', fields: ['questions', 'evaluationRubric'] }
         }
     },
     READING: {
@@ -188,7 +188,7 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
                 difficulty: formData.difficultyLevel || formData.difficulty,
                 lsrwComponent: taskType.charAt(0).toUpperCase() + taskType.slice(1).toLowerCase(),
                 assessmentType: TASK_CONFIG[taskType].subtypes[subType].label,
-                status: 'Draft'
+                status: formData.status || 'Draft'
             };
             if (!payload.startDate) delete payload.startDate;
             if (!payload.endDate) delete payload.endDate;
@@ -470,7 +470,11 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 block">Deployment Scope *</label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                             {VISIBILITY_SCOPES.map(scope => (
-                                <label key={scope.value} className={`relative flex flex-col p-6 border-2 rounded-2xl cursor-pointer transition-all ${formData.visibilityScope === scope.value ? 'border-gray-900 bg-white shadow-md' : 'border-gray-200 bg-transparent hover:border-gray-300'}`}>
+                                <label 
+                                    key={scope.value} 
+                                    onClick={() => handleInputChange('visibilityScope', scope.value)}
+                                    className={`relative flex flex-col p-6 border-2 rounded-2xl cursor-pointer transition-all ${formData.visibilityScope === scope.value ? 'border-gray-900 bg-white shadow-md' : 'border-gray-200 bg-transparent hover:border-gray-300'}`}
+                                >
                                     <div className="flex items-center mb-2">
                                         <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mr-3 ${formData.visibilityScope === scope.value ? 'border-gray-900' : 'border-gray-300'}`}>
                                             {formData.visibilityScope === scope.value && <div className="w-2.5 h-2.5 rounded-full bg-gray-900"></div>}

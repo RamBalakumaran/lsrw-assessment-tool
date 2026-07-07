@@ -8,11 +8,16 @@ venv/
 __pycache__/
 *.pyc
 
-# Environment variables (Safety)
+# Environment variables
 .env
 
+# Custom binaries and ZIPs
 ai-engine/ffmpeg.zip
-# Build outputs
+ai-engine/ffmpeg.exe
+ai-engine/ffmpeg_backup.exe
+ai-engine/ffprobe.exe
+
+# Build outputs and user content
 build/
 dist/
 uploads/
@@ -20,6 +25,3 @@ uploads/
 # OS generated files
 .DS_Store
 Thumbs.db
-
-ai-engine/ffmpeg.exe
-ai-engine/ffmpeg_backup.exe

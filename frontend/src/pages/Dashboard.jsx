@@ -191,9 +191,6 @@ const Dashboard = () => {
         <section>
           <div className="flex justify-between items-center mb-10">
             <h2 className="text-3xl font-black text-gray-900 tracking-tight">Assessment Modules</h2>
-            <button className="text-primary-600 font-black text-sm uppercase tracking-widest flex items-center hover:translate-x-1 transition-transform">
-              Browse Curriculum <ArrowRight size={16} className="ml-2" />
-            </button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl">
@@ -240,26 +237,7 @@ const Dashboard = () => {
           </div>
         </section>
 
-        {/* Quick Tips Section */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
-          className="mt-16 bg-indigo-900 rounded-[3rem] p-12 text-white relative overflow-hidden"
-        >
-          <div className="relative z-10 max-w-2xl">
-            <h4 className="text-4xl font-black mb-6 tracking-tighter leading-tight">Optimize your <br /><span className="text-indigo-400">LSRW Efficiency</span></h4>
-            <p className="text-indigo-100 text-lg font-medium mb-10 leading-relaxed">
-              Our AI models recommend focusing on "Speaking" today. Class data shows a 12% improvement in fluency when practiced after a Listening session.
-            </p>
-            <button className="px-8 py-4 bg-white text-indigo-900 rounded-2xl font-black shadow-xl hover:scale-105 transition active:scale-95">
-              View Personalized Insights
-            </button>
-          </div>
-          {/* Background Abstract */}
-          <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-primary-500 rounded-full blur-[100px] opacity-40 animate-pulse"></div>
-          <div className="absolute bottom-0 right-0 w-40 h-40 bg-indigo-400 rounded-full blur-[60px] opacity-20"></div>
-        </motion.div>
+        {/* Quick Tips Section Removed */}
       </main>
     </div>
   );

@@ -18,7 +18,7 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: 'Beginner',
     },
     instructions: { type: DataTypes.TEXT },
-    imageUrl: { type: DataTypes.STRING },
+    imageUrl: { type: DataTypes.TEXT },
     timeLimit: { type: DataTypes.INTEGER, comment: 'Time limit in seconds' },
     maxAttempts: { type: DataTypes.INTEGER, defaultValue: 1 },
     passingScore: { type: DataTypes.FLOAT },

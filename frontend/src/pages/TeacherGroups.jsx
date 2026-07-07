@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import { Layers, Plus, Search, ChevronRight, Users, Edit2, Trash2, X, Loader2 } from 'lucide-react';
+import { Layers, Plus, Search, ChevronRight, Users, Edit2, Trash2, X, Loader2, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
+import BulkImportModal from '../components/BulkImportModal';
+import MultiSelectSearchList from '../components/MultiSelectSearchList';
+import StudentPerformanceModal from '../components/StudentPerformanceModal';
 
 const TeacherGroups = () => {
     const currentUser = JSON.parse(localStorage.getItem('user'));
+    const navigate = useNavigate();
     const [groups, setGroups] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -18,6 +23,9 @@ const TeacherGroups = () => {
     const [students, setStudents] = useState([]);
     const [addMemberForm, setAddMemberForm] = useState('');
     const [addAdminForm, setAddAdminForm] = useState('');
+    const [showBulkImport, setShowBulkImport] = useState(false);
+    const [showStudentList, setShowStudentList] = useState(false);
+    const [selectedStudentId, setSelectedStudentId] = useState(null);
 
     const fetchData = async () => {
         setLoading(true);
@@ -80,6 +88,15 @@ const TeacherGroups = () => {
         }
     };
 
+    const handleAddMembersBulk = async (userIds) => {
+        try {
+            await api.post(`/groups/${selectedGroup.id}/members`, { userIds });
+            fetchData();
+        } catch (error) {
+            alert(error.response?.data?.error || "Error adding members");
+        }
+    };
+
     const handleRemoveMember = async (userId) => {
         try {
             await api.delete(`/groups/${selectedGroup.id}/members/${userId}`);
@@ -98,6 +115,15 @@ const TeacherGroups = () => {
             fetchData();
         } catch (error) {
             alert(error.response?.data?.error || "Error adding admin");
+        }
+    };
+
+    const handleAddAdminsBulk = async (userIds) => {
+        try {
+            await api.post(`/groups/${selectedGroup.id}/admins`, { userIds });
+            fetchData();
+        } catch (error) {
+            alert(error.response?.data?.error || "Error adding admins");
         }
     };
 
@@ -129,6 +155,18 @@ const TeacherGroups = () => {
         }
     };
 
+    const handleToggleGroupStatus = async () => {
+        if (!selectedGroup) return;
+        const newStatus = selectedGroup.status === 'INACTIVE' ? 'ACTIVE' : 'INACTIVE';
+        try {
+            await api.put(`/groups/${selectedGroup.id}`, { status: newStatus });
+            setSelectedGroup(prev => ({ ...prev, status: newStatus }));
+            fetchData();
+        } catch (error) {
+            alert(error.response?.data?.error || "Error updating group status");
+        }
+    };
+
     const filteredGroups = groups.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
     return (
@@ -145,70 +183,95 @@ const TeacherGroups = () => {
                         
                         <header className="mb-10 flex justify-between items-start">
                             <div>
-                                <h1 className="text-4xl font-black text-gray-900 tracking-tight">{selectedGroup.name}</h1>
-                                <p className="text-gray-500 font-medium">Manage students assigned to this group.</p>
+                                <h1 className="text-4xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+                                    {selectedGroup.name}
+                                    <span className={`text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider ${
+                                        selectedGroup.status === 'INACTIVE' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-700'
+                                    }`}>
+                                        {selectedGroup.status || 'ACTIVE'}
+                                    </span>
+                                </h1>
+                                <p className="text-gray-500 font-medium mt-1">Manage students assigned to this group.</p>
                             </div>
-                            <button onClick={() => handleDeleteGroup(selectedGroup.id)} className="px-4 py-2 bg-rose-50 text-rose-600 rounded-xl font-bold hover:bg-rose-100 transition flex items-center gap-2">
-                                <Trash2 size={18} /> Delete Group
-                            </button>
+                            <div className="flex gap-3">
+                                <button 
+                                    onClick={handleToggleGroupStatus} 
+                                    className={`px-4 py-2 rounded-xl font-bold transition flex items-center gap-2 ${
+                                        selectedGroup.status === 'INACTIVE' 
+                                            ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' 
+                                            : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                                    }`}
+                                >
+                                    {selectedGroup.status === 'INACTIVE' ? 'Activate Group' : 'Deactivate Group'}
+                                </button>
+                                <button onClick={() => handleDeleteGroup(selectedGroup.id)} className="px-4 py-2 bg-rose-50 text-rose-600 rounded-xl font-bold hover:bg-rose-100 transition flex items-center gap-2">
+                                    <Trash2 size={18} /> Delete Group
+                                </button>
+                            </div>
                         </header>
 
                         <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm max-w-3xl">
                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-xl font-black text-gray-900">Group Students</h3>
+                                <div>
+                                    <h3 className="text-xl font-black text-gray-900 font-sans">Group Students</h3>
+                                    <p className="text-xs text-gray-400 font-bold mt-1">
+                                        {selectedGroup.members?.length || 0} students enrolled
+                                    </p>
+                                </div>
                                 <button 
-                                    onClick={() => setIsInviting(!isInviting)}
-                                    className="text-sm font-bold text-primary-600 hover:text-primary-700 transition"
+                                    onClick={() => setShowBulkImport(true)}
+                                    className="text-xs font-black text-primary-600 hover:text-primary-700 flex items-center gap-1 transition uppercase tracking-wider bg-primary-50 px-3 py-2 rounded-xl"
                                 >
-                                    {isInviting ? 'Cancel Invite' : '+ Invite New Student'}
+                                    <Upload size={12} /> Bulk Import
                                 </button>
                             </div>
 
-                            {isInviting ? (
-                                <form onSubmit={handleInviteStudent} className="mb-6 p-6 bg-primary-50 rounded-2xl border border-primary-100">
-                                    <h4 className="text-sm font-black text-primary-900 mb-4">Create & Assign New Student</h4>
-                                    <div className="grid grid-cols-2 gap-4 mb-4">
-                                        <input type="text" required value={inviteForm.firstName} onChange={e => setInviteForm({...inviteForm, firstName: e.target.value})} placeholder="First Name" className="px-4 py-3 bg-white border border-primary-200 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary-500" />
-                                        <input type="text" required value={inviteForm.lastName} onChange={e => setInviteForm({...inviteForm, lastName: e.target.value})} placeholder="Last Name" className="px-4 py-3 bg-white border border-primary-200 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary-500" />
-                                        <input type="email" required value={inviteForm.email} onChange={e => setInviteForm({...inviteForm, email: e.target.value})} placeholder="Email Address" className="px-4 py-3 bg-white border border-primary-200 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary-500 col-span-2" />
-                                    </div>
-                                    <button type="submit" className="w-full py-3 bg-primary-600 text-white rounded-xl font-black hover:bg-primary-700 transition shadow-md">Invite & Add to Group</button>
-                                </form>
-                            ) : (
-                                <form onSubmit={handleAddMember} className="flex gap-2 mb-6">
-                                    <select value={addMemberForm} onChange={e => setAddMemberForm(e.target.value)} className="flex-1 p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition">
-                                        <option value="">Select an Existing Student...</option>
-                                        {students.filter(s => !selectedGroup.members?.some(m => m.id === s.id)).map(s => (
-                                            <option key={s.id} value={s.id}>{s.firstName} {s.lastName} ({s.email})</option>
-                                        ))}
-                                    </select>
-                                    <button type="submit" className="px-6 py-4 bg-primary-600 text-white rounded-2xl font-black hover:bg-primary-700 transition shadow-lg shadow-primary-500/30">Add</button>
-                                </form>
-                            )}
-
                             <div className="space-y-3">
-                                {selectedGroup.members?.map(member => (
-                                    <div key={member.id} className="flex justify-between items-center p-4 border border-gray-100 rounded-2xl bg-gray-50 hover:border-gray-200 transition">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-xl bg-primary-100 text-primary-600 font-black flex items-center justify-center">
-                                                {member.firstName[0]}
+                                {(selectedGroup.members || []).slice(0, 3).map(member => {
+                                    return (
+                                        <div 
+                                            key={member.id} 
+                                            className="flex justify-between items-center p-4 border border-gray-100 rounded-2xl bg-gray-50/50 hover:bg-gray-50 cursor-pointer transition-all"
+                                            onClick={() => setSelectedStudentId(member.id)}
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-xl bg-primary-100 text-primary-600 font-black flex items-center justify-center">
+                                                    {member.firstName ? member.firstName[0].toUpperCase() : 'S'}
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-gray-900 hover:text-primary-600 transition-colors font-sans">
+                                                        {member.firstName} {member.lastName}
+                                                    </div>
+                                                    <div className="text-xs text-gray-400 font-medium mt-0.5">{member.email}</div>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <div className="font-bold text-gray-900">{member.firstName} {member.lastName}</div>
-                                                <div className="text-xs text-gray-500 font-medium">{member.email}</div>
-                                            </div>
+                                            <button 
+                                                onClick={(e) => { 
+                                                    e.stopPropagation(); 
+                                                    handleRemoveMember(member.id); 
+                                                }} 
+                                                className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
                                         </div>
-                                        <button onClick={() => handleRemoveMember(member.id)} className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition">
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                                 {(!selectedGroup.members || selectedGroup.members.length === 0) && (
                                     <div className="p-8 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
                                         <Users size={32} className="mx-auto text-gray-400 mb-2" />
                                         <p className="text-gray-500 font-medium">No students in this group yet.</p>
                                     </div>
                                 )}
+                            </div>
+
+                            <div className="mt-6 pt-4 border-t border-gray-100 flex justify-center">
+                                <button 
+                                    onClick={() => navigate(`/groups/${selectedGroup.id}/students`)}
+                                    className="text-xs font-black text-gray-700 hover:text-black uppercase tracking-wider bg-gray-100 hover:bg-gray-200 px-6 py-3 rounded-2xl transition w-full text-center"
+                                >
+                                    {selectedGroup.members?.length > 3 ? "Show More / Manage" : "Manage Group Students"}
+                                </button>
                             </div>
                         </div>
 
@@ -217,15 +280,15 @@ const TeacherGroups = () => {
                             <h3 className="text-xl font-black text-gray-900 mb-6">Group Admins</h3>
                             <p className="text-sm font-medium text-gray-500 mb-6">Assign other teachers or trusted students to help manage this group.</p>
                             
-                            <form onSubmit={handleAddAdmin} className="flex gap-2 mb-6">
-                                <select value={addAdminForm} onChange={e => setAddAdminForm(e.target.value)} className="flex-1 p-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition">
-                                    <option value="">Select a User to Make Admin...</option>
-                                    {allUsers.filter(u => !selectedGroup.admins?.some(a => a.id === u.id)).map(u => (
-                                        <option key={u.id} value={u.id}>{u.firstName} {u.lastName} ({u.email} - {u.role})</option>
-                                    ))}
-                                </select>
-                                <button type="submit" className="px-6 py-4 bg-gray-900 text-white rounded-2xl font-black hover:bg-black transition shadow-lg">Make Admin</button>
-                            </form>
+                            <div className="mb-6">
+                                <MultiSelectSearchList 
+                                    items={allUsers.filter(u => ['TEACHER', 'ADMIN'].includes(u.role) && !selectedGroup.admins?.some(a => a.id === u.id))}
+                                    placeholder="Search teachers or admins..."
+                                    buttonText="Make Selected Admins"
+                                    buttonColor="bg-gray-900 hover:bg-black"
+                                    onAddSelected={handleAddAdminsBulk}
+                                />
+                            </div>
 
                             <div className="space-y-3">
                                 {selectedGroup.admins?.map(admin => (
@@ -290,8 +353,15 @@ const TeacherGroups = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                     {filteredGroups.map(group => (
                                         <div key={group.id} onClick={() => setSelectedGroup(group)} className="p-6 border-2 border-gray-100 rounded-[2rem] hover:border-primary-500 hover:shadow-xl cursor-pointer transition-all group/card relative overflow-hidden">
-                                            <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-6">
-                                                <Layers size={24} />
+                                            <div className="flex justify-between items-start mb-6">
+                                                <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                                    <Layers size={24} />
+                                                </div>
+                                                <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider ${
+                                                    group.status === 'INACTIVE' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-700'
+                                                }`}>
+                                                    {group.status || 'ACTIVE'}
+                                                </span>
                                             </div>
                                             <h3 className="text-xl font-black text-gray-900 mb-2 group-hover/card:text-primary-600 transition-colors">{group.name}</h3>
                                             <div className="flex items-center gap-4 text-sm font-bold text-gray-400">
@@ -331,6 +401,23 @@ const TeacherGroups = () => {
                             </form>
                         </motion.div>
                     </div>
+                )}
+
+                {/* Bulk Import Modal */}
+                {showBulkImport && selectedGroup && (
+                    <BulkImportModal 
+                        groupId={selectedGroup.id} 
+                        onSuccess={fetchData} 
+                        onClose={() => setShowBulkImport(false)} 
+                    />
+                )}
+
+                {/* Student Performance Details Modal */}
+                {selectedStudentId && (
+                    <StudentPerformanceModal 
+                        studentId={selectedStudentId} 
+                        onClose={() => setSelectedStudentId(null)} 
+                    />
                 )}
             </AnimatePresence>
         </div>

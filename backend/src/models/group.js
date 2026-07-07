@@ -7,6 +7,7 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true,
     },
     name: { type: DataTypes.STRING, allowNull: false },
+    status: { type: DataTypes.ENUM('ACTIVE', 'INACTIVE'), defaultValue: 'ACTIVE' },
   }, {
     tableName: 'groups',
     timestamps: true,

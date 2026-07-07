@@ -14,6 +14,7 @@ const attemptsRoute = require('./routes/attempts');
 const dashboardRoute = require('./routes/dashboard');
 const adminRoute = require('./routes/admin');
 const bulkImportRoute = require('./routes/bulkImport');
+const usersRoute = require('./routes/users');
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use('/api/attempts', attemptsRoute);
 app.use('/api/dashboard', dashboardRoute);
 app.use('/api/admin', adminRoute);
 app.use('/api/bulk-import', bulkImportRoute);
+app.use('/api/users', usersRoute);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));

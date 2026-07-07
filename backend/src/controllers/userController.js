@@ -99,3 +99,79 @@ exports.deleteUser = async (req, res) => {
     return res.status(500).json({ error: 'Server error' });
   }
 };
+
+// GET /api/users/:userId/performance
+exports.getUserPerformance = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const student = await db.User.findByPk(userId, {
+      attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'status', 'registrationNumber']
+    });
+    if (!student) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    const responses = await db.Response.findAll({
+      where: { userId }
+    });
+
+    const responsesWithTasks = [];
+    let totalScore = 0;
+    let peak = 0;
+    
+    let listeningScores = [];
+    let speakingScores = [];
+    let readingScores = [];
+    let writingScores = [];
+
+    for (const resp of responses) {
+      totalScore += resp.score || 0;
+      if ((resp.score || 0) > peak) peak = resp.score;
+
+      const task = await db.Task.findByPk(resp.taskId);
+      const taskTitle = task ? task.title : 'Deleted Task';
+      const lsrwComponent = task ? task.lsrwComponent : 'UNKNOWN';
+
+      if (task) {
+        if (lsrwComponent === 'LISTENING') listeningScores.push(resp.score || 0);
+        if (lsrwComponent === 'SPEAKING') speakingScores.push(resp.score || 0);
+        if (lsrwComponent === 'READING') readingScores.push(resp.score || 0);
+        if (lsrwComponent === 'WRITING') writingScores.push(resp.score || 0);
+      }
+
+      responsesWithTasks.push({
+        id: resp.id,
+        taskId: resp.taskId,
+        taskTitle,
+        lsrwComponent,
+        score: resp.score,
+        feedback: resp.feedback,
+        submittedAt: resp.submittedAt
+      });
+    }
+
+    const totalAttempts = responses.length;
+    const avg = totalAttempts > 0 ? Math.round(totalScore / totalAttempts) : 0;
+    const avgList = (arr) => arr.length > 0 ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
+
+    return res.json({
+      student,
+      stats: {
+        avg,
+        peak,
+        totalAttempts,
+        skillProficiency: [
+          { skill: "Speaking", val: avgList(speakingScores), color: "rose" },
+          { skill: "Listening", val: avgList(listeningScores), color: "emerald" },
+          { skill: "Reading", val: avgList(readingScores), color: "amber" },
+          { skill: "Writing", val: avgList(writingScores), color: "indigo" }
+        ]
+      },
+      activities: responsesWithTasks
+    });
+
+  } catch (err) {
+    console.error('Error fetching student performance:', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+};

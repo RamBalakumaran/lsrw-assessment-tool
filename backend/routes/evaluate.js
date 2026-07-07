@@ -46,7 +46,13 @@ router.post('/assess-speaking', authMiddleware, upload.single('audio'), async (r
     const pythonScript = path.resolve(__dirname, '../../ai-engine/full_assessment.py');
     const topicTitle = req.body.topicTitle || "Speaking Task";
     const topicDesc = req.body.topicDesc || "General speech";
-    const pythonProcess = spawn('python', [pythonScript, audioPath, topicTitle, topicDesc]);
+    
+    let topicImageUrl = req.body.topicImageUrl || "";
+    if (topicImageUrl && topicImageUrl.startsWith('/')) {
+        topicImageUrl = `http://localhost:${process.env.PORT || 5000}${topicImageUrl}`;
+    }
+    
+    const pythonProcess = spawn('python', [pythonScript, audioPath, topicTitle, topicDesc, topicImageUrl]);
 
     let dataString = '';
     pythonProcess.stdout.on('data', (data) => { dataString += data.toString(); });

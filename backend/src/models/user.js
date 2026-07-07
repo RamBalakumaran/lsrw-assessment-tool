@@ -13,6 +13,12 @@ module.exports = (sequelize, DataTypes) => {
     role: { type: DataTypes.ENUM('ADMIN', 'TEACHER', 'STUDENT'), allowNull: false },
     status: { type: DataTypes.ENUM('ACTIVE', 'INACTIVE'), defaultValue: 'ACTIVE' },
     forcePasswordReset: { type: DataTypes.BOOLEAN, defaultValue: true },
+    yearOfStudy: { type: DataTypes.STRING, allowNull: true },
+    registrationNumber: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+    },
   }, {
     tableName: 'users',
     timestamps: true,

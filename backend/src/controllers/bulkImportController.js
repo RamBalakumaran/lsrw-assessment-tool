@@ -67,6 +67,19 @@ const processImport = async (req, res, role) => {
                     organizationId
                 });
 
+                // Enroll in department (represented by Group) if provided
+                if (department) {
+                    let group = await db.Group.findOne({ where: { name: department } });
+                    if (!group) {
+                        group = await db.Group.create({ name: department, organizationId });
+                    }
+                    if (role === 'STUDENT') {
+                        await group.addMember(user);
+                    } else if (role === 'TEACHER') {
+                        await group.addAdmin(user);
+                    }
+                }
+
                 // Update profile info indirectly if needed or assume user model handles it.
                 // We'll return the temp password if we generated it so admin can share.
                 results.success.push({
