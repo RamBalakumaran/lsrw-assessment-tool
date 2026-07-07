@@ -23,11 +23,19 @@ exports.getAllTasks = async (req, res) => {
       const groupIds = studentGroups.map(g => g.id);
       
       tasks = await db.Task.findAll({
-        include: [{
-          model: db.Group,
-          as: 'targetGroups',
-          required: false
-        }],
+        where: { status: 'Published' },
+        include: [
+          {
+            model: db.Group,
+            as: 'targetGroups',
+            required: false
+          },
+          {
+            model: db.User,
+            as: 'creator',
+            attributes: ['id', 'role']
+          }
+        ],
         order: [['createdAt', 'DESC']]
       });
       
@@ -53,11 +61,18 @@ exports.getAllTasks = async (req, res) => {
       const groupIds = teacherGroups.map(g => g.id);
       
       tasks = await db.Task.findAll({
-        include: [{
-          model: db.Group,
-          as: 'targetGroups',
-          required: false
-        }],
+        include: [
+          {
+            model: db.Group,
+            as: 'targetGroups',
+            required: false
+          },
+          {
+            model: db.User,
+            as: 'creator',
+            attributes: ['id', 'role']
+          }
+        ],
         order: [['createdAt', 'DESC']]
       });
       
@@ -73,16 +88,29 @@ exports.getAllTasks = async (req, res) => {
     } else {
       // ADMIN or SUPER_ADMIN sees all tasks
       tasks = await db.Task.findAll({
-        include: [{
-          model: db.Group,
-          as: 'targetGroups',
-          required: false
-        }],
+        include: [
+          {
+            model: db.Group,
+            as: 'targetGroups',
+            required: false
+          },
+          {
+            model: db.User,
+            as: 'creator',
+            attributes: ['id', 'role']
+          }
+        ],
         order: [['createdAt', 'DESC']]
       });
     }
     
-    return res.json(tasks);
+    const formattedTasks = tasks.map(t => {
+      const tJson = typeof t.toJSON === 'function' ? t.toJSON() : t;
+      tJson.createdByRole = t.creator ? t.creator.role : (t.createdByRole || 'TEACHER');
+      return tJson;
+    });
+    
+    return res.json(formattedTasks);
   } catch (err) {
     console.error('Error fetching tasks:', err);
     return res.status(500).json({ error: 'Server error' });
@@ -103,7 +131,10 @@ exports.createTask = async (req, res) => {
       await task.setTargetGroups(groupIds);
     }
 
-    return res.status(201).json(task);
+    const taskJson = task.toJSON();
+    taskJson.createdByRole = req.user.role;
+
+    return res.status(201).json(taskJson);
   } catch (err) {
     console.error('Error creating task:', err);
     return res.status(500).json({ error: 'Server error' });
@@ -132,7 +163,11 @@ exports.updateTask = async (req, res) => {
       await task.setTargetGroups([]);
     }
 
-    return res.json(task);
+    const taskJson = task.toJSON();
+    const creator = await db.User.findByPk(task.creatorId);
+    taskJson.createdByRole = creator ? creator.role : 'TEACHER';
+
+    return res.json(taskJson);
   } catch (err) {
     console.error('Error updating task:', err);
     return res.status(500).json({ error: 'Server error' });

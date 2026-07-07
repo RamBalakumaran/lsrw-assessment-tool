@@ -35,7 +35,7 @@ const TopicSelection = ({ title, topics, onSelect, onBack }) => {
             >
               <div
                 className="h-32 w-full transition-transform group-hover:scale-105 duration-500"
-                style={{ background: t.color || '#0ea5e9' }}
+                style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' }}
               ></div>
               <div className="p-8 flex flex-col flex-grow">
                 <h3 className="text-xl font-bold text-gray-900 mb-3">{t.title}</h3>

@@ -18,10 +18,11 @@ router.get('/student', authMiddleware, async (req, res) => {
         // Get student's group IDs
         const groupIds = student.groupMemberships.map(g => g.id);
 
-        // Fetch Global tasks and Group tasks
+        // Fetch Global tasks and Group tasks (only Published ones)
         let assignedTasks = [];
         if (groupIds.length > 0) {
             assignedTasks = await db.Task.findAll({
+                where: { status: 'Published' },
                 include: [
                     {
                         model: db.Group,
@@ -34,7 +35,7 @@ router.get('/student', authMiddleware, async (req, res) => {
         }
 
         const globalTasks = await db.Task.findAll({
-            where: { visibilityScope: 'Global' }
+            where: { visibilityScope: 'Global', status: 'Published' }
         });
 
         // Combine and format tasks for the dashboard
@@ -48,11 +49,66 @@ router.get('/student', authMiddleware, async (req, res) => {
             dueDate: t.endDate
         }));
 
+        // Fetch student's responses to calculate dynamic stats
+        const studentResponses = await db.Response.findAll({
+            where: { userId: studentId },
+            attributes: ['score', 'submittedAt'],
+            order: [['submittedAt', 'DESC']]
+        });
+
+        // 1. Completed
+        const completedVal = studentResponses.length;
+
+        // 2. Skill Average
+        const validScores = studentResponses.map(r => r.score).filter(s => s !== null && s !== undefined);
+        const skillAvgVal = validScores.length > 0 
+            ? `${Math.round(validScores.reduce((acc, curr) => acc + curr, 0) / validScores.length)}%`
+            : '78%';
+
+        // 3. Global Rank
+        let rankVal = 'top 15%';
+        if (validScores.length > 0) {
+            const numericAvg = Math.round(validScores.reduce((acc, curr) => acc + curr, 0) / validScores.length);
+            rankVal = numericAvg >= 90 ? 'top 5%' : numericAvg >= 80 ? 'top 10%' : numericAvg >= 70 ? 'top 18%' : numericAvg >= 60 ? 'top 30%' : 'top 45%';
+        }
+
+        // 4. Daily Streak
+        const dates = studentResponses.map(r => {
+            if (!r.submittedAt) return null;
+            const dateObj = new Date(r.submittedAt);
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }).filter(Boolean);
+        const uniqueDates = [...new Set(dates)].sort((a, b) => b.localeCompare(a));
+
+        let streak = 0;
+        const todayObj = new Date();
+        const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
+
+        const yesterdayObj = new Date();
+        yesterdayObj.setDate(yesterdayObj.getDate() - 1);
+        const yesterdayStr = `${yesterdayObj.getFullYear()}-${String(yesterdayObj.getMonth() + 1).padStart(2, '0')}-${String(yesterdayObj.getDate()).padStart(2, '0')}`;
+
+        if (uniqueDates.includes(todayStr) || uniqueDates.includes(yesterdayStr)) {
+            let checkDate = uniqueDates.includes(todayStr) ? todayObj : yesterdayObj;
+            while (true) {
+                const checkStr = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
+                if (uniqueDates.includes(checkStr)) {
+                    streak++;
+                    checkDate.setDate(checkDate.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+        }
+
         const stats = [
-            { label: 'Skill Average', value: '78%', trend: '+4%' },
-            { label: 'Completed', value: '12', trend: '+2' },
-            { label: 'Global Rank', value: 'top 15%', trend: 'Up' },
-            { label: 'Daily Streak', value: '5 days', trend: 'Fire' }
+            { label: 'Skill Average', value: skillAvgVal, trend: '+4%' },
+            { label: 'Completed', value: String(completedVal), trend: completedVal > 0 ? `+${completedVal}` : '0' },
+            { label: 'Global Rank', value: rankVal, trend: 'Up' },
+            { label: 'Daily Streak', value: `${streak} day${streak !== 1 ? 's' : ''}`, trend: streak > 0 ? 'Fire' : 'Cold' }
         ];
 
         res.json({

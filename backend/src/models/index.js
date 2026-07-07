@@ -41,6 +41,9 @@ db.User.hasMany(db.Response, { foreignKey: 'userId', as: 'responses' });
 db.Response.belongsTo(db.Task, { foreignKey: 'taskId', as: 'task' });
 db.Task.hasMany(db.Response, { foreignKey: 'taskId', as: 'responses' });
 
+db.Task.belongsTo(db.User, { foreignKey: 'creatorId', as: 'creator' });
+db.User.hasMany(db.Task, { foreignKey: 'creatorId', as: 'createdTasks' });
+
 // Reading associations
 db.ReadingPassage.hasMany(db.ReadingQuestion, { foreignKey: 'passageId' });
 db.ReadingQuestion.belongsTo(db.ReadingPassage, { foreignKey: 'passageId' });
