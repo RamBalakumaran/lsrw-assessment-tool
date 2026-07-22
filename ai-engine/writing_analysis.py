@@ -32,9 +32,60 @@ def get_relevance_score(text, topic_prompt):
     final = max(keyword_score, ai_score)
     return min(100, final + 30) if final > 0 else 0
 
+def check_plagiarism(text, prompt):
+    if not prompt or prompt == "General": return False
+    
+    text_norm = re.sub(r'[^a-z0-9]', '', text.lower())
+    
+    # Split prompt by ' | ' to get individual metadata parts (passage, description, instructions, title)
+    parts = [p.strip() for p in prompt.split(" | ")]
+    for part in parts:
+        part_norm = re.sub(r'[^a-z0-9]', '', part.lower())
+        if not part_norm or len(part_norm) < 15: continue
+        
+        # 1. Direct containment check
+        if part_norm in text_norm or text_norm in part_norm:
+            return True
+            
+        # 2. Cosine Similarity Check (if AI is available)
+        if AI_AVAILABLE and len(text.split()) > 5:
+            try:
+                vec = TfidfVectorizer(stop_words='english')
+                matrix = vec.fit_transform([text.lower(), part.lower()])
+                sim = cosine_similarity(matrix[0:1], matrix[1:2])[0][0]
+                if sim > 0.90:
+                    return True
+            except: pass
+            
+        # 3. Keyword/word overlap check
+        part_words = set(re.findall(r'\w+', part.lower()))
+        text_words = set(re.findall(r'\w+', text.lower()))
+        
+        if len(part_words) > 5:
+            overlap = part_words.intersection(text_words)
+            if len(overlap) / len(part_words) > 0.80 and len(text_words) < len(part_words) * 1.5:
+                return True
+                
+    return False
+
 def analyze_writing(input_data):
     text = input_data.get('text', '')
     topic = input_data.get('topic', 'General')
+
+    # Plagiarism check
+    if check_plagiarism(text, topic):
+        return {
+            "score": 0,
+            "criteria": {
+                "Grammar Accuracy": 0,
+                "Task Fulfillment": 0,
+                "Professional Tone": 0,
+                "Coherence & Logical Flow": 0,
+                "Clarity of Expression": 0
+            },
+            "errors": [],
+            "structure_feedback": "Plagiarism warning: You copied the prompt directly. Please write an original response."
+        }
 
     try:
         # 1. GRAMMAR CHECK

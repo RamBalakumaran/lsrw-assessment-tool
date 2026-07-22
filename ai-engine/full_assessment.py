@@ -9,6 +9,8 @@ from textblob import TextBlob
 import wave
 import contextlib
 
+import shutil
+
 # Set path to ffmpeg relative to this script
 script_dir = os.path.dirname(os.path.abspath(__file__))
 ffmpeg_path = os.path.join(script_dir, "ffmpeg.exe")
@@ -16,12 +18,28 @@ ffprobe_path = os.path.join(script_dir, "ffprobe.exe")
 
 os.environ["PATH"] += os.pathsep + script_dir
 
-if os.path.exists(ffmpeg_path):
+global_ffmpeg = shutil.which("ffmpeg")
+global_ffprobe = shutil.which("ffprobe")
+
+if global_ffmpeg:
+    AudioSegment.converter = global_ffmpeg
+    AudioSegment.ffmpeg = global_ffmpeg
+    ffmpeg_executable = global_ffmpeg
+elif os.path.exists(ffmpeg_path):
     AudioSegment.converter = ffmpeg_path
     AudioSegment.ffmpeg = ffmpeg_path
+    ffmpeg_executable = ffmpeg_path
+else:
+    ffmpeg_executable = "ffmpeg"
 
-if os.path.exists(ffprobe_path):
+if global_ffprobe:
+    AudioSegment.ffprobe = global_ffprobe
+    ffprobe_executable = global_ffprobe
+elif os.path.exists(ffprobe_path):
     AudioSegment.ffprobe = ffprobe_path
+    ffprobe_executable = ffprobe_path
+else:
+    ffprobe_executable = "ffprobe"
 
 def analyze_audio(audio_path, topic_title="Speaking Task", topic_desc="", topic_image_url=""):
     if not os.path.exists(audio_path):
@@ -31,7 +49,7 @@ def analyze_audio(audio_path, topic_title="Speaking Task", topic_desc="", topic_
         wav_path = audio_path + ".temp.wav"
         
         # 1. Convert to WAV using direct ffmpeg call
-        cmd = [ffmpeg_path, "-y", "-i", audio_path, "-ar", "16000", "-ac", "1", "-f", "wav", wav_path]
+        cmd = [ffmpeg_executable, "-y", "-i", audio_path, "-ar", "16000", "-ac", "1", "-f", "wav", wav_path]
         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
         
         if not os.path.exists(wav_path):
@@ -59,44 +77,16 @@ def analyze_audio(audio_path, topic_title="Speaking Task", topic_desc="", topic_
 
         text = ""
         try:
-            # 4. Transcribe using Groq Whisper API for extreme accuracy and unlimited length
-            from groq import Groq
-            from dotenv import load_dotenv
-            from pydub.utils import make_chunks
-            
-            backend_env_path = os.path.join(os.path.dirname(script_dir), "backend", ".env")
-            load_dotenv(backend_env_path)
-            
-            groq_key = os.environ.get("GROQ_API_KEY")
-            if not groq_key:
-                raise ValueError("GROQ_API_KEY not found in backend/.env")
-            
-            client = Groq(api_key=groq_key)
-
-            # To handle "unlimited" audio length, we chunk into 10-minute segments
-            # 10 minutes of MP3 is ~6MB, which easily passes Groq's 25MB Whisper limit.
-            ten_minutes = 10 * 60 * 1000
-            audio_chunks = make_chunks(audio, ten_minutes)
-            
-            full_transcripts = []
-            for i, chunk in enumerate(audio_chunks):
-                mp3_path = f"{wav_path}_chunk_{i}.mp3"
-                # Export chunk to mp3 to aggressively save size and bandwidth
-                chunk.export(mp3_path, format="mp3", bitrate="64k")
+            # 4. Transcribe using local Whisper model for offline accuracy and no cost
+            import whisper
+            # We use the 'base' model for high accuracy on English speech, falling back to 'tiny' if needed
+            try:
+                model = whisper.load_model("base")
+            except Exception:
+                model = whisper.load_model("tiny")
                 
-                with open(mp3_path, "rb") as file:
-                    transcription = client.audio.transcriptions.create(
-                        file=(mp3_path, file.read()),
-                        model="whisper-large-v3",
-                        response_format="text",
-                        language="en"
-                    )
-                    full_transcripts.append(str(transcription).strip())
-                
-                if os.path.exists(mp3_path):
-                    os.remove(mp3_path)
-                    
-            text = " ".join(full_transcripts).strip()
+            result = model.transcribe(wav_path, language="en")
+            text = result.get("text", "").strip()
             
         except Exception as e:
             import sys
@@ -195,45 +185,52 @@ def analyze_audio(audio_path, topic_title="Speaking Task", topic_desc="", topic_
             # Fast Grammar Heuristic
             grammar_score = min(7.0 + (len(unique_words) / 60.0), 10.0)
 
-            # Relevance: AI LLM Relevance Check
+            # Relevance: Local NLP Relevance Check (No LLM API)
             relevance_score = 1.0
             try:
-                from groq import Groq
-                from dotenv import load_dotenv
-                backend_env_path = os.path.join(os.path.dirname(script_dir), "backend", ".env")
-                load_dotenv(backend_env_path)
-                groq_key = os.environ.get("GROQ_API_KEY")
-                if groq_key and len(unique_words) >= 5:
-                    llm_client = Groq(api_key=groq_key)
-                    
-                    prompt = f"""You are an expert English evaluator. 
-    Topic: {topic_title}
-    Topic Description: {topic_desc}
-    Student Transcript: {text}
-
-    Evaluate how relevant the student's transcript is to the SPECIFIC scenario described in the 'Topic Description'. 
-    CRITICAL RULE: If the 'Topic Description' does NOT contain specific details about a scene (e.g. if it just says generic instructions like 'Picture Description', 'Describe the image', or is empty), then you CANNOT verify the relevance, and you MUST return 1.0.
-    Otherwise, evaluate the relevance from 1.0 to 10.0 based on how accurately the transcript matches the specific scene details in the 'Topic Description'.
-    Strictly return ONLY a single float number between 1.0 and 10.0. Do not write any explanations or text."""
-
-                    completion = llm_client.chat.completions.create(
-                        messages=[{"role": "user", "content": prompt}],
-                        model="llama-3.3-70b-versatile",
-                        temperature=0.1,
-                    )
-                    
-                    score_str = completion.choices[0].message.content.strip()
-                    import re
-                    match = re.search(r"([0-9]*\.?[0-9]+)", score_str)
-                    if match:
-                        relevance_score = float(match.group(1))
-                        relevance_score = max(1.0, min(10.0, relevance_score))
-                elif len(unique_words) < 5:
+                if len(unique_words) < 5:
                     relevance_score = 1.0
+                else:
+                    combined_prompt = (topic_title + " " + topic_desc).strip()
+                    if not combined_prompt:
+                        relevance_score = 10.0
+                    else:
+                        stop_words = {'the', 'is', 'and', 'to', 'of', 'in', 'a', 'for', 'on', 'with', 'as', 'by', 'at', 'it', 'that', 'are', 'this', 'you', 'i', 'he', 'she', 'they', 'we', 'me', 'him', 'her', 'them', 'us'}
+                        
+                        # Extract topic words
+                        topic_blob = TextBlob(combined_prompt)
+                        topic_words = {w.lower() for w in topic_blob.words if w.lower() not in stop_words and w.isalpha()}
+                        
+                        if len(topic_words) <= 2:
+                            relevance_score = 10.0
+                        else:
+                            # Heuristic 1: Keyword match
+                            student_words = {w.lower() for w in blob.words if w.lower() not in stop_words and w.isalpha()}
+                            overlap = topic_words.intersection(student_words)
+                            target_matches = min(len(topic_words), 5)
+                            keyword_sim = len(overlap) / target_matches if target_matches > 0 else 1.0
+                            
+                            # Heuristic 2: Cosine similarity via TF-IDF
+                            cosine_sim = 0.0
+                            try:
+                                from sklearn.feature_extraction.text import TfidfVectorizer
+                                from sklearn.metrics.pairwise import cosine_similarity
+                                vec = TfidfVectorizer(stop_words='english')
+                                matrix = vec.fit_transform([text.lower(), combined_prompt.lower()])
+                                cosine_sim = cosine_similarity(matrix[0:1], matrix[1:2])[0][0]
+                            except Exception:
+                                pass
+                                
+                            # Scale to 1.0 - 10.0
+                            keyword_score = min((keyword_sim / 0.5) * 9.0 + 1.0, 10.0)
+                            cosine_score = min((cosine_sim / 0.25) * 9.0 + 1.0, 10.0)
+                            
+                            relevance_score = max(keyword_score, cosine_score)
+                            relevance_score = round(relevance_score, 1)
             except Exception as e:
                 import sys
-                sys.stderr.write("LLM Relevance check failed: " + str(e) + "\n")
-                # Fallback to old relevance check
+                sys.stderr.write("Local relevance check failed: " + str(e) + "\n")
+                # Simple fallback
                 topic_words = set(TextBlob(topic_title + " " + topic_desc).words.lower())
                 relevance_matches = len(unique_words.intersection(topic_words))
                 required_matches = max(5.0, len(topic_words) * 0.3)

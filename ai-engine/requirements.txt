@@ -6,5 +6,4 @@ strsimpy
 textblob
 openai-whisper
 torch
-groq
 python-dotenv
