@@ -29,4 +29,18 @@ api.interceptors.request.use((config) => {
     return Promise.reject(error);
 });
 
+// Add a response interceptor to handle token expiry / user deleted
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        const status = error.response?.status;
+        const msg = error.response?.data?.error || '';
+        if (status === 401 || msg === 'User not found.' || msg === 'User not found') {
+            localStorage.clear();
+            window.location.href = '/login';
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default api;

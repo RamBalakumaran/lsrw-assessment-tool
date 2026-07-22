@@ -83,7 +83,7 @@ enum TaskStatus {
 }
 
 model Organization {
-  id          String   @id @default(uuid())
+  id          String   @id @default(uuid()) @db.Char(36)
   name        String
   subdomain   String   @unique
   status      String   @default("ACTIVE")
@@ -99,14 +99,14 @@ model Organization {
 }
 
 model User {
-  id              String       @id @default(uuid())
+  id              String       @id @default(uuid()) @db.Char(36)
   email           String       @unique
-  password        String
+  password        String       @map("passwordHash")
   firstName       String?
   lastName        String?
   role            Role         @default(STUDENT)
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  organizationId  String
+  organization    Organization? @relation(fields: [organizationId], references: [id])
+  organizationId  String?      @db.Char(36)
   department      String?
   
   // Group relationships
@@ -118,23 +118,23 @@ model User {
   
   // Teacher-Student Relation
   teacher         User?        @relation("TeacherStudents", fields: [teacherId], references: [id])
-  teacherId       String?
+  teacherId       String?      @db.Char(36)
   students        User[]       @relation("TeacherStudents")
-
+ 
   // Tasks and attempts
   tasksCreated    Task[]       @relation("TaskCreator")
   attempts        Attempt[]
   auditLogs       AuditLog[]   @relation("AuditUser")
   progressSummary StudentProgressSummary?
-
+ 
   status          String       @default("ACTIVE") // ACTIVE, INACTIVE, INVITED
   forcePasswordReset Boolean    @default(false)
-
+ 
   registrationNumber String?
-  academicYear       String?
+  academicYear       String?     @map("yearOfStudy")
   section            String?
   studentEmail       String?
-
+ 
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
@@ -142,16 +142,17 @@ model User {
   @@index([organizationId])
   @@index([role])
   @@index([registrationNumber])
+  @@map("users")
 }
 
 model Department {
-  id            String       @id @default(uuid())
+  id            String       @id @default(uuid()) @db.Char(36)
   name          String
   status        String       @default("ACTIVE")
-  organization  Organization @relation(fields: [organizationId], references: [id])
-  organizationId String
+  organization  Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?      @db.Char(36)
   admin         User?        @relation("DepartmentAdministrator", fields: [adminId], references: [id])
-  adminId       String?
+  adminId       String?      @db.Char(36)
   staffMemberIds Json?
   
   groups        Group[]
@@ -166,21 +167,21 @@ model Department {
 }
 
 model Group {
-  id              String   @id @default(uuid())
+  id              String   @id @default(uuid()) @db.Char(36)
   name            String
   description     String?  @db.Text
   academicYear    String?
   section         String?
   status          String   @default("ACTIVE") // ACTIVE, INACTIVE
   
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  organizationId  String
+  organization    Organization? @relation(fields: [organizationId], references: [id])
+  organizationId  String?      @db.Char(36)
   
-  department      Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  departmentId    String
+  department      Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  departmentId    String?     @db.Char(36)
   
-  owner           User     @relation("GroupOwner", fields: [ownerId], references: [id])
-  ownerId         String
+  owner           User?     @relation("GroupOwner", fields: [ownerId], references: [id])
+  ownerId         String?     @db.Char(36)
   
   members         GroupMembership[]
   tasks           TaskGroupAssignment[]
@@ -192,25 +193,26 @@ model Group {
   @@index([organizationId])
   @@index([departmentId])
   @@index([ownerId])
+  @@map("groups")
 }
 
 model GroupMembership {
-  id          String   @id @default(uuid())
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
+  userId      String   @db.Char(36)
   group       Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  groupId     String
-  role        String   // OWNER, COLLABORATOR, MEMBER (for student members)
+  groupId     String   @db.Char(36)
+  role        String   @default("MEMBER") // OWNER, COLLABORATOR, MEMBER (for student members)
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
-  @@unique([userId, groupId])
+  @@id([userId, groupId])
   @@index([groupId])
+  @@map("groupmembers")
 }
 
 model Task {
-  id              String       @id @default(uuid())
+  id              String       @id @default(uuid()) @db.Char(36)
   title           String
   description     String?      @db.Text
   
@@ -220,14 +222,14 @@ model Task {
   status          TaskStatus   @default(DRAFT)
   timeLimit       Int?         // in seconds
   
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  organizationId  String
+  organization    Organization? @relation(fields: [organizationId], references: [id])
+  organizationId  String?      @db.Char(36)
   
   visibilityScope VisibilityScope @default(ORGANIZATION)
   
   // Creator info
-  createdBy       User         @relation("TaskCreator", fields: [createdById], references: [id])
-  createdById     String
+  createdBy       User?        @relation("TaskCreator", fields: [createdById], references: [id])
+  createdById     String?      @db.Char(36)
   createdByRole   Role
   
   // Module specific data - populated based on task type
@@ -241,6 +243,12 @@ model Task {
   passingScore    Int          @default(60)
   showAnswers     Boolean      @default(false)
   showScores      Boolean      @default(true)
+
+  maxAttempts     Int          @default(1)
+  startDate       DateTime?
+  endDate         DateTime?
+  imageUrl        String?      @db.Text
+  questionsJson   Json?        @map("questions")
   
   // Assignments (one-to-many relationships)
   departmentAssignments TaskDepartmentAssignment[]
@@ -258,41 +266,42 @@ model Task {
   @@index([visibilityScope])
   @@index([createdById])
   @@index([status])
+  @@map("tasks")
 }
 
 model TaskDepartmentAssignment {
-  id            String   @id @default(uuid())
   task          Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  taskId        String
+  taskId        String   @db.Char(36)
   department    Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  departmentId  String
+  departmentId  String   @db.Char(36)
   
   createdAt     DateTime @default(now())
   
-  @@unique([taskId, departmentId])
+  @@id([taskId, departmentId])
   @@index([taskId])
   @@index([departmentId])
 }
 
 model TaskGroupAssignment {
-  id            String   @id @default(uuid())
   task          Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  taskId        String
+  taskId        String   @db.Char(36)
   group         Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  groupId       String
+  groupId       String   @db.Char(36)
   dueDate       DateTime?
   
   createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
   
-  @@unique([taskId, groupId])
+  @@id([taskId, groupId])
   @@index([taskId])
   @@index([groupId])
+  @@map("taskgroups")
 }
 
 model Question {
-  id          String   @id @default(uuid())
+  id          String   @id @default(uuid()) @db.Char(36)
   task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  taskId      String
+  taskId      String   @db.Char(36)
   questionText String   @db.Text
   options      Json?    // For MCQs: ["A", "B", "C", "D"]
   correctAnswer String
@@ -307,16 +316,19 @@ model Question {
 }
 
 model Attempt {
-  id              String   @id @default(uuid())
+  id              String   @id @default(uuid()) @db.Char(36)
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId          String
+  userId          String   @db.Char(36)
   task            Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  taskId          String
+  taskId          String   @db.Char(36)
   
   status          String   @default("COMPLETED") // COMPLETED, IN_PROGRESS, SUBMITTED
   score           Float?
   totalScore      Float?
   percentage      Float?
+  
+  answer          String?  @db.Text
+  feedback        String?  @db.Text
   
   // AI Results stored as JSON
   aiResults       Json?    // { grammar: 0.8, fluency: 0.7, stt: "...", etc }
@@ -332,12 +344,13 @@ model Attempt {
   @@index([userId])
   @@index([taskId])
   @@index([submittedAt])
+  @@map("responses")
 }
 
 model StudentProgressSummary {
-  id              String   @id @default(uuid())
+  id              String   @id @default(uuid()) @db.Char(36)
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId          String   @unique
+  userId          String   @unique @db.Char(36)
 
   listeningAvg    Float    @default(0)
   speakingAvg     Float    @default(0)
@@ -352,13 +365,13 @@ model StudentProgressSummary {
 }
 
 model AuditLog {
-  id              String   @id @default(uuid())
-  userId          String?  // User performing the action
+  id              String   @id @default(uuid()) @db.Char(36)
+  userId          String?  @db.Char(36) // User performing the action
   user            User?    @relation("AuditUser", fields: [userId], references: [id], onDelete: SetNull)
   
   action          String   // USER_CREATED, ROLE_ASSIGNED, TASK_CREATED, TASK_PUBLISHED, GROUP_CREATED, etc.
   entityType      String   // User, Task, Group, Department, Organization
-  entityId        String?
+  entityId        String?  @db.Char(36)
   
   task            Task?    @relation("TaskAudit", fields: [entityId], references: [id], onDelete: SetNull)
   
@@ -375,9 +388,9 @@ model AuditLog {
 }
 
 model Subscription {
-  id              String       @id @default(uuid())
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  organizationId  String
+  id              String       @id @default(uuid()) @db.Char(36)
+  organization    Organization? @relation(fields: [organizationId], references: [id])
+  organizationId  String?      @db.Char(36)
   plan            String       // FREE, BASIC, PRO, INSTITUTIONAL
   status          String       @default("ACTIVE")
   startDate       DateTime     @default(now())
@@ -389,4 +402,85 @@ model Subscription {
   storageLimit    Int          @default(1024) // in MB
 
   @@index([organizationId])
+}
+
+model ReadingPassage {
+  passageId       String   @id @default(uuid()) @db.Char(36) @map("passage_id")
+  tenantId        String   @map("tenant_id")
+  title           String?
+  content         String   @db.Text
+  wordCount       Int      @default(0) @map("word_count")
+  difficultyLevel String?  @map("difficulty_level")
+  topic           String?
+  isActive        Boolean  @default(true) @map("is_active")
+  createdBy       String?  @db.Char(36) @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@map("reading_passages")
+}
+
+model ReadingQuestion {
+  questionId     String   @id @default(uuid()) @db.Char(36) @map("question_id")
+  passageId      String   @db.Char(36) @map("passage_id")
+  tenantId       String   @map("tenant_id")
+  questionText   String   @db.Text @map("question_text")
+  questionType   String   @map("question_type")
+  options        Json?
+  correctAnswer  String   @map("correct_answer")
+  marks          Float    @default(1.0)
+  competencyAxis String?  @map("competency_axis")
+  questionOrder  Int      @default(0) @map("question_order")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([passageId])
+  @@map("reading_questions")
+}
+
+model ReadingAttempt {
+  attemptId              String    @id @default(uuid()) @db.Char(36) @map("attempt_id")
+  tenantId               String    @map("tenant_id")
+  userId                 String    @map("user_id")
+  assessmentId           String?   @map("assessment_id")
+  passageId              String?   @db.Char(36) @map("passage_id")
+  evaluationPath         String    @default("OBJECTIVE") @map("evaluation_path")
+  modality               String    @default("READING")
+  startTime              DateTime? @map("start_time")
+  endTime                DateTime? @map("end_time")
+  timeSpentSeconds       Int?      @map("time_spent_seconds")
+  wordsPerMinute         Float?    @map("words_per_minute")
+  totalQuestions         Int?      @map("total_questions")
+  correctAnswers         Int?      @map("correct_answers")
+  accuracyRate           Float?    @map("accuracy_rate")
+  comprehensionScore     Float?    @map("comprehension_score")
+  vocabularyScore        Float?    @map("vocabulary_score")
+  grammarScore           Float?    @map("grammar_score")
+  discourseCoherenceScore Float?   @map("discourse_coherence_score")
+  overallReadingScore    Float?    @map("overall_reading_score")
+  parameterVector        Json?     @map("parameter_vector")
+  reliabilitySignal      Float     @default(1.0) @map("reliability_signal")
+  feedbackGenerated      Json?     @map("feedback_generated")
+  evaluationTimestamp    DateTime? @map("evaluation_timestamp")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@map("reading_attempts")
+}
+
+model ReadingResponse {
+  responseId        String    @id @default(uuid()) @db.Char(36) @map("response_id")
+  attemptId         String    @db.Char(36) @map("attempt_id")
+  questionId        String    @db.Char(36) @map("question_id")
+  userId            String?   @map("user_id")
+  tenantId          String    @map("tenant_id")
+  selectedAnswer    String?   @db.Text @map("selected_answer")
+  isCorrect         Boolean?  @map("is_correct")
+  marksObtained     Float?    @map("marks_obtained")
+  responseTimestamp DateTime? @map("response_timestamp")
+
+  @@map("reading_responses")
 }

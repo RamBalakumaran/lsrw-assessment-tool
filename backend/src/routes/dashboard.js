@@ -422,13 +422,27 @@ router.get('/student', authMiddleware, async (req, res) => {
             { label: 'Daily Streak', value: `${streak} ${streak === 1 ? 'Day' : 'Days'}`, trend: streak > 0 ? 'Fire' : 'Inactive' }
         ];
 
-        // Fetch Global tasks and Group tasks (only Published ones)
+        // 1. Identify which tasks are completed/submitted (any response with status !== 'ASSIGNED')
+        const completedTaskIds = userResponses.filter(r => r.status !== 'ASSIGNED').map(r => r.taskId);
+
+        // 2. Identify which tasks are individually assigned
+        const individuallyAssignedTaskIds = userResponses.filter(r => r.status === 'ASSIGNED').map(r => r.taskId);
+
+        // 3. Fetch individually assigned tasks
+        let individuallyAssignedTasks = [];
+        if (individuallyAssignedTaskIds.length > 0) {
+            individuallyAssignedTasks = await db.Task.findAll({
+                where: { id: individuallyAssignedTaskIds }
+            });
+        }
+
+        // 4. Fetch Global tasks and Group tasks (only Published ones)
         const groupIds = user.groupMemberships.map(g => g.id);
 
-        let assignedTasks = [];
+        let groupTasks = [];
         if (groupIds.length > 0) {
-            assignedTasks = await db.Task.findAll({
-                where: { status: 'Published' },
+            groupTasks = await db.Task.findAll({
+                where: { status: { [db.Sequelize.Op.in]: ['Published', 'PUBLISHED'] } },
                 include: [
                     {
                         model: db.Group,
@@ -441,18 +455,20 @@ router.get('/student', authMiddleware, async (req, res) => {
         }
 
         const globalTasks = await db.Task.findAll({
-            where: { visibilityScope: 'Global', status: 'Published' }
+            where: { 
+                visibilityScope: { [db.Sequelize.Op.in]: ['Global', 'GLOBAL'] }, 
+                status: { [db.Sequelize.Op.in]: ['Published', 'PUBLISHED'] } 
+            }
         });
 
-        // Combine and filter out tasks that are already completed by the student
-        const allRelevantTasks = [...assignedTasks, ...globalTasks].filter((task, index, self) =>
+        // 5. Combine and deduplicate
+        const allRelevantTasks = [...individuallyAssignedTasks, ...groupTasks, ...globalTasks];
+        const uniqueTasks = allRelevantTasks.filter((task, index, self) =>
             index === self.findIndex((t) => t.id === task.id)
         );
 
-        // Filter out completed tasks so they only see tasks they haven't submitted yet
-        const pendingTasks = allRelevantTasks.filter(task => 
-            !userResponses.some(r => r.taskId === task.id)
-        );
+        // 6. Filter out completed tasks so they only see tasks they haven't submitted yet
+        const pendingTasks = uniqueTasks.filter(task => !completedTaskIds.includes(task.id));
 
         const formattedAssignedTasks = pendingTasks.map(t => ({
             id: t.id,

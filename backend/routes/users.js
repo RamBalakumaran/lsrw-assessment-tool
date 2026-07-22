@@ -10,6 +10,7 @@ const multer = require('multer');
 
 const prisma = new PrismaClient();
 const { requireRole, getUserRoles, isDepartmentAdmin, logAudit } = require('../middleware/rbac');
+const { authMiddleware } = require('../middleware/auth');
 
 // Setup multer for file uploads
 const storage = multer.diskStorage({
@@ -353,10 +354,11 @@ router.get('/:userId/performance', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Student not found' });
     }
 
-    const attempts = await prisma.attempt.findMany({
+    const db = require('../src/models');
+    const attempts = await db.Response.findAll({
       where: { userId, status: 'COMPLETED' },
-      include: { task: true },
-      orderBy: { submittedAt: 'desc' }
+      include: [{ model: db.Task, as: 'task' }],
+      order: [['submittedAt', 'DESC']]
     });
 
     const responsesWithTasks = [];
@@ -375,7 +377,7 @@ router.get('/:userId/performance', authMiddleware, async (req, res) => {
 
       const task = attempt.task;
       const taskTitle = task ? task.title : 'Deleted Task';
-      const lsrwComponent = task ? task.type : 'UNKNOWN';
+      const lsrwComponent = task ? (task.lsrwComponent || task.type || 'UNKNOWN').toUpperCase() : 'UNKNOWN';
 
       if (task) {
         if (lsrwComponent === 'LISTENING') listeningScores.push(score);
@@ -390,7 +392,7 @@ router.get('/:userId/performance', authMiddleware, async (req, res) => {
         taskTitle,
         lsrwComponent,
         score,
-        feedback: attempt.teacherFeedback || (attempt.aiResults ? JSON.stringify(attempt.aiResults) : ''),
+        feedback: attempt.feedback || (attempt.aiResults ? JSON.stringify(attempt.aiResults) : ''),
         submittedAt: attempt.submittedAt
       });
     }

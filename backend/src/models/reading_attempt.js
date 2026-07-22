@@ -1,10 +1,10 @@
 module.exports = (sequelize, DataTypes) => {
   const ReadingAttempt = sequelize.define('ReadingAttempt', {
-    attemptId: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true, field: 'attempt_id' },
+    attemptId: { type: DataTypes.CHAR(36), defaultValue: DataTypes.UUIDV4, primaryKey: true, field: 'attempt_id' },
     tenantId: { type: DataTypes.STRING, allowNull: false, field: 'tenant_id', index: true },
     userId: { type: DataTypes.STRING, allowNull: false, field: 'user_id' },
     assessmentId: { type: DataTypes.STRING, field: 'assessment_id' },
-    passageId: { type: DataTypes.UUID, field: 'passage_id' },
+    passageId: { type: DataTypes.CHAR(36), field: 'passage_id' },
     evaluationPath: { type: DataTypes.STRING(20), defaultValue: 'OBJECTIVE', field: 'evaluation_path' },
     modality: { type: DataTypes.STRING(20), defaultValue: 'READING' },
     startTime: { type: DataTypes.DATE, field: 'start_time' },

@@ -155,8 +155,13 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
+        const normalizedEmail = email?.trim().toLowerCase();
+        if (!normalizedEmail || !normalizedEmail.endsWith('@nec.edu.in')) {
+            return res.status(403).json({ error: 'Access denied. Only @nec.edu.in accounts are allowed to log in.' });
+        }
+
         const user = await prisma.user.findUnique({
-            where: { email: email.trim().toLowerCase() },
+            where: { email: normalizedEmail },
             include: userProfileInclude,
         });
 

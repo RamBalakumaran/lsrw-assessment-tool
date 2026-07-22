@@ -3,6 +3,122 @@ import api from '../utils/api';
 import { X, Target, Award, BarChart, Loader2, Calendar, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+const renderFeedback = (feedback) => {
+    if (!feedback) return null;
+    
+    // Try to parse feedback as JSON
+    let data;
+    try {
+        data = JSON.parse(feedback);
+    } catch (e) {
+        // If it's not JSON, render it as plain text
+        return (
+            <p className="text-xs text-slate-500 italic mt-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 max-w-md leading-relaxed">
+                "{feedback}"
+            </p>
+        );
+    }
+
+    // Case 1: Error JSON
+    if (data.error) {
+        return (
+            <div className="mt-2 bg-rose-50 border border-rose-100 text-rose-700 text-xs px-3.5 py-2.5 rounded-xl max-w-md font-semibold flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 shrink-0" />
+                <span>{data.error}</span>
+            </div>
+        );
+    }
+
+    // Case 2: Speaking evaluation JSON
+    if (data.overall_score !== undefined || data.transcription !== undefined) {
+        const metrics = data.metrics || {};
+        return (
+            <div className="mt-2 bg-slate-50/50 border border-slate-100 p-3 rounded-xl max-w-md space-y-2">
+                {data.transcription && (
+                    <div>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Transcription</span>
+                        <p className="text-xs text-slate-700 font-medium italic bg-white p-2 rounded-lg border border-slate-100 leading-relaxed">
+                            "{data.transcription}"
+                        </p>
+                    </div>
+                )}
+                
+                <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                    {metrics.pronunciation !== undefined && (
+                        <div className="bg-white p-1.5 rounded-lg border border-slate-100 flex justify-between items-center">
+                            <span className="text-slate-400 font-bold text-[9px] uppercase">Pronunciation</span>
+                            <span className="font-extrabold text-slate-800">{metrics.pronunciation}/10</span>
+                        </div>
+                    )}
+                    {metrics.fluency !== undefined && (
+                        <div className="bg-white p-1.5 rounded-lg border border-slate-100 flex justify-between items-center">
+                            <span className="text-slate-400 font-bold text-[9px] uppercase">Fluency</span>
+                            <span className="font-extrabold text-slate-800">{metrics.fluency}/10</span>
+                        </div>
+                    )}
+                    {metrics.vocabulary !== undefined && (
+                        <div className="bg-white p-1.5 rounded-lg border border-slate-100 flex justify-between items-center">
+                            <span className="text-slate-400 font-bold text-[9px] uppercase">Vocabulary</span>
+                            <span className="font-extrabold text-slate-800">{metrics.vocabulary}/10</span>
+                        </div>
+                    )}
+                    {metrics.grammar !== undefined && (
+                        <div className="bg-white p-1.5 rounded-lg border border-slate-100 flex justify-between items-center">
+                            <span className="text-slate-400 font-bold text-[9px] uppercase">Grammar</span>
+                            <span className="font-extrabold text-slate-800">{metrics.grammar}/10</span>
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 text-[9px] text-slate-500 font-bold">
+                    {data.wpm !== undefined && (
+                        <span className="bg-slate-100 px-1.5 py-0.5 rounded">WPM: {data.wpm}</span>
+                    )}
+                    {metrics.pause_count !== undefined && (
+                        <span className="bg-slate-100 px-1.5 py-0.5 rounded">Pauses: {metrics.pause_count}</span>
+                    )}
+                    {metrics.filler_count !== undefined && (
+                        <span className="bg-slate-100 px-1.5 py-0.5 rounded">Fillers: {metrics.filler_count}</span>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // Case 3: Writing evaluation JSON
+    if (data.criteria !== undefined) {
+        const criteria = data.criteria || {};
+        return (
+            <div className="mt-2 bg-slate-50/50 border border-slate-100 p-3 rounded-xl max-w-md space-y-2">
+                {data.structure_feedback && (
+                    <div>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">AI Feedback</span>
+                        <p className="text-xs text-slate-700 font-medium bg-white p-2 rounded-lg border border-slate-100 leading-relaxed">
+                            {data.structure_feedback}
+                        </p>
+                    </div>
+                )}
+                
+                <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                    {Object.entries(criteria).map(([key, val]) => (
+                        <div key={key} className="bg-white p-1.5 rounded-lg border border-slate-100 flex justify-between items-center">
+                            <span className="text-slate-400 font-bold text-[9px] uppercase truncate mr-2" title={key}>{key}</span>
+                            <span className="font-extrabold text-slate-800 shrink-0">{val}%</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    // Default fallback
+    return (
+        <p className="text-xs text-slate-500 italic mt-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 max-w-md leading-relaxed">
+            "{feedback}"
+        </p>
+    );
+};
+
 const StudentPerformanceModal = ({ studentId, onClose }) => {
     const [performance, setPerformance] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -145,11 +261,7 @@ const StudentPerformanceModal = ({ studentId, onClose }) => {
                                                         <Calendar size={12} /> {new Date(act.submittedAt).toLocaleDateString()}
                                                     </span>
                                                 </div>
-                                                {act.feedback && (
-                                                    <p className="text-xs text-gray-500 italic mt-2 bg-gray-50 p-2.5 rounded-xl border border-gray-100 max-w-md">
-                                                        "{act.feedback}"
-                                                    </p>
-                                                )}
+                                                {renderFeedback(act.feedback)}
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3 self-end md:self-auto">

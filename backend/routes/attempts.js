@@ -31,8 +31,10 @@ router.post('/submit', authMiddleware, async (req, res) => {
             userId: req.user.id,
             taskId,
             studentAnswers,
+            answer: studentAnswers ? JSON.stringify(studentAnswers) : "",
             score,
             aiResults,
+            feedback: aiResults ? (typeof aiResults === 'string' ? aiResults : JSON.stringify(aiResults)) : "",
             status: 'COMPLETED',
             submittedAt: new Date()
         });

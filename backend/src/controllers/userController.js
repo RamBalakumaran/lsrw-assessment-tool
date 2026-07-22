@@ -130,13 +130,19 @@ exports.getUserPerformance = async (req, res) => {
 
       const task = await db.Task.findByPk(resp.taskId);
       const taskTitle = task ? task.title : 'Deleted Task';
-      const lsrwComponent = task ? task.lsrwComponent : 'UNKNOWN';
+      const lsrwComponent = task ? (task.lsrwComponent || 'UNKNOWN') : 'UNKNOWN';
 
       if (task) {
-        if (lsrwComponent === 'LISTENING') listeningScores.push(resp.score || 0);
-        if (lsrwComponent === 'SPEAKING') speakingScores.push(resp.score || 0);
-        if (lsrwComponent === 'READING') readingScores.push(resp.score || 0);
-        if (lsrwComponent === 'WRITING') writingScores.push(resp.score || 0);
+        const compUpper = lsrwComponent.toUpperCase();
+        if (compUpper === 'LISTENING') listeningScores.push(resp.score || 0);
+        if (compUpper === 'SPEAKING') speakingScores.push(resp.score || 0);
+        if (compUpper === 'READING') readingScores.push(resp.score || 0);
+        if (compUpper === 'WRITING') writingScores.push(resp.score || 0);
+      }
+
+      let feedbackText = resp.feedback;
+      if (!feedbackText && resp.aiResults) {
+        feedbackText = typeof resp.aiResults === 'string' ? resp.aiResults : JSON.stringify(resp.aiResults);
       }
 
       responsesWithTasks.push({
@@ -145,7 +151,7 @@ exports.getUserPerformance = async (req, res) => {
         taskTitle,
         lsrwComponent,
         score: resp.score,
-        feedback: resp.feedback,
+        feedback: feedbackText,
         submittedAt: resp.submittedAt
       });
     }

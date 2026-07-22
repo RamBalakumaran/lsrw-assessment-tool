@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const db = require('../src/models');
 const { authMiddleware } = require('../middleware/auth');
+const { getPythonExecutable } = require('../utils/pythonPath');
 
 const upload = multer({ dest: 'uploads/' });
 
@@ -52,7 +53,7 @@ router.post('/assess-speaking', authMiddleware, upload.single('audio'), async (r
         topicImageUrl = `http://localhost:${process.env.PORT || 5000}${topicImageUrl}`;
     }
     
-    const pythonProcess = spawn('python', [pythonScript, audioPath, topicTitle, topicDesc, topicImageUrl]);
+    const pythonProcess = spawn(getPythonExecutable(), [pythonScript, audioPath, topicTitle, topicDesc, topicImageUrl]);
 
     let dataString = '';
     pythonProcess.stdout.on('data', (data) => { dataString += data.toString(); });
@@ -70,6 +71,8 @@ router.post('/assess-speaking', authMiddleware, upload.single('audio'), async (r
                     userId: req.user.id,
                     taskId: req.body.taskId,
                     score: Math.round((result.overall_score || 0) * 10),
+                    answer: result.transcription || "",
+                    aiResults: result,
                     feedback: JSON.stringify(result),
                     submittedAt: new Date()
                 });

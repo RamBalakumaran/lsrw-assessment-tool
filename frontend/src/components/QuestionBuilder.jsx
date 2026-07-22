@@ -41,7 +41,8 @@ const QuestionBuilder = ({ questions, onChange }) => {
             options: ['Option 1', 'Option 2'],
             correctAnswer: 'Option 1',
             correctAnswers: [],
-            points: 1
+            points: 1,
+            time: 20
         };
         onChange([...questions, newQuestion]);
     };
@@ -255,17 +256,9 @@ const QuestionBuilder = ({ questions, onChange }) => {
 
     return (
         <div className="bg-gray-50 p-8 rounded-[2rem] border border-gray-100">
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h3 className="text-xl font-black text-gray-900">Assessment Questions</h3>
-                    <p className="text-gray-500 font-medium text-sm">Add dynamic questions for this task.</p>
-                </div>
-                <button
-                    onClick={(e) => { e.preventDefault(); addQuestion(); }}
-                    className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition shadow-sm flex items-center gap-2 text-sm"
-                >
-                    <Plus size={16} /> Add Question
-                </button>
+            <div className="mb-6">
+                <h3 className="text-xl font-black text-gray-900">Assessment Questions</h3>
+                <p className="text-gray-500 font-medium text-sm">Add dynamic questions for this task.</p>
             </div>
 
             <div className="space-y-6">
@@ -293,17 +286,26 @@ const QuestionBuilder = ({ questions, onChange }) => {
                                             ))}
                                         </select>
                                     </div>
-                                    <div className="w-32">
-                                        <div className="relative">
-                                            <input
-                                                type="number"
-                                                value={q.points}
-                                                onChange={(e) => updateQuestion(index, 'points', parseInt(e.target.value) || 0)}
-                                                className="w-full pl-4 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary-100"
-                                                min="1"
-                                            />
-                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">Pts</span>
-                                        </div>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            value={q.points}
+                                            onChange={(e) => updateQuestion(index, 'points', parseInt(e.target.value) || 0)}
+                                            className="w-20 px-2 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-center focus:outline-none focus:ring-2 focus:ring-primary-100"
+                                            min="1"
+                                        />
+                                        <span className="text-xs font-bold text-gray-400">Pts</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            value={q.time !== undefined ? q.time : 20}
+                                            onChange={(e) => updateQuestion(index, 'time', parseInt(e.target.value) || 0)}
+                                            className="w-24 px-2 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-center focus:outline-none focus:ring-2 focus:ring-primary-100"
+                                            min="1"
+                                            placeholder="Time"
+                                        />
+                                        <span className="text-xs font-bold text-gray-400">Secs</span>
                                     </div>
                                 </div>
 
@@ -340,6 +342,15 @@ const QuestionBuilder = ({ questions, onChange }) => {
                         <p className="text-gray-400 text-sm">Click "Add Question" to start building your assessment.</p>
                     </div>
                 )}
+
+                <div className="pt-4 flex justify-center">
+                    <button
+                        onClick={(e) => { e.preventDefault(); addQuestion(); }}
+                        className="px-6 py-3 bg-white border border-gray-200 text-gray-700 rounded-2xl font-black hover:bg-gray-50 hover:border-gray-300 transition shadow-sm hover:shadow flex items-center gap-2 text-sm"
+                    >
+                        <Plus size={18} /> Add Question
+                    </button>
+                </div>
             </div>
         </div>
     );

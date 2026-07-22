@@ -24,7 +24,7 @@ router.get('/teacher', async (req, res) => {
             // Fetch the task to know its type
             const task = await db.Task.findByPk(resp.taskId);
             if (task) {
-                const component = task.lsrwComponent;
+                const component = (task.lsrwComponent || '').toUpperCase();
                 if (component === 'LISTENING') listeningScores.push(resp.score || 0);
                 if (component === 'SPEAKING') speakingScores.push(resp.score || 0);
                 if (component === 'READING') readingScores.push(resp.score || 0);

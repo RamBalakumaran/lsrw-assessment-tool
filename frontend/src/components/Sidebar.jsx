@@ -36,9 +36,9 @@ const Sidebar = ({ role }) => {
     ];
 
     const studentLinks = [
-        { title: "Overview", icon: <LayoutDashboard />, link: "/dashboard" },
-        { title: "My Progress", icon: <BarChart />, link: "/history" },
-        { title: "LSRW Modules", icon: <Layers />, link: "/dashboard" },
+        { title: "Overview", icon: <LayoutDashboard />, link: "/student/dashboard" },
+        { title: "My Progress", icon: <BarChart />, link: "/student/history" },
+        { title: "LSRW Modules", icon: <Layers />, link: "/student/dashboard" },
     ];
 
     const links = role === 'ADMIN'

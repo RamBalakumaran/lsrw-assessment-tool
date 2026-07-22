@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import {
-    Users,
     Calendar,
     MessageSquare,
     ChevronRight,
@@ -13,6 +12,7 @@ import {
 import { motion } from 'framer-motion';
 import api from '../utils/api';
 import { Loader2 } from 'lucide-react';
+import StudentPerformanceModal from '../components/StudentPerformanceModal';
 
 const TeacherDashboard = () => {
     const navigate = useNavigate();
@@ -20,6 +20,7 @@ const TeacherDashboard = () => {
     const [originalStudents, setOriginalStudents] = useState([]);
     const [stats, setStats] = useState({ studentCount: 0, tasksAssigned: 0, pendingReports: 0, groupsCount: 0, groupActivities: [] });
     const [loading, setLoading] = useState(true);
+    const [selectedStudentId, setSelectedStudentId] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('All');
     const [selectedStudent, setSelectedStudent] = useState(null);
@@ -37,7 +38,13 @@ const TeacherDashboard = () => {
                     tasksAssigned: res.data.tasksAssigned,
                     pendingReports: res.data.pendingReports,
                     groupsCount: res.data.groupsCount || 0,
-                    groupActivities: res.data.groupActivities || []
+                    groupActivities: (res.data.groupActivities || []).map(g => ({
+                        groupId: g.id,
+                        groupName: g.name,
+                        studentCount: g.studentsCount,
+                        attemptCount: g.attemptsCount,
+                        avgScore: g.avgScore
+                    }))
                 });
 
                 const mappedStudents = res.data.students.map(s => {
@@ -418,12 +425,23 @@ const TeacherDashboard = () => {
                                         <div className="text-6xl font-black text-primary-900 mb-2">{selectedStudent.score}%</div>
                                         <p className="text-primary-600 font-medium">Overall proficiency across all LSRW modules.</p>
                                     </div>
-                                    <button
-                                        onClick={openAssignModal}
-                                        className="w-full py-4 bg-primary-600 text-white rounded-2xl font-black shadow-lg shadow-primary-500/20 hover:bg-primary-700 transition"
-                                    >
-                                        Assign New Task
-                                    </button>
+                                    <div className="space-y-3 mt-4">
+                                        <button
+                                            onClick={() => {
+                                                setSelectedStudentId(selectedStudent.id);
+                                                setSelectedStudent(null);
+                                            }}
+                                            className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black shadow-lg shadow-indigo-500/20 transition"
+                                        >
+                                            View Detailed Performance Report
+                                        </button>
+                                        <button
+                                            onClick={openAssignModal}
+                                            className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl font-black shadow-lg shadow-primary-500/20 transition"
+                                        >
+                                            Assign New Task
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </motion.div>
@@ -462,10 +480,17 @@ const TeacherDashboard = () => {
                                         >
                                             <div className="flex items-center space-x-6">
                                                 <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-primary-600 font-black shadow-sm group-hover:scale-110 transition">
-                                                    {task.type[0]}
+                                                    {(task.type || task.lsrwComponent || 'Task')[0]}
                                                 </div>
                                                 <div>
-                                                    <div className="font-bold text-gray-900 group-hover:text-white transition">{task.title}</div>
+                                                    <div className="font-bold text-gray-900 group-hover:text-white transition flex items-center flex-wrap gap-2">
+                                                        <span>{task.title}</span>
+                                                        {(task.assessmentType || task.subType) && (
+                                                            <span className="px-2 py-0.5 text-[8px] font-black uppercase tracking-wider rounded bg-indigo-50 text-indigo-600 border border-indigo-100 group-hover:bg-white/20 group-hover:text-white group-hover:border-transparent shrink-0">
+                                                                {(task.assessmentType || task.subType).replace(/_/g, ' ')}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <div className="text-xs text-gray-400 group-hover:text-primary-100 transition whitespace-nowrap overflow-hidden text-ellipsis max-w-xs">{task.description}</div>
                                                 </div>
                                             </div>
@@ -486,6 +511,12 @@ const TeacherDashboard = () => {
                     </div>
                 )}
             </main>
+            {selectedStudentId && (
+                <StudentPerformanceModal
+                    studentId={selectedStudentId}
+                    onClose={() => setSelectedStudentId(null)}
+                />
+            )}
         </div>
     );
 };

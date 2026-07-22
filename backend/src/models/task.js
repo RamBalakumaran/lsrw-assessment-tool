@@ -2,20 +2,22 @@
 module.exports = (sequelize, DataTypes) => {
   const Task = sequelize.define('Task', {
     id: {
-      type: DataTypes.UUID,
+      type: DataTypes.CHAR(36),
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
     title: { type: DataTypes.STRING, allowNull: false },
     description: { type: DataTypes.TEXT },
     lsrwComponent: {
-      type: DataTypes.ENUM('Listening', 'Speaking', 'Reading', 'Writing'),
+      type: DataTypes.ENUM('LISTENING', 'SPEAKING', 'READING', 'WRITING', 'Listening', 'Speaking', 'Reading', 'Writing'),
       allowNull: false,
+      field: 'type',
     },
-    assessmentType: { type: DataTypes.STRING },
+    assessmentType: { type: DataTypes.STRING, field: 'subType' },
     difficultyLevel: {
-      type: DataTypes.ENUM('Beginner', 'Intermediate', 'Advanced'),
-      defaultValue: 'Beginner',
+      type: DataTypes.ENUM('BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'Beginner', 'Intermediate', 'Advanced'),
+      defaultValue: 'INTERMEDIATE',
+      field: 'difficulty',
     },
     instructions: { type: DataTypes.TEXT },
     imageUrl: { type: DataTypes.TEXT },
@@ -27,19 +29,52 @@ module.exports = (sequelize, DataTypes) => {
     passage: { type: DataTypes.TEXT },
     audioUrl: { type: DataTypes.STRING },
     status: {
-      type: DataTypes.ENUM('Draft', 'Published', 'Archived'),
-      defaultValue: 'Draft',
+      type: DataTypes.ENUM('DRAFT', 'PUBLISHED', 'ARCHIVED', 'Draft', 'Published', 'Archived'),
+      defaultValue: 'DRAFT',
+      get() {
+        const rawValue = this.getDataValue('status');
+        if (rawValue === 'PUBLISHED') return 'Published';
+        if (rawValue === 'DRAFT') return 'Draft';
+        if (rawValue === 'ARCHIVED') return 'Archived';
+        return rawValue;
+      },
+      set(val) {
+        if (val === 'Published') {
+          this.setDataValue('status', 'PUBLISHED');
+        } else if (val === 'Draft') {
+          this.setDataValue('status', 'DRAFT');
+        } else if (val === 'Archived') {
+          this.setDataValue('status', 'ARCHIVED');
+        } else {
+          this.setDataValue('status', val ? val.toUpperCase() : 'DRAFT');
+        }
+      }
     },
     visibilityScope: {
-      type: DataTypes.ENUM('Global', 'GroupSpecific'),
-      defaultValue: 'Global',
+      type: DataTypes.ENUM('GLOBAL', 'ORGANIZATION', 'DEPARTMENT', 'GROUP', 'Global', 'GroupSpecific'),
+      defaultValue: 'GLOBAL',
+      get() {
+        const rawValue = this.getDataValue('visibilityScope');
+        if (rawValue === 'GLOBAL') return 'Global';
+        if (rawValue === 'GROUP') return 'GroupSpecific';
+        return rawValue;
+      },
+      set(val) {
+        if (val === 'GroupSpecific' || val === 'GROUP') {
+          this.setDataValue('visibilityScope', 'GROUP');
+        } else if (val === 'Global' || val === 'GLOBAL') {
+          this.setDataValue('visibilityScope', 'GLOBAL');
+        } else {
+          this.setDataValue('visibilityScope', val || 'GLOBAL');
+        }
+      }
     },
     questions: {
       type: DataTypes.JSON,
       comment: 'Array of question objects for assessment',
     },
     // Foreign key to creator (admin or staff)
-    creatorId: { type: DataTypes.UUID, allowNull: false },
+    creatorId: { type: DataTypes.CHAR(36), allowNull: false, field: 'createdById' },
   }, {
     tableName: 'tasks',
     timestamps: true,

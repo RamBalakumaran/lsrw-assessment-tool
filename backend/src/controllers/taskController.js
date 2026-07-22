@@ -10,7 +10,6 @@ exports.getAllTasks = async (req, res) => {
     let tasks;
     
     if (userRole === 'STUDENT') {
-      // Students see Global tasks or tasks assigned to groups they are members of
       const studentGroups = await db.Group.findAll({
         include: [{
           model: db.User,
@@ -21,9 +20,35 @@ exports.getAllTasks = async (req, res) => {
         attributes: ['id']
       });
       const groupIds = studentGroups.map(g => g.id);
-      
+
+      const assignedResponses = await db.Response.findAll({
+        where: { userId, status: 'ASSIGNED' },
+        attributes: ['taskId']
+      });
+      const assignedTaskIds = assignedResponses.map(r => r.taskId);
+
+      const orConditions = [
+        { visibilityScope: { [db.Sequelize.Op.in]: ['Global', 'GLOBAL'] }, status: { [db.Sequelize.Op.in]: ['Published', 'PUBLISHED'] } }
+      ];
+
+      if (groupIds.length > 0) {
+        orConditions.push({
+          visibilityScope: { [db.Sequelize.Op.in]: ['GroupSpecific', 'GROUP'] },
+          status: { [db.Sequelize.Op.in]: ['Published', 'PUBLISHED'] },
+          '$targetGroups.id$': { [db.Sequelize.Op.in]: groupIds }
+        });
+      }
+
+      if (assignedTaskIds.length > 0) {
+        orConditions.push({
+          id: { [db.Sequelize.Op.in]: assignedTaskIds }
+        });
+      }
+
       tasks = await db.Task.findAll({
-        where: { status: 'Published' },
+        where: {
+          [db.Sequelize.Op.or]: orConditions
+        },
         include: [
           {
             model: db.Group,
@@ -37,14 +62,6 @@ exports.getAllTasks = async (req, res) => {
           }
         ],
         order: [['createdAt', 'DESC']]
-      });
-      
-      tasks = tasks.filter(task => {
-        if (task.visibilityScope === 'Global') return true;
-        if (task.visibilityScope === 'GroupSpecific') {
-          return task.targetGroups && task.targetGroups.some(g => groupIds.includes(g.id));
-        }
-        return false;
       });
       
     } else if (userRole === 'TEACHER') {
@@ -78,8 +95,9 @@ exports.getAllTasks = async (req, res) => {
       
       tasks = tasks.filter(task => {
         if (task.creatorId === userId) return true;
-        if (task.visibilityScope === 'Global') return true;
-        if (task.visibilityScope === 'GroupSpecific') {
+        const scopeUpper = (task.visibilityScope || '').toUpperCase();
+        if (scopeUpper === 'GLOBAL') return true;
+        if (scopeUpper === 'GROUPSPECIFIC' || scopeUpper === 'GROUP') {
           return task.targetGroups && task.targetGroups.some(g => groupIds.includes(g.id));
         }
         return false;
@@ -151,9 +169,9 @@ exports.updateTask = async (req, res) => {
     const task = await db.Task.findByPk(id);
     if (!task) return res.status(404).json({ error: 'Task not found' });
 
-    // Auth check: only the creator of the task or an ADMIN/SUPER_ADMIN can modify it
-    if (task.creatorId !== req.user.id && req.user.role !== 'ADMIN' && req.user.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Only the task creator or an administrator can modify this task' });
+    // Auth check: only the creator of the task, a teacher, or an administrator can modify it
+    if (task.creatorId !== req.user.id && req.user.role !== 'TEACHER' && req.user.role !== 'ADMIN' && req.user.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Only the task creator, a teacher, or an administrator can modify this task' });
     }
 
     await task.update(taskData);
@@ -183,9 +201,9 @@ exports.deleteTask = async (req, res) => {
     const task = await db.Task.findByPk(id);
     if (!task) return res.status(404).json({ error: 'Task not found' });
 
-    // Auth check: only the creator of the task or an ADMIN/SUPER_ADMIN can delete it
-    if (task.creatorId !== req.user.id && req.user.role !== 'ADMIN' && req.user.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({ error: 'Only the task creator or an administrator can delete this task' });
+    // Auth check: only the creator of the task, a teacher, or an administrator can delete it
+    if (task.creatorId !== req.user.id && req.user.role !== 'TEACHER' && req.user.role !== 'ADMIN' && req.user.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Only the task creator, a teacher, or an administrator can delete this task' });
     }
 
     await task.destroy();

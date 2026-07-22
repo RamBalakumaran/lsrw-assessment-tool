@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import TopicSelection from '../components/TopicSelection';
 import SmartQuiz from '../components/SmartQuiz';
 import DetailedReport from '../components/DetailedReport';
 import { Headphones, Play, ShieldCheck, Music } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
+import FullscreenProctorGuard from '../components/FullscreenProctorGuard';
 
 const getYoutubeId = (url) => {
     if (!url) return null;
@@ -16,6 +17,7 @@ const getYoutubeId = (url) => {
 
 const ListeningTest = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [phase, setPhase] = useState('topic');
     const [selectedTopic, setSelectedTopic] = useState(null);
     const [report, setReport] = useState(null);
@@ -49,7 +51,10 @@ const ListeningTest = () => {
         const fetchTasks = async () => {
             try {
                 const res = await api.get('/tasks');
-                const data = res.data.filter(t => t.type === 'LISTENING' || t.lsrwComponent === 'Listening');
+                const data = res.data.filter(t => {
+                    const comp = (t.lsrwComponent || t.type || '').toUpperCase();
+                    return comp === 'LISTENING';
+                });
                 const formattedTasks = data.map((t, idx) => ({
                     ...t,
                     desc: t.description,
@@ -181,62 +186,83 @@ const ListeningTest = () => {
         );
     };
 
+    const handleExit = () => {
+        if (id) {
+            navigate('/student/dashboard');
+        } else {
+            setPhase('topic');
+            setSelectedTopic(null);
+            setPlayCount(0);
+        }
+    };
+
     if (phase === 'topic') {
         return <TopicSelection title="Listening" topics={topics} onSelect={(t) => { setSelectedTopic(t); setPhase('listen'); }} onBack={() => window.location.href = '/dashboard'} />;
     }
 
-    if (phase === 'listen') {
+    if (phase === 'listen' || phase === 'quiz') {
         return (
-            <div className="max-w-4xl mx-auto px-6 py-12">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-white rounded-[2.5rem] shadow-xl border border-gray-100 overflow-hidden"
-                >
-                    <div className="p-12 text-center">
-                        <div className="w-20 h-20 bg-primary-100 text-primary-600 rounded-3xl flex items-center justify-center mx-auto mb-8">
-                            <Headphones size={40} />
-                        </div>
-                        <h2 className="text-4xl font-black text-gray-900 mb-4">{selectedTopic.title}</h2>
-                        <p className="text-gray-500 text-lg mb-10 max-w-xl mx-auto">
-                            Listen to the media carefully. You can replay the track if needed, but it may affect your final score assessment.
-                        </p>
+            <FullscreenProctorGuard
+                title={selectedTopic?.title}
+                onExit={handleExit}
+            >
+                {phase === 'listen' ? (
+                    <div className="max-w-4xl mx-auto px-6 py-12">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="bg-white rounded-[2.5rem] shadow-xl border border-gray-100 overflow-hidden"
+                        >
+                            <div className="p-12 text-center">
+                                <div className="w-20 h-20 bg-primary-100 text-primary-600 rounded-3xl flex items-center justify-center mx-auto mb-8">
+                                    <Headphones size={40} />
+                                </div>
+                                <h2 className="text-4xl font-black text-gray-900 mb-4">{selectedTopic.title}</h2>
+                                <p className="text-gray-500 text-lg mb-10 max-w-xl mx-auto">
+                                    Listen to the media carefully. You can replay the track if needed, but it may affect your final score assessment.
+                                </p>
 
-                        {renderMedia(selectedTopic.audioUrl)}
+                                {renderMedia(selectedTopic.audioUrl)}
 
-                        <div className="flex flex-col items-center space-y-6">
-                            <button
-                                onClick={() => {
-                                    setPhase('quiz');
-                                    setStartTime(Date.now());
-                                }}
-                                className="px-12 py-5 bg-gray-900 text-white rounded-2xl font-black text-xl hover:bg-black transition transform hover:-translate-y-1 active:scale-95 flex items-center shadow-xl shadow-gray-900/20"
-                            >
-                                Proceed to Questions <Play className="ml-3 h-5 w-5 fill-current" />
-                            </button>
+                                <div className="flex flex-col items-center space-y-6">
+                                    <button
+                                        onClick={() => {
+                                            setPhase('quiz');
+                                            setStartTime(Date.now());
+                                        }}
+                                        className="px-12 py-5 bg-gray-900 text-white rounded-2xl font-black text-xl hover:bg-black transition transform hover:-translate-y-1 active:scale-95 flex items-center shadow-xl shadow-gray-900/20"
+                                    >
+                                        Proceed to Questions <Play className="ml-3 h-5 w-5 fill-current" />
+                                    </button>
 
-                            <div className="flex items-center space-x-2 text-emerald-600 font-bold bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100 italic">
-                                <ShieldCheck size={18} />
-                                <span>High-fidelity audio stream verified</span>
+                                    <div className="flex items-center space-x-2 text-emerald-600 font-bold bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100 italic">
+                                        <ShieldCheck size={18} />
+                                        <span>High-fidelity audio stream verified</span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        </motion.div>
                     </div>
-                </motion.div>
-            </div>
+                ) : (
+                    <SmartQuiz questions={selectedTopic.questions} onComplete={handleComplete} />
+                )}
+            </FullscreenProctorGuard>
         );
     }
-
-    if (phase === 'quiz') return <SmartQuiz questions={selectedTopic.questions} onComplete={handleComplete} />;
 
     return (
         <DetailedReport
             {...report}
             onRetry={() => {
-                setPhase('topic');
-                setReport(null);
-                setPlayCount(0);
+                if (id) {
+                    navigate('/listening');
+                } else {
+                    setPhase('topic');
+                    setReport(null);
+                    setPlayCount(0);
+                }
             }}
-            onHome={() => window.location.href = '/dashboard'}
+            onHome={() => navigate('/student/dashboard')}
         />
     );
 };

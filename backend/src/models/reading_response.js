@@ -1,8 +1,8 @@
 module.exports = (sequelize, DataTypes) => {
   const ReadingResponse = sequelize.define('ReadingResponse', {
-    responseId: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true, field: 'response_id' },
-    attemptId: { type: DataTypes.UUID, allowNull: false, field: 'attempt_id' },
-    questionId: { type: DataTypes.UUID, allowNull: false, field: 'question_id' },
+    responseId: { type: DataTypes.CHAR(36), defaultValue: DataTypes.UUIDV4, primaryKey: true, field: 'response_id' },
+    attemptId: { type: DataTypes.CHAR(36), allowNull: false, field: 'attempt_id' },
+    questionId: { type: DataTypes.CHAR(36), allowNull: false, field: 'question_id' },
     userId: { type: DataTypes.STRING, field: 'user_id' },
     tenantId: { type: DataTypes.STRING, allowNull: false, field: 'tenant_id' },
     selectedAnswer: { type: DataTypes.TEXT, field: 'selected_answer' },

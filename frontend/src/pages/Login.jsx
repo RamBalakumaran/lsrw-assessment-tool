@@ -20,7 +20,7 @@ const Login = () => {
                     const user = JSON.parse(userStr);
                     if (user.role === 'ADMIN') navigate('/admin/dashboard', { replace: true });
                     else if (user.role === 'TEACHER') navigate('/teacher/dashboard', { replace: true });
-                    else navigate('/dashboard', { replace: true });
+                    else navigate('/student/dashboard', { replace: true });
                 } catch (e) {
                     navigate('/dashboard', { replace: true });
                 }
@@ -56,7 +56,7 @@ const Login = () => {
             // Redirect based on role
             if (user.role === 'ADMIN') navigate('/admin/dashboard');
             else if (user.role === 'TEACHER') navigate('/teacher/dashboard');
-            else navigate('/dashboard');
+            else navigate('/student/dashboard');
 
         } catch (err) {
             setError(err.response?.data?.error || 'Authentication failed. Please verify your credentials.');

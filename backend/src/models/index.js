@@ -2,11 +2,16 @@
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 const { Sequelize } = require('sequelize');
+Sequelize.DataTypes.UUID.prototype.toSql = function() { return 'CHAR(36)'; };
 
 const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
   host: process.env.DB_HOST,
   dialect: 'mysql',
   logging: false,
+  define: {
+    charset: 'utf8mb4',
+    collate: 'utf8mb4_unicode_ci',
+  }
 });
 
 const db = {};
@@ -72,7 +77,27 @@ db.sequelize.sync()
       await db.sequelize.query("ALTER TABLE `groups` ADD COLUMN `status` VARCHAR(255) DEFAULT 'ACTIVE';");
       console.log('Added status column to groups table');
     } catch (e) {}
+    try {
+      await db.sequelize.query("ALTER TABLE `responses` ADD COLUMN `studentAnswers` JSON NULL;");
+      console.log('Added studentAnswers column to responses table');
+    } catch (e) {}
+    try {
+      await db.sequelize.query("ALTER TABLE `responses` ADD COLUMN `aiResults` JSON NULL;");
+      console.log('Added aiResults column to responses table');
+    } catch (e) {}
+    try {
+      await db.sequelize.query("ALTER TABLE `responses` ADD COLUMN `status` VARCHAR(255) DEFAULT 'COMPLETED';");
+      console.log('Added status column to responses table');
+    } catch (e) {}
+    try {
+      await db.sequelize.query("ALTER TABLE `tasks` ADD COLUMN `passage` TEXT NULL;");
+      console.log('Added passage column to tasks table');
+    } catch (e) {}
+    try {
+      await db.sequelize.query("ALTER TABLE `tasks` ADD COLUMN `audioUrl` VARCHAR(255) NULL;");
+      console.log('Added audioUrl column to tasks table');
+    } catch (e) {}
   })
-  .catch(err => console.error('DB sync error:', err));
+  .catch(err => console.warn('DB sync warning (non-fatal):', err.message));
 
 module.exports = db;

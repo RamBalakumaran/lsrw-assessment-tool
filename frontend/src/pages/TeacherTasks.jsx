@@ -237,6 +237,11 @@ const TeacherTasks = () => {
                                             <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border italic ${getTypeColor(task.lsrwComponent || task.type)} border-current/10`}>
                                                 {task.lsrwComponent || task.type}
                                             </span>
+                                            {(task.assessmentType || task.subType) && (
+                                                <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border italic bg-indigo-50 text-indigo-600 border-indigo-100">
+                                                    {(task.assessmentType || task.subType).replace(/_/g, ' ')}
+                                                </span>
+                                            )}
                                         </div>
                                         <p className="text-gray-500 font-medium line-clamp-1">{task.description}</p>
                                     </div>

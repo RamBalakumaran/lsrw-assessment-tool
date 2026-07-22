@@ -10,7 +10,11 @@ exports.login = async (req, res) => {
     return res.status(400).json({ error: 'Email and password required' });
   }
   try {
-    const user = await db.User.findOne({ where: { email } });
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail.endsWith('@nec.edu.in')) {
+      return res.status(403).json({ error: 'Access denied. Only @nec.edu.in accounts are allowed to log in.' });
+    }
+    const user = await db.User.findOne({ where: { email: normalizedEmail } });
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
     if (user.status === 'INACTIVE') return res.status(403).json({ error: 'Account suspended or inactive' });
     const valid = await bcrypt.compare(password, user.passwordHash);

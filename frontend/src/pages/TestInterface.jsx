@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useReactMediaRecorder } from 'react-media-recorder';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -8,9 +8,11 @@ import {
 import TopicSelection from '../components/TopicSelection';
 import DetailedReport from '../components/DetailedReport';
 import api from '../utils/api';
+import FullscreenProctorGuard from '../components/FullscreenProctorGuard';
 
 const TestInterface = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [phase, setPhase] = useState('topic');
     const [selectedTopic, setSelectedTopic] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -279,7 +281,10 @@ const TestInterface = () => {
         const fetchTasks = async () => {
             try {
                 const res = await api.get('/tasks');
-                const specificTasks = res.data.filter(t => t.type === 'SPEAKING' || t.lsrwComponent === 'Speaking');
+                const specificTasks = res.data.filter(t => {
+                    const comp = (t.lsrwComponent || t.type || '').toUpperCase();
+                    return comp === 'SPEAKING';
+                });
                 const formattedTasks = specificTasks.map((t, idx) => ({
                     ...t,
                     desc: t.description,
@@ -301,207 +306,238 @@ const TestInterface = () => {
         fetchTasks();
     }, [id]);
 
+    const handleExit = () => {
+        if (id) {
+            navigate('/student/dashboard');
+        } else {
+            setPhase('topic');
+            setSelectedTopic(null);
+        }
+    };
+
     if (phase === 'topic') {
         return <TopicSelection title="Speaking" topics={topics} onSelect={(t) => { setSelectedTopic(t); setPhase('record'); }} onBack={() => window.location.href = '/dashboard'} />;
     }
 
     if (phase === 'record') {
         return (
-            <div className="max-w-4xl mx-auto px-6 py-12">
-                <div className="flex justify-between items-center mb-10">
-                    <button
-                        onClick={() => setPhase('topic')}
-                        className="flex items-center text-gray-500 hover:text-primary-600 transition font-bold text-xs uppercase tracking-widest"
+            <FullscreenProctorGuard
+                title={selectedTopic?.title}
+                onExit={handleExit}
+            >
+                <div className="max-w-4xl mx-auto px-6 py-12">
+                    <div className="flex justify-between items-center mb-10">
+                        <button
+                            onClick={() => setPhase('topic')}
+                            className="flex items-center text-gray-500 hover:text-primary-600 transition font-bold text-xs uppercase tracking-widest"
+                        >
+                            <ArrowLeft className="mr-2" size={16} /> Choose Topic
+                        </button>
+                        <div className="flex items-center space-x-2 text-primary-600 font-bold bg-primary-50 px-4 py-2 rounded-xl text-sm">
+                            <Activity size={16} />
+                            <span>Interactive Audio System</span>
+                        </div>
+                    </div>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-white rounded-[3rem] shadow-xl border border-gray-100 overflow-hidden flex flex-col md:flex-row min-h-[600px]"
                     >
-                        <ArrowLeft className="mr-2" size={16} /> Choose Topic
-                    </button>
-                    <div className="flex items-center space-x-2 text-primary-600 font-bold bg-primary-50 px-4 py-2 rounded-xl text-sm">
-                        <Activity size={16} />
-                        <span>Interactive Audio System</span>
-                    </div>
-                </div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-white rounded-[3rem] shadow-xl border border-gray-100 overflow-hidden flex flex-col md:flex-row min-h-[600px]"
-                >
-                    {/* Topic Side */}
-                    <div className="md:w-5/12 bg-gray-50 p-12 border-r border-gray-100 flex flex-col justify-center">
-                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-primary-500 shadow-sm mb-6">
-                            <Mic size={32} />
-                        </div>
-                        <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">{selectedTopic.title}</h2>
-                        
-                        {isMulti ? (
-                            <div className="mb-6">
-                                <div className="inline-block px-3 py-1 bg-primary-100 text-primary-700 font-bold rounded-lg mb-4 text-xs tracking-widest uppercase">
-                                    Sentence {currentQIndex + 1} of {selectedTopic.questions.length}
-                                </div>
-                                <h3 className="font-bold text-gray-800 text-lg mb-2">Instructions</h3>
-                                <p className="text-gray-500 mb-6">{selectedTopic.desc || "Listen to the media carefully, then repeat exactly what you hear."}</p>
-                                
-                                {selectedTopic.questions[currentQIndex].text && (
-                                    <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm mb-6">
-                                        <p className="text-gray-700 font-medium italic">"{selectedTopic.questions[currentQIndex].text}"</p>
-                                    </div>
-                                )}
-
-                                {selectedTopic.questions[currentQIndex].audioUrl && (
-                                    <div className="p-4 bg-white rounded-2xl shadow-sm border border-gray-100">
-                                        {selectedTopic.questions[currentQIndex].audioUrl.match(/\.(mp4|webm|mkv)/i) ? (
-                                            <video 
-                                                controls 
-                                                src={selectedTopic.questions[currentQIndex].audioUrl} 
-                                                className="w-full rounded-xl"
-                                                onPlay={() => setMediaPhase('play')}
-                                                onEnded={() => setMediaPhase('record')}
-                                            />
-                                        ) : (
-                                            <audio 
-                                                controls 
-                                                src={selectedTopic.questions[currentQIndex].audioUrl} 
-                                                className="w-full"
-                                                onPlay={() => setMediaPhase('play')}
-                                                onEnded={() => setMediaPhase('record')}
-                                            />
-                                        )}
-                                    </div>
-                                )}
+                        {/* Topic Side */}
+                        <div className={`${selectedTopic.passage ? 'md:w-7/12 p-8 justify-start max-h-[650px] overflow-y-auto' : 'md:w-5/12 p-12 justify-center'} bg-gray-50 border-r border-gray-100 flex flex-col`}>
+                            <div className={`${selectedTopic.passage ? 'w-12 h-12 mb-4' : 'w-16 h-16 mb-6'} bg-white rounded-2xl flex items-center justify-center text-primary-500 shadow-sm`}>
+                                <Mic size={selectedTopic.passage ? 24 : 32} />
                             </div>
-                        ) : (
-                            <>
-                                {selectedTopic.imageUrl && (
-                                    <div className="mb-6 rounded-2xl overflow-hidden shadow-sm border border-gray-100 bg-white p-2">
-                                        <img src={selectedTopic.imageUrl} alt="Topic Visual" className="w-full h-auto rounded-xl object-contain max-h-[250px]" />
+                            <h2 className={`${selectedTopic.passage ? 'text-2xl mb-2' : 'text-3xl mb-4'} font-black text-gray-900 tracking-tight`}>{selectedTopic.title}</h2>
+                            
+                            {isMulti ? (
+                                <div className="mb-6">
+                                    <div className="inline-block px-3 py-1 bg-primary-100 text-primary-700 font-bold rounded-lg mb-4 text-xs tracking-widest uppercase">
+                                        Sentence {currentQIndex + 1} of {selectedTopic.questions.length}
                                     </div>
-                                )}
-                                <p className="text-gray-500 text-lg font-medium leading-relaxed">
-                                    {selectedTopic.desc}
-                                </p>
-                            </>
-                        )}
-
-                        <div className="mt-8 space-y-4">
-                            {selectedTopic.timeLimit && (
-                                <div className="flex items-center space-x-3 text-sm font-bold text-gray-400">
-                                    <Clock size={18} className="text-blue-500" />
-                                    <span>Time Limit: {selectedTopic.timeLimit} seconds</span>
-                                </div>
-                            )}
-                            <div className="flex items-center space-x-3 text-sm font-bold text-gray-400">
-                                <ShieldCheck size={18} className="text-emerald-500" />
-                                <span>Noise suppression active</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Recording Side */}
-                    <div className="md:w-7/12 p-12 flex flex-col items-center justify-center relative bg-white">
-                        {status === 'recording' && timeLeft !== null && (
-                            <div className="absolute top-8 right-8 bg-rose-50 border border-rose-100 px-4 py-2 rounded-xl flex items-center space-x-2 text-rose-500 font-black tracking-widest shadow-sm">
-                                <Clock size={16} />
-                                <span>
-                                    {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
-                                </span>
-                            </div>
-                        )}
-                        <AnimatePresence mode="wait">
-                            {loading || mediaPhase === 'evaluating' ? (
-                                <motion.div
-                                    key="loading"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="text-center"
-                                >
-                                    <div className="relative">
-                                        <Loader2 size={80} className="text-primary-500 animate-spin mx-auto mb-8" />
-                                        <RefreshCw size={30} className="text-primary-200 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                                    </div>
-                                    <h3 className="text-2xl font-black text-gray-900 mb-2">Analyzing Patterns...</h3>
-                                    <p className="text-gray-500 font-medium">Decoding phonemes and checking fluency</p>
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    key="interface"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="text-center w-full"
-                                >
-                                    {status === 'recording' ? (
-                                        <div className="mb-12">
-                                            <div className="flex justify-center items-end gap-1.5 h-32 mb-8">
-                                                {[...Array(15)].map((_, i) => (
-                                                    <motion.div
-                                                        key={i}
-                                                        animate={{ height: [20, Math.random() * 100 + 20, 20] }}
-                                                        transition={{ repeat: Infinity, duration: 0.5 + Math.random() }}
-                                                        className="w-2 bg-primary-500 rounded-full"
-                                                    ></motion.div>
-                                                ))}
-                                            </div>
-                                            <div className="inline-block px-6 py-2 bg-rose-50 text-rose-500 rounded-2xl font-black text-sm uppercase tracking-widest border border-rose-100 animate-pulse">
-                                                Live • Recording
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="mb-12">
-                                            <div className="w-32 h-32 rounded-full border-4 border-gray-50 flex items-center justify-center mx-auto mb-6 bg-gray-50/50">
-                                                <Mic size={48} className="text-gray-300" />
-                                            </div>
-                                            <h3 className="text-xl font-bold text-gray-900">
-                                                {isMulti ? (mediaPhase === 'play' ? "Watch/Listen First" : "Ready to start?") : "Ready to start?"}
-                                            </h3>
-                                            <p className="text-gray-400">
-                                                {isMulti ? (mediaPhase === 'play' ? "Please play the media on the left." : "Press the button and repeat the sentence.") : "Press the button when you're ready to speak"}
-                                            </p>
+                                    <h3 className="font-bold text-gray-800 text-lg mb-2">Instructions</h3>
+                                    <p className="text-gray-500 mb-6">{selectedTopic.desc || "Listen to the media carefully, then repeat exactly what you hear."}</p>
+                                    
+                                    {selectedTopic.questions[currentQIndex].text && (
+                                        <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm mb-6">
+                                            <p className="text-gray-700 font-medium italic">"{selectedTopic.questions[currentQIndex].text}"</p>
                                         </div>
                                     )}
 
-                                    <div className="flex justify-center">
-                                        {status !== 'recording' ? (
-                                            <button
-                                                onClick={startRecording}
-                                                disabled={isMulti && mediaPhase === 'play'}
-                                                className={`group flex flex-col items-center ${isMulti && mediaPhase === 'play' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                            >
-                                                <div className="w-24 h-24 bg-primary-600 rounded-full flex items-center justify-center text-white shadow-2xl shadow-primary-500/40 group-hover:scale-110 active:scale-95 transition-all duration-300 group-hover:bg-primary-500">
-                                                    <Mic size={40} />
-                                                </div>
-                                                <span className="mt-4 font-black text-gray-900 uppercase tracking-tighter text-lg">Start Recording</span>
-                                            </button>
-                                        ) : (
-                                            <button
-                                                onClick={stopRecording}
-                                                className="group flex flex-col items-center"
-                                            >
-                                                <div className="w-24 h-24 bg-rose-600 rounded-full flex items-center justify-center text-white shadow-2xl shadow-rose-500/40 hover:scale-110 active:scale-95 transition-all duration-300">
-                                                    <Square size={36} className="fill-current" />
-                                                </div>
-                                                <span className="mt-4 font-black text-rose-600 uppercase tracking-tighter text-lg">
-                                                    {isMulti && currentQIndex < selectedTopic.questions.length - 1 ? 'Next Sentence' : 'Finish Recognition'}
-                                                </span>
-                                            </button>
-                                        )}
-                                    </div>
-                                </motion.div>
+                                    {selectedTopic.questions[currentQIndex].audioUrl && (
+                                        <div className="p-4 bg-white rounded-2xl shadow-sm border border-gray-100">
+                                            {selectedTopic.questions[currentQIndex].audioUrl.match(/\.(mp4|webm|mkv)/i) ? (
+                                                <video 
+                                                    controls 
+                                                    src={selectedTopic.questions[currentQIndex].audioUrl} 
+                                                    className="w-full rounded-xl"
+                                                    onPlay={() => setMediaPhase('play')}
+                                                    onEnded={() => setMediaPhase('record')}
+                                                />
+                                            ) : (
+                                                <audio 
+                                                    controls 
+                                                    src={selectedTopic.questions[currentQIndex].audioUrl} 
+                                                    className="w-full"
+                                                    onPlay={() => setMediaPhase('play')}
+                                                    onEnded={() => setMediaPhase('record')}
+                                                />
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <>
+                                    {selectedTopic.imageUrl && (
+                                        <div className="mb-6 rounded-2xl overflow-hidden shadow-sm border border-gray-100 bg-white p-2">
+                                            <img src={selectedTopic.imageUrl} alt="Topic Visual" className="w-full h-auto rounded-xl object-contain max-h-[250px]" />
+                                        </div>
+                                    )}
+                                    {selectedTopic.desc && (
+                                        <p className={`${selectedTopic.passage ? 'text-slate-500 text-sm font-semibold mb-2' : 'text-gray-500 text-lg font-medium leading-relaxed mb-6'}`}>
+                                            {selectedTopic.desc}
+                                        </p>
+                                    )}
+                                    {selectedTopic.passage && (
+                                        <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm mt-3 flex-1 flex flex-col min-h-[300px]">
+                                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-2"></span>
+                                                Passage to Read Aloud
+                                            </h4>
+                                            <div className="text-slate-700 text-base md:text-lg font-medium leading-relaxed whitespace-pre-line select-none flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                                                {selectedTopic.passage}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
                             )}
-                        </AnimatePresence>
-                    </div>
-                </motion.div>
-            </div>
+
+                            <div className="mt-8 space-y-4">
+                                {selectedTopic.timeLimit && (
+                                    <div className="flex items-center space-x-3 text-sm font-bold text-gray-400">
+                                        <Clock size={18} className="text-blue-500" />
+                                        <span>Time Limit: {selectedTopic.timeLimit} seconds</span>
+                                    </div>
+                                )}
+                                <div className="flex items-center space-x-3 text-sm font-bold text-gray-400">
+                                    <ShieldCheck size={18} className="text-emerald-500" />
+                                    <span>Noise suppression active</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Recording Side */}
+                        <div className={`${selectedTopic.passage ? 'md:w-5/12 p-8' : 'md:w-7/12 p-12'} flex flex-col items-center justify-center relative bg-white`}>
+                            {status === 'recording' && timeLeft !== null && (
+                                <div className="absolute top-8 right-8 bg-rose-50 border border-rose-100 px-4 py-2 rounded-xl flex items-center space-x-2 text-rose-500 font-black tracking-widest shadow-sm">
+                                    <Clock size={16} />
+                                    <span>
+                                        {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                                    </span>
+                                </div>
+                            )}
+                            <AnimatePresence mode="wait">
+                                {loading || mediaPhase === 'evaluating' ? (
+                                    <motion.div
+                                        key="loading"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className="text-center"
+                                    >
+                                        <div className="relative">
+                                            <Loader2 size={80} className="text-primary-500 animate-spin mx-auto mb-8" />
+                                            <RefreshCw size={30} className="text-primary-200 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                                        </div>
+                                        <h3 className="text-2xl font-black text-gray-900 mb-2">Analyzing Patterns...</h3>
+                                        <p className="text-gray-500 font-medium">Decoding phonemes and checking fluency</p>
+                                    </motion.div>
+                                ) : (
+                                    <motion.div
+                                        key="interface"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className="text-center w-full"
+                                    >
+                                        {status === 'recording' ? (
+                                            <div className="mb-12">
+                                                <div className="flex justify-center items-end gap-1.5 h-32 mb-8">
+                                                    {[...Array(15)].map((_, i) => (
+                                                        <motion.div
+                                                            key={i}
+                                                            animate={{ height: [20, Math.random() * 100 + 20, 20] }}
+                                                            transition={{ repeat: Infinity, duration: 0.5 + Math.random() }}
+                                                            className="w-2 bg-primary-500 rounded-full"
+                                                        ></motion.div>
+                                                    ))}
+                                                </div>
+                                                <div className="inline-block px-6 py-2 bg-rose-50 text-rose-500 rounded-2xl font-black text-sm uppercase tracking-widest border border-rose-100 animate-pulse">
+                                                    Live • Recording
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="mb-12">
+                                                <div className="w-32 h-32 rounded-full border-4 border-gray-50 flex items-center justify-center mx-auto mb-6 bg-gray-50/50">
+                                                    <Mic size={48} className="text-gray-300" />
+                                                </div>
+                                                <h3 className="text-xl font-bold text-gray-900">
+                                                    {isMulti ? (mediaPhase === 'play' ? "Watch/Listen First" : "Ready to start?") : "Ready to start?"}
+                                                </h3>
+                                                <p className="text-gray-400">
+                                                    {isMulti ? (mediaPhase === 'play' ? "Please play the media on the left." : "Press the button and repeat the sentence.") : "Press the button when you're ready to speak"}
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        <div className="flex justify-center">
+                                            {status !== 'recording' ? (
+                                                <button
+                                                    onClick={startRecording}
+                                                    disabled={isMulti && mediaPhase === 'play'}
+                                                    className={`group flex flex-col items-center ${isMulti && mediaPhase === 'play' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                >
+                                                    <div className="w-24 h-24 bg-primary-600 rounded-full flex items-center justify-center text-white shadow-2xl shadow-primary-500/40 group-hover:scale-110 active:scale-95 transition-all duration-300 group-hover:bg-primary-500">
+                                                        <Mic size={40} />
+                                                    </div>
+                                                    <span className="mt-4 font-black text-gray-900 uppercase tracking-tighter text-lg">Start Recording</span>
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={stopRecording}
+                                                    className="group flex flex-col items-center"
+                                                >
+                                                    <div className="w-24 h-24 bg-rose-600 rounded-full flex items-center justify-center text-white shadow-2xl shadow-rose-500/40 hover:scale-110 active:scale-95 transition-all duration-300">
+                                                        <Square size={36} className="fill-current" />
+                                                    </div>
+                                                    <span className="mt-4 font-black text-rose-600 uppercase tracking-tighter text-lg">
+                                                        {isMulti && currentQIndex < selectedTopic.questions.length - 1 ? 'Next Sentence' : 'Finish Recognition'}
+                                                    </span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    </motion.div>
+                </div>
+            </FullscreenProctorGuard>
         );
     }
 
     return (
         <DetailedReport
             {...report}
-            transcript={report.transcript}
+            transcript={report?.transcript}
             onRetry={() => {
-                setPhase('topic');
-                setReport(null);
+                if (id) {
+                    navigate('/speaking');
+                } else {
+                    setPhase('topic');
+                    setReport(null);
+                }
             }}
-            onHome={() => window.location.href = '/dashboard'}
+            onHome={() => navigate('/student/dashboard')}
         />
     );
 };

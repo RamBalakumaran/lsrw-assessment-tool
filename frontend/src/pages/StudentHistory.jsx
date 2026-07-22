@@ -53,7 +53,7 @@ const renderNestedValue = (val) => {
     return <span className="font-medium text-gray-800 break-words block mt-1">{String(val)}</span>;
 };
 
-const HistoryPage = () => {
+const StudentHistory = () => {
     const [attempts, setAttempts] = useState([]);
     const [stats, setStats] = useState({ peak: 0, peakTask: "No attempts yet", total: 0, average: 0 });
     const [loading, setLoading] = useState(true);
@@ -308,4 +308,4 @@ const HistoryPage = () => {
     );
 };
 
-export default HistoryPage;
+export default StudentHistory;

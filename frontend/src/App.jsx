@@ -1,11 +1,12 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Dashboard from './pages/Dashboard';
+import DashboardRedirect from './components/DashboardRedirect';
+import StudentDashboard from './pages/StudentDashboard';
+import StudentHistory from './pages/StudentHistory';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
-import HistoryPage from './pages/History';
 import Profile from './pages/Profile';
 import PasswordReset from './pages/PasswordReset';
 import UserManagement from './pages/UserManagement';
@@ -32,7 +33,10 @@ function App() {
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<DashboardRedirect />} />
+          <Route path="/student/dashboard" element={<StudentDashboard />} />
+          <Route path="/student/history" element={<StudentHistory />} />
+
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/users" element={<UserManagement />} />
           <Route path="/admin/tasks" element={<GlobalTasks />} />
@@ -43,8 +47,6 @@ function App() {
           <Route path="/teacher/performance" element={<TeacherPerformance />} />
 
           <Route path="/groups/:groupId/students" element={<GroupStudentsPage />} />
-
-          <Route path="/history" element={<HistoryPage />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/reset-password" element={<PasswordReset />} />
 

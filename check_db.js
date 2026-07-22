@@ -1,14 +1,14 @@
 const db = require('./backend/src/models');
 
-async function checkCreators() {
+async function showResponses() {
     try {
-        const tasks = await db.Task.findAll();
-        for (const t of tasks) {
-            const creator = await db.User.findByPk(t.creatorId);
-            console.log(`Task Title: ${t.title} | Creator Name: ${creator ? `${creator.firstName} ${creator.lastName}` : 'UNKNOWN'} | Creator Role: ${creator ? creator.role : 'UNKNOWN'}`);
+        const responses = await db.Response.findAll({ limit: 10 });
+        for (const r of responses) {
+            const task = await db.Task.findByPk(r.taskId);
+            console.log(`Response ID: ${r.id} | Score: ${r.score} | TaskTitle: ${task ? task.title : 'null'} | lsrwComponent: ${task ? task.lsrwComponent : 'null'} | type: ${task ? task.type : 'null'}`);
         }
     } catch (e) {
         console.error(e);
     }
 }
-checkCreators();
+showResponses();

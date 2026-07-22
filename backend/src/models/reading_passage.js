@@ -1,7 +1,7 @@
 module.exports = (sequelize, DataTypes) => {
   const ReadingPassage = sequelize.define('ReadingPassage', {
     passageId: {
-      type: DataTypes.UUID,
+      type: DataTypes.CHAR(36),
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
       field: 'passage_id'

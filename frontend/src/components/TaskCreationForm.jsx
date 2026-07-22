@@ -25,7 +25,8 @@ const TASK_CONFIG = {
             SELF_INTRODUCTION: { label: 'Self-Introduction', fields: ['instructions', 'timeLimit', 'evaluationRubric'] },
             PICTURE_DESCRIPTION: { label: 'Picture Description', fields: ['instructions', 'imageUrl', 'timeLimit', 'evaluationRubric'] },
             ONE_MINUTE_ASSESSMENT: { label: 'One Minute Assessment', fields: ['instructions', 'timeLimit', 'evaluationRubric'] },
-            REPEAT_SENTENCES: { label: 'Repeat Sentences', fields: ['questions', 'evaluationRubric'] }
+            REPEAT_SENTENCES: { label: 'Repeat Sentences', fields: ['questions', 'evaluationRubric'] },
+            READ_ALOUD: { label: 'Read Aloud Passage', fields: ['passage', 'timeLimit', 'evaluationRubric'] }
         }
     },
     READING: {
@@ -34,7 +35,6 @@ const TASK_CONFIG = {
         bg: 'bg-emerald-50',
         border: 'border-emerald-100',
         subtypes: {
-            READ_ALOUD: { label: 'Read Aloud Passage', fields: ['passage', 'timeLimit', 'evaluationRubric'] },
             COMPREHENSION_MCQ: { label: 'Reading Comprehension (MCQ)', fields: ['passage', 'questions'] },
             TRUE_FALSE: { label: 'True/False Questions', fields: ['passage', 'questions'] },
             FILL_BLANKS: { label: 'Fill in the Blanks', fields: ['passage', 'questions'] },

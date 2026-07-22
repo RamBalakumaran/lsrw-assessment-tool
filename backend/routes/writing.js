@@ -4,12 +4,13 @@ const { spawn } = require('child_process');
 const path = require('path');
 const db = require('../src/models');
 const { authMiddleware } = require('../middleware/auth');
+const { getPythonExecutable } = require('../utils/pythonPath');
 
 router.post('/analyze', authMiddleware, async (req, res) => {
     const { text, topic, taskId } = req.body;
 
     const pythonScript = path.resolve(__dirname, '../../ai-engine/writing_analysis.py');
-    const pythonProcess = spawn('python', [pythonScript]);
+    const pythonProcess = spawn(getPythonExecutable(), [pythonScript]);
 
     let dataString = '';
     let errorString = '';
@@ -35,6 +36,8 @@ router.post('/analyze', authMiddleware, async (req, res) => {
                     userId: req.user.id,
                     taskId: taskId || null,
                     score: result.score,
+                    answer: text,
+                    feedback: result.structure_feedback || "",
                     aiResults: result,
                     status: 'COMPLETED',
                     submittedAt: new Date()

@@ -1,7 +1,7 @@
 module.exports = (sequelize, DataTypes) => {
   const ReadingQuestion = sequelize.define('ReadingQuestion', {
-    questionId: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true, field: 'question_id' },
-    passageId: { type: DataTypes.UUID, allowNull: false, field: 'passage_id' },
+    questionId: { type: DataTypes.CHAR(36), defaultValue: DataTypes.UUIDV4, primaryKey: true, field: 'question_id' },
+    passageId: { type: DataTypes.CHAR(36), allowNull: false, field: 'passage_id' },
     tenantId: { type: DataTypes.STRING, allowNull: false, field: 'tenant_id', index: true },
     questionText: { type: DataTypes.TEXT, allowNull: false, field: 'question_text' },
     questionType: { type: DataTypes.ENUM('MCQ','TRUE_FALSE','FILL_BLANK','SHORT_ANSWER'), field: 'question_type' },

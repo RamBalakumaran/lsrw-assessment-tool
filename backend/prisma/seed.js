@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 const bcrypt = require('bcryptjs');
 
 async function main() {
-    const hashedPassword = await bcrypt.hash('password123', 10);
+    const hashedPassword = await bcrypt.hash('123456', 10);
 
     // 1. Create Organization
     const org = await prisma.organization.upsert({
@@ -24,7 +24,7 @@ async function main() {
 
     // 2. Create Super Admin
     const superAdmin = await prisma.user.upsert({
-        where: { email: 'admin@fluentpro.com' },
+        where: { email: 'admin@nec.edu.in' },
         update: {
             firstName: 'System',
             lastName: 'Administrator',
@@ -34,7 +34,7 @@ async function main() {
             status: 'ACTIVE',
         },
         create: {
-            email: 'admin@fluentpro.com',
+            email: 'admin@nec.edu.in',
             password: hashedPassword,
             firstName: 'System',
             lastName: 'Administrator',
@@ -49,7 +49,7 @@ async function main() {
 
     // 3. Create Organization Admin
     const orgAdmin = await prisma.user.upsert({
-        where: { email: 'orgadmin@fluentpro.com' },
+        where: { email: 'orgadmin@nec.edu.in' },
         update: {
             firstName: 'Olivia',
             lastName: 'Manager',
@@ -59,7 +59,7 @@ async function main() {
             status: 'ACTIVE',
         },
         create: {
-            email: 'orgadmin@fluentpro.com',
+            email: 'orgadmin@nec.edu.in',
             password: hashedPassword,
             firstName: 'Olivia',
             lastName: 'Manager',
@@ -74,7 +74,7 @@ async function main() {
 
     // 4. Create Department Admin
     const departmentAdmin = await prisma.user.upsert({
-        where: { email: 'deptadmin@fluentpro.com' },
+        where: { email: 'deptadmin@nec.edu.in' },
         update: {
             firstName: 'Maya',
             lastName: 'Coordinator',
@@ -84,7 +84,7 @@ async function main() {
             status: 'ACTIVE',
         },
         create: {
-            email: 'deptadmin@fluentpro.com',
+            email: 'deptadmin@nec.edu.in',
             password: hashedPassword,
             firstName: 'Maya',
             lastName: 'Coordinator',
@@ -99,7 +99,7 @@ async function main() {
 
     // 5. Create Teacher
     const teacher = await prisma.user.upsert({
-        where: { email: 'teacher@fluentpro.com' },
+        where: { email: 'teacher@nec.edu.in' },
         update: {
             firstName: 'Sarah',
             lastName: 'Instructor',
@@ -109,7 +109,7 @@ async function main() {
             status: 'ACTIVE',
         },
         create: {
-            email: 'teacher@fluentpro.com',
+            email: 'teacher@nec.edu.in',
             password: hashedPassword,
             firstName: 'Sarah',
             lastName: 'Instructor',
@@ -124,7 +124,7 @@ async function main() {
 
     // 6. Create Students
     const student1 = await prisma.user.upsert({
-        where: { email: 'student@fluentpro.com' },
+        where: { email: 'student@nec.edu.in' },
         update: {
             firstName: 'Alex',
             lastName: 'Learner',
@@ -134,7 +134,7 @@ async function main() {
             status: 'ACTIVE',
         },
         create: {
-            email: 'student@fluentpro.com',
+            email: 'student@nec.edu.in',
             password: hashedPassword,
             firstName: 'Alex',
             lastName: 'Learner',
@@ -148,7 +148,7 @@ async function main() {
     console.log('✅ Student 1 created:', student1.email);
 
     const student2 = await prisma.user.upsert({
-        where: { email: 'student2@fluentpro.com' },
+        where: { email: 'student2@nec.edu.in' },
         update: {
             firstName: 'Jane',
             lastName: 'Smith',
@@ -158,7 +158,7 @@ async function main() {
             status: 'ACTIVE',
         },
         create: {
-            email: 'student2@fluentpro.com',
+            email: 'student2@nec.edu.in',
             password: hashedPassword,
             firstName: 'Jane',
             lastName: 'Smith',
@@ -197,12 +197,12 @@ async function main() {
     console.log('✅ SEED DATA CREATED SUCCESSFULLY!');
     console.log('='.repeat(50));
     console.log('\n📝 Test Credentials:\n');
-    console.log('Super Admin:    admin@fluentpro.com / password123');
-    console.log('Org Admin:      orgadmin@fluentpro.com / password123');
-    console.log('Dept Admin:     deptadmin@fluentpro.com / password123');
-    console.log('Teacher:        teacher@fluentpro.com / password123');
-    console.log('Student 1:      student@fluentpro.com / password123');
-    console.log('Student 2:      student2@fluentpro.com / password123');
+    console.log('Super Admin:    admin@nec.edu.in / 123456');
+    console.log('Org Admin:      orgadmin@nec.edu.in / 123456');
+    console.log('Dept Admin:     deptadmin@nec.edu.in / 123456');
+    console.log('Teacher:        teacher@nec.edu.in / 123456');
+    console.log('Student 1:      student@nec.edu.in / 123456');
+    console.log('Student 2:      student2@nec.edu.in / 123456');
     console.log('\n' + '='.repeat(50) + '\n');
 }
 

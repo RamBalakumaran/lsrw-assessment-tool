@@ -225,6 +225,11 @@ const GlobalTasks = () => {
                                                 <span className="px-5 py-1.5 rounded-full bg-primary-50 text-primary-600 text-[10px] font-black uppercase tracking-[0.2em] border border-primary-100 inline-block shadow-sm">
                                                     {task.type}
                                                 </span>
+                                                {(task.assessmentType || task.subType) && (
+                                                    <span className="px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] border border-indigo-100 inline-block shadow-sm">
+                                                        {(task.assessmentType || task.subType).replace(/_/g, ' ')}
+                                                    </span>
+                                                )}
                                             </div>
                                             <p className="text-gray-500 font-medium text-sm line-clamp-1 leading-relaxed">
                                                 {task.description || "No description provided for this curriculum asset."}
