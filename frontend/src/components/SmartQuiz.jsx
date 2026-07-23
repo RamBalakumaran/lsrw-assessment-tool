@@ -57,31 +57,57 @@ const SmartQuiz = ({ questions, onComplete }) => {
         >
           <h2 className="text-2xl font-bold text-gray-900 mb-8 leading-tight">{q.questionText || q.text}</h2>
 
-          <div className="space-y-4 mb-10">
-            {(q.options || q.opts || []).map((opt, idx) => (
-              <motion.div
-                key={opt}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                onClick={() => setAnswers({ ...answers, [q.id]: opt })}
-                className={`group flex items-center justify-between p-5 rounded-2xl border-2 cursor-pointer transition-all ${answers[q.id] === opt
-                  ? 'border-primary-500 bg-primary-50'
-                  : 'border-gray-50 bg-gray-50 hover:border-gray-200 hover:bg-white'
-                  }`}
+          {q.audioUrl && (
+            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 mb-8 max-w-xl mx-auto">
+              <audio
+                controls
+                key={q.audioUrl}
+                className="w-full h-10 rounded-full"
+                src={q.audioUrl}
               >
-                <div className="flex items-center">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center mr-4 font-bold ${answers[q.id] === opt ? 'bg-primary-500 text-white' : 'bg-white text-gray-400 group-hover:text-primary-500'
-                    }`}>
-                    {String.fromCharCode(65 + idx)}
+                Your browser does not support audio playback.
+              </audio>
+            </div>
+          )}
+
+          <div className="space-y-4 mb-10">
+            {(!q.options && !q.opts) || (q.options || q.opts || []).length === 0 ? (
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-400 uppercase tracking-wider block mb-2">Your Answer</label>
+                <textarea
+                  value={answers[q.id] || ''}
+                  onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })}
+                  className="w-full p-6 min-h-[120px] rounded-2xl border-2 border-gray-100 outline-none text-lg text-gray-800 leading-relaxed font-semibold focus:border-primary-500 bg-gray-50 focus:bg-white transition-all shadow-sm resize-none"
+                  placeholder="Type your response here..."
+                  autoFocus
+                />
+              </div>
+            ) : (
+              (q.options || q.opts || []).map((opt, idx) => (
+                <motion.div
+                  key={opt}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  onClick={() => setAnswers({ ...answers, [q.id]: opt })}
+                  className={`group flex items-center justify-between p-5 rounded-2xl border-2 cursor-pointer transition-all ${answers[q.id] === opt
+                    ? 'border-primary-500 bg-primary-50'
+                    : 'border-gray-50 bg-gray-50 hover:border-gray-200 hover:bg-white'
+                    }`}
+                >
+                  <div className="flex items-center">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mr-4 font-bold ${answers[q.id] === opt ? 'bg-primary-500 text-white' : 'bg-white text-gray-400 group-hover:text-primary-500'
+                      }`}>
+                      {String.fromCharCode(65 + idx)}
+                    </div>
+                    <span className={`text-lg transition-colors ${answers[q.id] === opt ? 'text-primary-900 font-bold' : 'text-gray-600 font-medium'
+                      }`}>
+                      {opt}
+                    </span>
                   </div>
-                  <span className={`text-lg transition-colors ${answers[q.id] === opt ? 'text-primary-900 font-bold' : 'text-gray-600 font-medium'
-                    }`}>
-                    {opt}
-                  </span>
-                </div>
-                {answers[q.id] === opt && <CheckCircle2 className="text-primary-500" size={24} />}
-              </motion.div>
-            ))}
+                  {answers[q.id] === opt && <CheckCircle2 className="text-primary-500" size={24} />}
+                </motion.div>
+              ))
+            )}
           </div>
 
           <button

@@ -67,7 +67,7 @@ const GroupStudentsPage = () => {
         <div className="flex bg-gray-50 min-h-screen">
             <Sidebar role={role} />
 
-            <main className="flex-1 p-6 md:p-10 overflow-y-auto font-sans">
+            <main className="flex-1 p-6 md:p-10 overflow-y-auto min-w-0 font-sans">
                 {/* Back button & Header */}
                 <button 
                     onClick={() => navigate(-1)} 

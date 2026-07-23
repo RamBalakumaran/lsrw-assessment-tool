@@ -125,7 +125,7 @@ const StudentHistory = () => {
         <div className="flex bg-gray-50 min-h-screen">
             <Sidebar role="STUDENT" />
 
-            <main className="flex-1 p-10 overflow-y-auto">
+            <main className="flex-1 p-6 md:p-10 overflow-y-auto min-w-0">
                 <header className="flex justify-between items-center mb-10">
                     <div>
                         <h1 className="text-4xl font-black text-gray-900 tracking-tight">Performance History</h1>

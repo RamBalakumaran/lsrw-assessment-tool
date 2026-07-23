@@ -15,6 +15,38 @@ const getYoutubeId = (url) => {
     return (match && match[2].length === 11) ? match[2] : null;
 };
 
+const calculateLevenshtein = (a, b) => {
+    const tmp = [];
+    for (let i = 0; i <= a.length; i++) {
+        tmp.push([i]);
+    }
+    for (let j = 0; j <= b.length; j++) {
+        tmp[0][j] = j;
+    }
+    for (let i = 1; i <= a.length; i++) {
+        for (let j = 1; j <= b.length; j++) {
+            tmp[i][j] = Math.min(
+                tmp[i - 1][j] + 1,
+                tmp[i][j - 1] + 1,
+                tmp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+            );
+        }
+    }
+    return tmp[a.length][b.length];
+};
+
+const getSimilarity = (str1, str2) => {
+    const s1 = (str1 || "").trim().toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()?]/g, "").replace(/\s+/g, " ");
+    const s2 = (str2 || "").trim().toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()?]/g, "").replace(/\s+/g, " ");
+    
+    if (s1 === s2) return 1.0;
+    if (!s1 || !s2) return 0.0;
+    
+    const distance = calculateLevenshtein(s1, s2);
+    const maxLength = Math.max(s1.length, s2.length);
+    return (maxLength - distance) / maxLength;
+};
+
 const ListeningTest = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -81,56 +113,112 @@ const ListeningTest = () => {
         const totalTime = Math.round((Date.now() - startTime) / 1000);
         let correct = 0;
         let mistakes = [];
-
         let criteria = {};
-        selectedTopic.questions.forEach(q => criteria[q.type] = 0);
 
-        selectedTopic.questions.forEach(q => {
-            if (answers[q.id] === q.correctAnswer) {
-                correct++;
-                criteria[q.type] = 100;
-            } else {
-                mistakes.push({
-                    type: q.type,
-                    question: q.text,
-                    userAnswer: answers[q.id] || "No Answer",
-                    correctAnswer: q.correctAnswer
-                });
-            }
-        });
+        const isDictation = selectedTopic?.subType === 'DICTATION' || 
+                            selectedTopic?.assessmentType === 'Dictation' || 
+                            selectedTopic?.title?.toLowerCase().includes('dictation');
 
-        const score = Math.round((correct / selectedTopic.questions.length) * 100);
+        if (isDictation) {
+            let totalSim = 0;
+            selectedTopic.questions.forEach((q, idx) => {
+                const sim = getSimilarity(answers[q.id], q.correctAnswer);
+                totalSim += sim;
+                criteria[q.type || `Sentence ${idx + 1}`] = Math.round(sim * 100);
 
-        const reportData = {
-            score,
-            title: "Listening",
-            metrics: [
-                { label: "Completion Time", value: `${totalTime}s` },
-                { label: "Audio Replays", value: playCount },
-                { label: "Overall Accuracy", value: `${score}%` },
-                { label: "Focus Rank", value: score > 80 ? "Alpha" : "Beta" }
-            ],
-            criteria,
-            mistakes,
-            recommendations: [
-                playCount > 1 ? "Try to answer without replaying for higher score." : "Excellent concentration, single playback.",
-                score < 100 ? "Identify keywords in questions before playing." : "Perfect comprehension of the audio track."
-            ]
-        };
-
-        setReport(reportData);
-        setPhase('report');
-
-        // Submit attempt to backend
-        try {
-            api.post('/attempts/submit', {
-                taskId: selectedTopic?.id,
-                studentAnswers: answers,
-                score,
-                aiResults: reportData
+                if (sim >= 0.95) {
+                    correct++;
+                } else {
+                    mistakes.push({
+                        type: q.type || "Dictation",
+                        question: q.text || q.questionText || `Sentence ${idx + 1}`,
+                        userAnswer: answers[q.id] || "[No Answer]",
+                        correctAnswer: q.correctAnswer
+                    });
+                }
             });
-        } catch (e) {
-            console.error("Failed to submit attempt", e);
+
+            const score = Math.round((totalSim / selectedTopic.questions.length) * 100);
+
+            const reportData = {
+                score,
+                title: "Listening Dictation",
+                metrics: [
+                    { label: "Completion Time", value: `${totalTime}s` },
+                    { label: "Audio Replays", value: playCount },
+                    { label: "Transcription Match", value: `${score}%` },
+                    { label: "Focus Rank", value: score > 80 ? "Alpha" : "Beta" }
+                ],
+                criteria,
+                mistakes,
+                recommendations: [
+                    playCount > 1 ? "Try to type the sentence with fewer audio replays." : "Excellent concentration, single playback.",
+                    score < 90 ? "Listen closely to spelling and phonemes, and check for missing words." : "Excellent dictation and spelling accuracy."
+                ]
+            };
+
+            setReport(reportData);
+            setPhase('report');
+
+            try {
+                api.post('/attempts/submit', {
+                    taskId: selectedTopic?.id,
+                    studentAnswers: answers,
+                    score,
+                    aiResults: reportData
+                });
+            } catch (e) {
+                console.error("Failed to submit attempt", e);
+            }
+        } else {
+            selectedTopic.questions.forEach(q => criteria[q.type] = 0);
+
+            selectedTopic.questions.forEach(q => {
+                if (answers[q.id] === q.correctAnswer) {
+                    correct++;
+                    criteria[q.type] = 100;
+                } else {
+                    mistakes.push({
+                        type: q.type,
+                        question: q.text,
+                        userAnswer: answers[q.id] || "No Answer",
+                        correctAnswer: q.correctAnswer
+                    });
+                }
+            });
+
+            const score = Math.round((correct / selectedTopic.questions.length) * 100);
+
+            const reportData = {
+                score,
+                title: "Listening",
+                metrics: [
+                    { label: "Completion Time", value: `${totalTime}s` },
+                    { label: "Audio Replays", value: playCount },
+                    { label: "Overall Accuracy", value: `${score}%` },
+                    { label: "Focus Rank", value: score > 80 ? "Alpha" : "Beta" }
+                ],
+                criteria,
+                mistakes,
+                recommendations: [
+                    playCount > 1 ? "Try to answer without replaying for higher score." : "Excellent concentration, single playback.",
+                    score < 100 ? "Identify keywords in questions before playing." : "Perfect comprehension of the audio track."
+                ]
+            };
+
+            setReport(reportData);
+            setPhase('report');
+
+            try {
+                api.post('/attempts/submit', {
+                    taskId: selectedTopic?.id,
+                    studentAnswers: answers,
+                    score,
+                    aiResults: reportData
+                });
+            } catch (e) {
+                console.error("Failed to submit attempt", e);
+            }
         }
     };
 
@@ -219,10 +307,24 @@ const ListeningTest = () => {
                                 </div>
                                 <h2 className="text-4xl font-black text-gray-900 mb-4">{selectedTopic.title}</h2>
                                 <p className="text-gray-500 text-lg mb-10 max-w-xl mx-auto">
-                                    Listen to the media carefully. You can replay the track if needed, but it may affect your final score assessment.
+                                    {selectedTopic.audioUrl 
+                                        ? "Listen to the media carefully. You can replay the track if needed, but it may affect your final score assessment."
+                                        : "Get ready to listen to the dictation sentences. Each question will play its own audio clip."
+                                    }
                                 </p>
 
-                                {renderMedia(selectedTopic.audioUrl)}
+                                {selectedTopic.audioUrl ? (
+                                    renderMedia(selectedTopic.audioUrl)
+                                ) : (
+                                    <div className="bg-gray-50 p-8 rounded-[2rem] border border-gray-100 mb-10 max-w-xl mx-auto text-center">
+                                        <p className="text-gray-700 font-bold text-lg leading-relaxed">
+                                            This is a Dictation Exercise containing multiple sentences.
+                                        </p>
+                                        <p className="text-gray-500 text-md mt-2">
+                                            For each sentence, play the audio clip and type exactly what you hear in the input field.
+                                        </p>
+                                    </div>
+                                )}
 
                                 <div className="flex flex-col items-center space-y-6">
                                     <button

@@ -34,36 +34,45 @@ function App() {
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardRedirect />} />
-          <Route path="/student/dashboard" element={<StudentDashboard />} />
-          <Route path="/student/history" element={<StudentHistory />} />
-
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/users" element={<UserManagement />} />
-          <Route path="/admin/tasks" element={<GlobalTasks />} />
-
-          <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-          <Route path="/teacher/groups" element={<TeacherGroups />} />
-          <Route path="/teacher/tasks" element={<TeacherTasks />} />
-          <Route path="/teacher/performance" element={<TeacherPerformance />} />
-
-          <Route path="/groups/:groupId/students" element={<GroupStudentsPage />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/reset-password" element={<PasswordReset />} />
 
-          {/* Speaking Module */}
-          <Route path="/test/:id" element={<TestInterface />} />
-          <Route path="/speaking-test/:id" element={<TestInterface />} />
-          <Route path="/speaking" element={<TestInterface />} />
+          {/* Admin Routes */}
+          <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SUPER_ADMIN', 'DEPT_ADMIN']} />}>
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<UserManagement />} />
+            <Route path="/admin/tasks" element={<GlobalTasks />} />
+          </Route>
 
-          {/* Other Modules */}
-          <Route path="/listening" element={<ListeningTest />} />
-          <Route path="/listening-test/:id" element={<ListeningTest />} />
-          
-          <Route path="/reading" element={<ReadingTest />} />
-          <Route path="/reading-test/:id" element={<ReadingTest />} />
-          
-          <Route path="/writing" element={<WritingTest />} />
-          <Route path="/writing-test/:id" element={<WritingTest />} />
+          {/* Teacher Routes */}
+          <Route element={<ProtectedRoute allowedRoles={['TEACHER', 'DEPT_ADMIN', 'ADMIN', 'SUPER_ADMIN']} />}>
+            <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+            <Route path="/teacher/groups" element={<TeacherGroups />} />
+            <Route path="/teacher/tasks" element={<TeacherTasks />} />
+            <Route path="/teacher/performance" element={<TeacherPerformance />} />
+            <Route path="/groups/:groupId/students" element={<GroupStudentsPage />} />
+          </Route>
+
+          {/* Student Routes */}
+          <Route element={<ProtectedRoute allowedRoles={['STUDENT']} />}>
+            <Route path="/student/dashboard" element={<StudentDashboard />} />
+            <Route path="/student/history" element={<StudentHistory />} />
+
+            {/* Speaking Module */}
+            <Route path="/test/:id" element={<TestInterface />} />
+            <Route path="/speaking-test/:id" element={<TestInterface />} />
+            <Route path="/speaking" element={<TestInterface />} />
+
+            {/* Other Modules */}
+            <Route path="/listening" element={<ListeningTest />} />
+            <Route path="/listening-test/:id" element={<ListeningTest />} />
+            
+            <Route path="/reading" element={<ReadingTest />} />
+            <Route path="/reading-test/:id" element={<ReadingTest />} />
+            
+            <Route path="/writing" element={<WritingTest />} />
+            <Route path="/writing-test/:id" element={<WritingTest />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>

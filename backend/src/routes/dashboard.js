@@ -3,7 +3,8 @@ const router = express.Router();
 const db = require('../models');
 const { authMiddleware } = require('../../middleware/auth');
 const { Sequelize } = require('../models');
-
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 // GET /api/dashboard/teacher
 router.get('/teacher', authMiddleware, async (req, res) => {
     try {
@@ -431,38 +432,57 @@ router.get('/student', authMiddleware, async (req, res) => {
         // 3. Fetch individually assigned tasks
         let individuallyAssignedTasks = [];
         if (individuallyAssignedTaskIds.length > 0) {
-            individuallyAssignedTasks = await db.Task.findAll({
-                where: { id: individuallyAssignedTaskIds }
+            individuallyAssignedTasks = await prisma.task.findMany({
+                where: { id: { in: individuallyAssignedTaskIds } }
             });
         }
 
-        // 4. Fetch Global tasks and Group tasks (only Published ones)
-        const groupIds = user.groupMemberships.map(g => g.id);
-
-        let groupTasks = [];
-        if (groupIds.length > 0) {
-            groupTasks = await db.Task.findAll({
-                where: { status: { [db.Sequelize.Op.in]: ['Published', 'PUBLISHED'] } },
-                include: [
-                    {
-                        model: db.Group,
-                        as: 'targetGroups',
-                        where: { id: groupIds },
-                        attributes: []
-                    }
-                ]
-            });
-        }
-
-        const globalTasks = await db.Task.findAll({
-            where: { 
-                visibilityScope: { [db.Sequelize.Op.in]: ['Global', 'GLOBAL'] }, 
-                status: { [db.Sequelize.Op.in]: ['Published', 'PUBLISHED'] } 
-            }
+        // 4. Fetch Global tasks (only Published ones)
+        const globalTasks = await prisma.task.findMany({
+            where: { visibilityScope: 'GLOBAL', status: 'PUBLISHED' }
         });
+        const pendingGlobalTasks = globalTasks.filter(task => !completedTaskIds.includes(task.id));
+        const formattedGlobalTasks = pendingGlobalTasks.map(t => ({
+            id: t.id,
+            task: t,
+            dueDate: t.endDate
+        }));
+
+        // 5. Build group cards for each active group membership
+        const groupCards = [];
+        let allGroupTasks = [];
+        for (const group of user.groupMemberships) {
+            const tasksForGroup = await prisma.task.findMany({
+                where: { 
+                    status: 'PUBLISHED',
+                    groupAssignments: {
+                        some: { groupId: group.id }
+                    }
+                }
+            });
+            const pendingGroupTasks = tasksForGroup.filter(task => !completedTaskIds.includes(task.id));
+            const formattedGroupTasks = pendingGroupTasks.map(t => ({
+                id: t.id,
+                task: t,
+                dueDate: t.endDate
+            }));
+
+            allGroupTasks.push(...tasksForGroup);
+
+            if (formattedGroupTasks.length > 0) {
+                groupCards.push({
+                    id: group.id,
+                    name: group.name,
+                    description: group.description,
+                    academicYear: group.academicYear,
+                    section: group.section,
+                    tasks: formattedGroupTasks
+                });
+            }
+        }
 
         // 5. Combine and deduplicate
-        const allRelevantTasks = [...individuallyAssignedTasks, ...groupTasks, ...globalTasks];
+        const allRelevantTasks = [...individuallyAssignedTasks, ...globalTasks, ...allGroupTasks];
         const uniqueTasks = allRelevantTasks.filter((task, index, self) =>
             index === self.findIndex((t) => t.id === task.id)
         );
@@ -485,7 +505,9 @@ router.get('/student', authMiddleware, async (req, res) => {
             },
             groups: user.groupMemberships,
             stats,
-            assignedTasks: formattedAssignedTasks
+            assignedTasks: formattedAssignedTasks,
+            globalTasks: formattedGlobalTasks,
+            groupCards
         });
 
     } catch (error) {

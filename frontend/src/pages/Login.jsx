@@ -18,7 +18,7 @@ const Login = () => {
             if (userStr) {
                 try {
                     const user = JSON.parse(userStr);
-                    if (user.role === 'ADMIN') navigate('/admin/dashboard', { replace: true });
+                    if (['ADMIN', 'SUPER_ADMIN', 'DEPT_ADMIN'].includes(user.role)) navigate('/admin/dashboard', { replace: true });
                     else if (user.role === 'TEACHER') navigate('/teacher/dashboard', { replace: true });
                     else navigate('/student/dashboard', { replace: true });
                 } catch (e) {
@@ -54,7 +54,7 @@ const Login = () => {
             }
 
             // Redirect based on role
-            if (user.role === 'ADMIN') navigate('/admin/dashboard');
+            if (['ADMIN', 'SUPER_ADMIN', 'DEPT_ADMIN'].includes(user.role)) navigate('/admin/dashboard');
             else if (user.role === 'TEACHER') navigate('/teacher/dashboard');
             else navigate('/student/dashboard');
 

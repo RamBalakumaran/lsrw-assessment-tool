@@ -123,7 +123,7 @@ const PasswordReset = () => {
             // Redirect to role dashboard after short delay
             setTimeout(() => {
                 const role = user?.role;
-                if (role === 'ADMIN') navigate('/admin/dashboard');
+                if (['ADMIN', 'SUPER_ADMIN', 'DEPT_ADMIN'].includes(role)) navigate('/admin/dashboard');
                 else if (role === 'TEACHER') navigate('/teacher/dashboard');
                 else navigate('/dashboard');
             }, 1800);
@@ -152,7 +152,7 @@ const PasswordReset = () => {
         <div className="flex bg-gray-50 min-h-screen font-sans">
             <Sidebar role={user.role} />
 
-            <main className="flex-1 p-10 overflow-y-auto">
+            <main className="flex-1 p-6 md:p-10 overflow-y-auto min-w-0">
                 <header className="mb-10">
                     <h1 className="text-4xl font-black text-gray-900 tracking-tight">
                         {isForced ? 'Complete Your Account Profile' : 'Reset Password'}

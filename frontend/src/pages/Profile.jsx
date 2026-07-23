@@ -135,15 +135,15 @@ const Profile = () => {
         <div className="flex bg-gray-50 min-h-screen">
             <Sidebar role={user.role} />
 
-            <main className="flex-1 p-10 overflow-y-auto">
-                <header className="mb-10 flex justify-between items-start">
+            <main className="flex-1 p-6 md:p-10 overflow-y-auto min-w-0">
+                <header className="mb-10 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-6">
                     <div>
                         <h1 className="text-4xl font-black text-gray-900 tracking-tight">Profile</h1>
                         <p className="text-gray-500 font-medium">Essential account details for your current login.</p>
                     </div>
                     <Link
                         to="/reset-password"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-[1.5rem] font-bold hover:bg-primary-700 transition"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-[1.5rem] font-bold hover:bg-primary-700 transition self-start sm:self-auto"
                     >
                         <Lock size={18} />
                         <span>Reset Password</span>
@@ -158,7 +158,7 @@ const Profile = () => {
                     >
                         <div className="h-40 bg-gradient-to-r from-primary-600 via-sky-600 to-emerald-500" />
 
-                        <div className="px-10 pb-10 -mt-14">
+                        <div className="px-6 md:px-10 pb-6 md:pb-10 -mt-14">
                             <div className="w-28 h-28 rounded-[2rem] bg-white p-2 shadow-2xl mb-6">
                                 <div className="w-full h-full rounded-[1.5rem] bg-primary-50 text-primary-600 flex items-center justify-center">
                                     <User size={42} />

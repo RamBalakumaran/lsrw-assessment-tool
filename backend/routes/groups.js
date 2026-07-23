@@ -242,17 +242,18 @@ router.post('/:id/members', authMiddleware, async (req, res) => {
             return res.status(400).json({ error: 'userIds array is required' });
         }
 
-        // Check if user is the group owner
+        // Check if user is group owner or admin
+        const isSystemAdmin = ['ADMIN', 'SUPER_ADMIN', 'DEPT_ADMIN'].includes(req.user.role);
         const group = await prisma.group.findFirst({
             where: {
                 id,
                 organizationId: orgId,
-                ownerId: userId
+                ...( !isSystemAdmin && { ownerId: userId } )
             }
         });
 
         if (!group) {
-            return res.status(403).json({ error: 'Only group owner can add members' });
+            return res.status(403).json({ error: 'Access denied to manage members in this group' });
         }
 
         // Add members
@@ -340,12 +341,12 @@ router.delete('/:id/members/:memberId', authMiddleware, async (req, res) => {
 router.post('/:id/students', authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
-        const { studentIds } = req.body;
+        const studentIds = req.body.studentIds || req.body.userIds;
         const userId = req.user.id;
         const orgId = req.user.organizationId;
 
         if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
-            return res.status(400).json({ error: 'studentIds array is required' });
+            return res.status(400).json({ error: 'studentIds or userIds array is required' });
         }
 
         // Verify group exists and user has access

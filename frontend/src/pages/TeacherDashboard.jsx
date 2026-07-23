@@ -132,22 +132,22 @@ const TeacherDashboard = () => {
         <div className="flex bg-gray-50 min-h-screen font-sans">
             <Sidebar role="TEACHER" />
 
-            <main className="flex-1 p-10 overflow-y-auto">
-                <header className="flex justify-between items-center mb-10">
+            <main className="flex-1 p-6 md:p-10 overflow-y-auto min-w-0">
+                <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6 mb-10">
                     <div>
                         <h1 className="text-4xl font-black text-gray-900 tracking-tight">Educator Hub</h1>
                         <p className="text-gray-500 font-medium">Monitoring {stats.studentCount} assigned students</p>
                     </div>
 
-                    <div className="flex items-center space-x-4">
-                        <div className="relative">
+                    <div className="flex items-center space-x-4 w-full sm:w-auto">
+                        <div className="relative w-full sm:w-auto">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                             <input
                                 type="text"
                                 placeholder="Search student..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-12 pr-6 py-3 bg-white border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-100 transition shadow-sm font-medium w-80"
+                                className="pl-12 pr-6 py-3 bg-white border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-100 transition shadow-sm font-medium w-full sm:w-80"
                             />
                         </div>
                     </div>
@@ -194,7 +194,7 @@ const TeacherDashboard = () => {
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+                            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-x-auto max-w-full">
                                 <table className="w-full text-left font-medium">
                                     <thead>
                                         <tr className="bg-gray-50/50 border-b border-gray-50">
@@ -260,7 +260,7 @@ const TeacherDashboard = () => {
                                 </span>
                             </div>
 
-                            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+                            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-x-auto max-w-full">
                                 <table className="w-full text-left font-medium">
                                     <thead>
                                         <tr className="bg-gray-50/50 border-b border-gray-50">
@@ -390,28 +390,28 @@ const TeacherDashboard = () => {
                             animate={{ scale: 1, opacity: 1 }}
                             className="bg-white w-full max-w-4xl rounded-[3rem] overflow-hidden shadow-2xl"
                         >
-                            <div className="p-10 border-b border-gray-100 flex justify-between items-start">
-                                <div className="flex items-center space-x-6">
-                                    <div className="w-20 h-20 rounded-3xl bg-primary-600 text-white font-black text-3xl flex items-center justify-center shadow-lg shadow-primary-500/30">
+                            <div className="p-6 sm:p-10 border-b border-gray-100 flex justify-between items-start gap-4">
+                                <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left w-full">
+                                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-primary-600 text-white font-black text-2xl sm:text-3xl flex items-center justify-center shadow-lg shadow-primary-500/30 shrink-0">
                                         {selectedStudent.avatar}
                                     </div>
-                                    <div>
-                                        <h2 className="text-4xl font-black text-gray-900">{selectedStudent.name}</h2>
-                                        <p className="text-lg text-gray-500 font-medium">{selectedStudent.email}</p>
+                                    <div className="min-w-0">
+                                        <h2 className="text-2xl sm:text-4xl font-black text-gray-900 truncate">{selectedStudent.name}</h2>
+                                        <p className="text-sm sm:text-lg text-gray-500 font-medium truncate">{selectedStudent.email}</p>
                                     </div>
                                 </div>
-                                <button onClick={() => setSelectedStudent(null)} className="p-3 bg-gray-50 text-gray-400 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                <button onClick={() => setSelectedStudent(null)} className="p-3 bg-gray-50 text-gray-400 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition shrink-0">
+                                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
                                 </button>
                             </div>
-                            <div className="p-12 grid md:grid-cols-2 gap-12">
+                            <div className="p-6 sm:p-12 grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12">
                                 <div>
                                     <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">Recent Performance</h4>
                                     <div className="space-y-4">
                                         {selectedStudent.recentAttempts.map((attempt, idx) => (
                                             <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
-                                                <div className="font-bold text-gray-900">{attempt.task?.title || 'Practice Session'}</div>
-                                                <div className="text-primary-600 font-black">{attempt.status === 'ASSIGNED' ? 'PENDING' : `${attempt.score || 0}%`}</div>
+                                                <div className="font-bold text-gray-900 truncate mr-2">{attempt.task?.title || 'Practice Session'}</div>
+                                                <div className="text-primary-600 font-black shrink-0">{attempt.status === 'ASSIGNED' ? 'PENDING' : `${attempt.score || 0}%`}</div>
                                             </div>
                                         ))}
                                         {selectedStudent.recentAttempts.length === 0 && (
@@ -419,25 +419,25 @@ const TeacherDashboard = () => {
                                         )}
                                     </div>
                                 </div>
-                                <div className="bg-primary-50 p-8 rounded-[2rem] border border-primary-100 flex flex-col justify-between">
+                                <div className="bg-primary-50 p-6 sm:p-8 rounded-[2rem] border border-primary-100 flex flex-col justify-between">
                                     <div>
                                         <h4 className="text-xs font-black text-primary-600 uppercase tracking-widest mb-4">Mastery level</h4>
-                                        <div className="text-6xl font-black text-primary-900 mb-2">{selectedStudent.score}%</div>
-                                        <p className="text-primary-600 font-medium">Overall proficiency across all LSRW modules.</p>
+                                        <div className="text-5xl sm:text-6xl font-black text-primary-900 mb-2">{selectedStudent.score}%</div>
+                                        <p className="text-primary-600 font-medium text-sm sm:text-base">Overall proficiency across all LSRW modules.</p>
                                     </div>
-                                    <div className="space-y-3 mt-4">
+                                    <div className="space-y-3 mt-6">
                                         <button
                                             onClick={() => {
                                                 setSelectedStudentId(selectedStudent.id);
                                                 setSelectedStudent(null);
                                             }}
-                                            className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black shadow-lg shadow-indigo-500/20 transition"
+                                            className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs sm:text-sm font-black shadow-lg shadow-indigo-500/20 transition px-4"
                                         >
                                             View Detailed Performance Report
                                         </button>
                                         <button
                                             onClick={openAssignModal}
-                                            className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl font-black shadow-lg shadow-primary-500/20 transition"
+                                            className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl text-xs sm:text-sm font-black shadow-lg shadow-primary-500/20 transition px-4"
                                         >
                                             Assign New Task
                                         </button>

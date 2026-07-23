@@ -212,7 +212,7 @@ const UserManagement = () => {
         <div className="flex bg-gray-50 min-h-screen">
             <Sidebar role={currentUser?.role || 'ADMIN'} />
 
-            <main className="flex-1 p-10 overflow-y-auto">
+            <main className="flex-1 p-6 md:p-10 overflow-y-auto min-w-0">
                 {selectedGroup ? (
                     // GROUP DRILLDOWN VIEW
                     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
@@ -270,6 +270,15 @@ const UserManagement = () => {
                                          <Upload size={12} /> Bulk Import
                                      </button>
                                  </div>
+                                 <div className="mb-6">
+                                      <MultiSelectSearchList 
+                                          items={users.filter(u => u.role === 'STUDENT' && !selectedGroup.members?.some(m => m.id === u.id))}
+                                          placeholder="Search existing students to add..."
+                                          buttonText="Add Selected Students"
+                                          buttonColor="bg-primary-600 hover:bg-primary-700"
+                                          onAddSelected={handleAddMembersBulk}
+                                      />
+                                  </div>
  
                                  <div className="space-y-3">
                                      {(selectedGroup.members || []).slice(0, 3).map(member => {

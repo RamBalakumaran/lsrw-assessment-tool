@@ -8,7 +8,8 @@ const QUESTION_TYPES = [
     { value: 'CHECKBOX', label: 'Checkboxes (Multiple Answers)' },
     { value: 'TRUE_FALSE', label: 'True / False' },
     { value: 'FILL_BLANKS', label: 'Fill in the Blanks' },
-    { value: 'REPEAT_SENTENCE', label: 'Repeat Sentence (Audio/Video)' }
+    { value: 'REPEAT_SENTENCE', label: 'Repeat Sentence (Audio/Video)' },
+    { value: 'DICTATION', label: 'Audio Dictation / Short Answer' }
 ];
 
 const QuestionBuilder = ({ questions, onChange }) => {
@@ -66,6 +67,10 @@ const QuestionBuilder = ({ questions, onChange }) => {
                 updated[index].options = [];
                 updated[index].correctAnswer = '';
             } else if (value === 'REPEAT_SENTENCE') {
+                updated[index].options = [];
+                updated[index].correctAnswer = '';
+                if (!updated[index].audioUrl) updated[index].audioUrl = '';
+            } else if (value === 'DICTATION') {
                 updated[index].options = [];
                 updated[index].correctAnswer = '';
                 if (!updated[index].audioUrl) updated[index].audioUrl = '';
@@ -249,6 +254,43 @@ const QuestionBuilder = ({ questions, onChange }) => {
                         <p className="text-xs text-gray-400 mt-2 font-medium">The student will watch/listen to this media and then repeat the sentence (Question Text).</p>
                     </div>
                 );
+            case 'DICTATION':
+                return (
+                    <div className="mt-4 space-y-4">
+                        <div>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Audio Source (Audio URL or File) *</label>
+                            <div className="flex space-x-2">
+                                <input
+                                    type="url"
+                                    value={q.audioUrl || ''}
+                                    onChange={(e) => updateQuestion(index, 'audioUrl', e.target.value)}
+                                    className="flex-1 px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition"
+                                    placeholder="https://example.com/audio.mp3"
+                                />
+                                <label className="flex-shrink-0 cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-4 px-6 rounded-2xl transition flex items-center">
+                                    {uploadingIndex === index ? (
+                                        <span className="animate-pulse">Uploading...</span>
+                                    ) : (
+                                        <>
+                                            <Plus size={20} className="mr-2" /> Upload PC Audio
+                                            <input type="file" accept="audio/*" className="hidden" onChange={(e) => handleMediaUpload(index, e)} />
+                                        </>
+                                    )}
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Correct Answer / Expected Response *</label>
+                            <input
+                                type="text"
+                                value={q.correctAnswer}
+                                onChange={(e) => updateQuestion(index, 'correctAnswer', e.target.value)}
+                                className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition"
+                                placeholder="Type the expected sentence or answer the student is supposed to type..."
+                            />
+                        </div>
+                    </div>
+                );
             default:
                 return null;
         }
@@ -320,11 +362,13 @@ const QuestionBuilder = ({ questions, onChange }) => {
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Question Text *</label>
+                                    <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">
+                                        {q.type === 'DICTATION' ? 'Question Text / Prompt (e.g., Question 1)' : 'Question Text *'}
+                                    </label>
                                     <textarea
                                         value={q.text}
                                         onChange={(e) => updateQuestion(index, 'text', e.target.value)}
-                                        placeholder="Enter the question prompt..."
+                                        placeholder={q.type === 'DICTATION' ? "Enter the question prompt or instructions..." : "Enter the question prompt..."}
                                         rows="2"
                                         className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl font-medium focus:outline-none focus:ring-4 focus:ring-primary-100 transition resize-none"
                                     />

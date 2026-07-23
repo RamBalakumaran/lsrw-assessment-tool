@@ -17,7 +17,7 @@ const Settings = () => {
         <div className="flex bg-gray-50 min-h-screen">
             <Sidebar />
 
-            <main className="flex-1 p-10 overflow-y-auto">
+            <main className="flex-1 p-6 md:p-10 overflow-y-auto min-w-0">
                 <header className="mb-12">
                     <h1 className="text-4xl font-black text-gray-900 tracking-tight">Portal Settings</h1>
                     <p className="text-gray-500 font-medium">Configure your personal and institutional preferences</p>

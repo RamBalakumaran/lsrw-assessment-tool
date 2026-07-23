@@ -89,7 +89,7 @@ const AdminDashboard = () => {
         <div className="flex bg-gray-50 min-h-screen">
             <Sidebar role={currentUser?.role || 'ADMIN'} />
 
-            <main className="flex-1 p-10 overflow-y-auto">
+            <main className="flex-1 p-6 md:p-10 overflow-y-auto min-w-0">
                 <header className="flex justify-between items-center mb-10">
                     <div>
                         <h1 className="text-4xl font-black text-gray-900 tracking-tight">
@@ -189,7 +189,10 @@ const AdminDashboard = () => {
                         <div className="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-sm">
                             <h3 className="text-2xl font-black text-gray-900 mb-8">Skill Proficiency</h3>
                             <div className="space-y-8">
-                                {(stats?.skillStats || []).map((skill, i) => (
+                                {(Array.isArray(stats?.skillStats)
+                                    ? stats.skillStats
+                                    : Object.entries(stats?.skillStats || {}).map(([name, score]) => ({ name, score }))
+                                ).map((skill, i) => (
                                     <div key={`${skill.name}-${i}`}>
                                         <div className="flex justify-between items-end mb-3">
                                             <span className="font-black text-gray-700 text-sm uppercase tracking-wider">{skill.name}</span>

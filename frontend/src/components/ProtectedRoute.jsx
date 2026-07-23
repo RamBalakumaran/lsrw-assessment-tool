@@ -3,7 +3,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import api from '../utils/api';
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ allowedRoles, children }) => {
     const token = localStorage.getItem('token');
     const [checkingSession, setCheckingSession] = useState(Boolean(token));
     const [sessionInvalid, setSessionInvalid] = useState(false);
@@ -73,6 +73,9 @@ const ProtectedRoute = ({ children }) => {
         const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
         if (storedUser.forcePasswordReset && location.pathname !== '/reset-password') {
             return <Navigate to="/reset-password" replace />;
+        }
+        if (allowedRoles && !allowedRoles.includes(storedUser.role)) {
+            return <Navigate to="/dashboard" replace />;
         }
     } catch (_) {}
 

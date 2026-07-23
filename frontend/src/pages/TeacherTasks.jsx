@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import TaskCreationForm from '../components/TaskCreationForm';
 import {
@@ -25,6 +26,8 @@ import { motion } from 'framer-motion';
 import api from '../utils/api';
 
 const TeacherTasks = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem('user'));
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -81,7 +84,15 @@ const TeacherTasks = () => {
         fetchTasks();
     }, []);
 
-    const handleOpenCreateModal = () => {
+    useEffect(() => {
+        if (location.state?.prefillGroupId) {
+            handleOpenCreateModal(location.state.prefillGroupId);
+            // Clear the state so it doesn't reopen on refresh
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location.state, navigate]);
+
+    const handleOpenCreateModal = (groupId = null) => {
         setEditTaskId(null);
         setNewTask({
             title: '',
@@ -92,7 +103,9 @@ const TeacherTasks = () => {
             passage: '',
             audioUrl: '',
             instructions: '',
-            questions: []
+            questions: [],
+            visibilityScope: groupId ? 'GroupSpecific' : 'Global',
+            groupIds: groupId ? [groupId] : []
         });
         setIsModalOpen(true);
     };
@@ -202,8 +215,8 @@ const TeacherTasks = () => {
         <div className="flex bg-gray-50 min-h-screen">
             <Sidebar role="TEACHER" />
 
-            <main className="flex-1 p-10 overflow-y-auto">
-                <header className="flex justify-between items-center mb-12">
+            <main className="flex-1 p-6 md:p-10 overflow-y-auto min-w-0">
+                <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6 mb-12">
                     <div>
                         <h1 className="text-4xl font-black text-gray-900 tracking-tight">Assigned Modules</h1>
                         <p className="text-gray-500 font-medium">Curriculum management for your student groups</p>
@@ -211,7 +224,7 @@ const TeacherTasks = () => {
 
                     <button
                         onClick={handleOpenCreateModal}
-                        className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/30"
+                        className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/30 self-start sm:self-auto"
                     >
                         <Plus size={18} />
                         <span>Create New Task</span>
@@ -225,70 +238,70 @@ const TeacherTasks = () => {
                                 key={task.id}
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex items-center justify-between group hover:shadow-xl transition-all"
+                                className="bg-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 group hover:shadow-xl transition-all"
                             >
-                                <div className="flex items-center space-x-8">
-                                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black group-hover:scale-110 transition-transform ${getTypeColor(task.lsrwComponent || task.type)}`}>
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 flex-1 min-w-0 w-full">
+                                    <div className={`w-14 h-14 md:w-16 md:h-16 flex-shrink-0 rounded-2xl flex items-center justify-center font-black group-hover:scale-110 transition-transform ${getTypeColor(task.lsrwComponent || task.type)}`}>
                                         {getIcon(task.lsrwComponent || task.type)}
                                     </div>
-                                    <div className="max-w-md">
-                                        <div className="flex items-center space-x-3 mb-1">
-                                            <h3 className="text-2xl font-black text-gray-900">{task.title}</h3>
-                                            <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border italic ${getTypeColor(task.lsrwComponent || task.type)} border-current/10`}>
+                                    <div className="flex-1 min-w-0 w-full">
+                                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                                            <h3 className="text-xl md:text-2xl font-black text-gray-900 leading-tight break-words">{task.title}</h3>
+                                            <span className={`px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest rounded-lg border italic ${getTypeColor(task.lsrwComponent || task.type)} border-current/10 flex-shrink-0`}>
                                                 {task.lsrwComponent || task.type}
                                             </span>
                                             {(task.assessmentType || task.subType) && (
-                                                <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-lg border italic bg-indigo-50 text-indigo-600 border-indigo-100">
+                                                <span className="px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest rounded-lg border italic bg-indigo-50 text-indigo-600 border-indigo-100 flex-shrink-0">
                                                     {(task.assessmentType || task.subType).replace(/_/g, ' ')}
                                                 </span>
                                             )}
                                         </div>
-                                        <p className="text-gray-500 font-medium line-clamp-1">{task.description}</p>
+                                        <p className="text-gray-500 font-medium text-sm line-clamp-2 md:line-clamp-1">{task.description}</p>
                                     </div>
                                 </div>
 
-                                 <div className="flex items-center space-x-12">
-                                     <div className="text-right hidden md:block text-xs font-black text-gray-400 uppercase tracking-widest leading-none font-sans">
-                                         <div className="mb-px">{task.difficultyLevel}</div>
-                                         <div>{task.timeLimit >= 60 ? `${Math.round(task.timeLimit / 60)} MINS` : `${task.timeLimit} SECS`}</div>
-                                     </div>
-                                     {task.creatorId === user?.id || user?.role === 'ADMIN' || user?.role === 'TEACHER' ? (
-                                         <div className="flex items-center space-x-2">
-                                             <button
-                                                 onClick={() => handleToggleStatus(task)}
-                                                 className={`p-3 rounded-2xl transition shadow-sm ${task.status === 'Published' ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
-                                                 title={task.status === 'Published' ? 'Click to Deactivate' : 'Click to Activate'}
-                                             >
-                                                 <Zap size={20} />
-                                             </button>
-                                             <button
-                                                 onClick={() => setViewingQuizId(viewingQuizId === task.id ? null : task.id)}
-                                                 className={`p-3 rounded-2xl transition shadow-sm ${viewingQuizId === task.id ? 'bg-indigo-600 text-white' : 'bg-gray-50 text-gray-400 hover:bg-indigo-50'}`}
-                                                 title="Preview Task Content"
-                                             >
-                                                 <Eye size={20} />
-                                             </button>
-                                             <button
-                                                 onClick={() => handleEditTask(task)}
-                                                 className="p-3 bg-gray-50 text-gray-400 rounded-2xl hover:bg-indigo-600 hover:text-white transition shadow-sm"
-                                                 title="Edit Task"
-                                             >
-                                                 <Edit2 size={20} />
-                                             </button>
-                                             <button
-                                                 onClick={() => handleDeleteTask(task.id)}
-                                                 className="p-3 bg-gray-50 text-gray-400 rounded-2xl hover:bg-rose-600 hover:text-white transition shadow-sm"
-                                                 title="Delete Task"
-                                             >
-                                                 <Trash2 size={20} />
-                                             </button>
-                                         </div>
-                                     ) : (
-                                         <div className="px-4 py-2 bg-gray-50 rounded-xl text-[10px] font-black tracking-widest uppercase text-gray-400 border border-gray-100 italic">
-                                             Admin Assigned
-                                         </div>
-                                     )}
-                                 </div>
+                                <div className="flex items-center justify-between lg:justify-end gap-6 lg:gap-8 flex-shrink-0 w-full lg:w-auto pt-4 lg:pt-0 border-t border-gray-100 lg:border-t-0">
+                                    <div className="text-left text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none font-sans flex-shrink-0">
+                                        <div className="mb-1">{task.difficultyLevel}</div>
+                                        <div>{task.timeLimit >= 60 ? `${Math.round(task.timeLimit / 60)} MINS` : `${task.timeLimit} SECS`}</div>
+                                    </div>
+                                    {task.creatorId === user?.id || user?.role === 'ADMIN' || user?.role === 'TEACHER' ? (
+                                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                                            <button
+                                                onClick={() => handleToggleStatus(task)}
+                                                className={`p-2.5 md:p-3 rounded-2xl transition shadow-sm ${task.status === 'Published' ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
+                                                title={task.status === 'Published' ? 'Click to Deactivate' : 'Click to Activate'}
+                                            >
+                                                <Zap size={18} />
+                                            </button>
+                                            <button
+                                                onClick={() => setViewingQuizId(viewingQuizId === task.id ? null : task.id)}
+                                                className={`p-2.5 md:p-3 rounded-2xl transition shadow-sm ${viewingQuizId === task.id ? 'bg-indigo-600 text-white' : 'bg-gray-50 text-gray-400 hover:bg-indigo-50'}`}
+                                                title="Preview Task Content"
+                                            >
+                                                <Eye size={18} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleEditTask(task)}
+                                                className="p-2.5 md:p-3 bg-gray-50 text-gray-400 rounded-2xl hover:bg-indigo-600 hover:text-white transition shadow-sm"
+                                                title="Edit Task"
+                                            >
+                                                <Edit2 size={18} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteTask(task.id)}
+                                                className="p-2.5 md:p-3 bg-gray-50 text-gray-400 rounded-2xl hover:bg-rose-600 hover:text-white transition shadow-sm"
+                                                title="Delete Task"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="px-4 py-2 bg-gray-50 rounded-xl text-[10px] font-black tracking-widest uppercase text-gray-400 border border-gray-100 italic flex-shrink-0">
+                                            Admin Assigned
+                                        </div>
+                                    )}
+                                </div>
                              </motion.div>
  
                              {/* Collapsible Task Preview */}

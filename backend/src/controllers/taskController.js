@@ -145,12 +145,12 @@ exports.createTask = async (req, res) => {
 
     const task = await db.Task.create(taskData);
 
-    if (taskData.visibilityScope === 'GroupSpecific' && groupIds && groupIds.length > 0) {
+    if (groupIds && Array.isArray(groupIds) && groupIds.length > 0) {
       await task.setTargetGroups(groupIds);
     }
 
     const taskJson = task.toJSON();
-    taskJson.groupIds = taskData.visibilityScope === 'GroupSpecific' ? (groupIds || []) : [];
+    taskJson.groupIds = groupIds || [];
     taskJson.createdByRole = req.user.role;
 
     return res.status(201).json(taskJson);
@@ -176,14 +176,12 @@ exports.updateTask = async (req, res) => {
 
     await task.update(taskData);
 
-    if (taskData.visibilityScope === 'GroupSpecific' && groupIds) {
+    if (groupIds && Array.isArray(groupIds)) {
       await task.setTargetGroups(groupIds);
-    } else if (taskData.visibilityScope !== 'GroupSpecific' && taskData.visibilityScope) {
-      await task.setTargetGroups([]);
     }
 
     const taskJson = task.toJSON();
-    taskJson.groupIds = taskData.visibilityScope === 'GroupSpecific' ? (groupIds || []) : [];
+    taskJson.groupIds = groupIds || [];
     const creator = await db.User.findByPk(task.creatorId);
     taskJson.createdByRole = creator ? creator.role : 'TEACHER';
 

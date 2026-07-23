@@ -446,7 +446,8 @@ router.put('/:id', authMiddleware, async (req, res) => {
         const orgId = req.user.organizationId;
         const {
             title, description, difficulty, timeLimit, audioUrl, passage,
-            instructions, evaluationRubric, questions, passingScore
+            instructions, evaluationRubric, questions, passingScore,
+            visibilityScope, departmentIds, groupIds
         } = req.body;
 
         const task = await prisma.task.findFirst({
@@ -477,6 +478,19 @@ router.put('/:id', authMiddleware, async (req, res) => {
                 ...(instructions && { instructions }),
                 ...(evaluationRubric && { evaluationRubric: JSON.stringify(evaluationRubric) }),
                 ...(passingScore && { passingScore }),
+                ...(visibilityScope && { visibilityScope }),
+                ...(departmentIds && {
+                    departmentAssignments: {
+                        deleteMany: {},
+                        create: departmentIds.map(deptId => ({ departmentId: deptId }))
+                    }
+                }),
+                ...(groupIds && {
+                    groupAssignments: {
+                        deleteMany: {},
+                        create: groupIds.map(gId => ({ groupId: gId }))
+                    }
+                }),
                 ...(questions && {
                     questions: {
                         deleteMany: {},
@@ -493,8 +507,8 @@ router.put('/:id', authMiddleware, async (req, res) => {
             },
             include: {
                 questions: true,
-                departmentAssignments: true,
-                groupAssignments: true
+                departmentAssignments: { include: { department: { select: { id: true, name: true } } } },
+                groupAssignments: { include: { group: { select: { id: true, name: true } } } }
             }
         });
 

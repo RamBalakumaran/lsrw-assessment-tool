@@ -45,7 +45,7 @@ const SystemHealth = () => {
         <div className="flex bg-gray-50 min-h-screen">
             <Sidebar role="ADMIN" />
 
-            <main className="flex-1 p-10 overflow-y-auto">
+            <main className="flex-1 p-6 md:p-10 overflow-y-auto min-w-0">
                 <header className="mb-12">
                     <h1 className="text-4xl font-black text-gray-900 tracking-tight">System Reliability</h1>
                     <p className="text-gray-500 font-medium">Real-time status of global core services</p>

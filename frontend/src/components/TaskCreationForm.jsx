@@ -13,7 +13,7 @@ const TASK_CONFIG = {
         subtypes: {
             MCQ_AUDIO: { label: 'Multiple Choice from Audio', fields: ['audioUrl', 'questions'] },
             FILL_BLANKS_AUDIO: { label: 'Fill Blanks from Audio', fields: ['audioUrl', 'questions'] },
-            DICTATION: { label: 'Dictation Exercise', fields: ['audioUrl', 'questions'] }
+            DICTATION: { label: 'Dictation Exercise', fields: ['questions'] }
         }
     },
     SPEAKING: {
@@ -108,9 +108,14 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
 
     useEffect(() => {
         if (initialData) {
+            const mappedGroupIds = initialData.groupAssignments 
+                ? initialData.groupAssignments.map(g => g.groupId) 
+                : (initialData.targetGroups ? initialData.targetGroups.map(g => g.id) : (initialData.groupIds || []));
+
             setFormData(prev => ({
                 ...prev,
                 ...initialData,
+                groupIds: mappedGroupIds
             }));
 
             const mappedTaskType = initialData.type
@@ -192,7 +197,6 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
             };
             if (!payload.startDate) delete payload.startDate;
             if (!payload.endDate) delete payload.endDate;
-            if (payload.visibilityScope !== 'GroupSpecific') payload.groupIds = [];
 
             let response;
             if (initialData && initialData.id) {
@@ -486,30 +490,28 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
                             ))}
                         </div>
 
-                        {formData.visibilityScope === 'GroupSpecific' && (
-                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="pt-4 border-t border-gray-200">
-                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 block">Target Groups</label>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-2">
-                                    {groups.length === 0 ? (
-                                        <div className="text-gray-500 font-medium italic">No targetable groups available.</div>
-                                    ) : groups.map(group => (
-                                        <label key={group.id} className="flex items-center p-4 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-gray-900 transition">
-                                            <input
-                                                type="checkbox"
-                                                checked={formData.groupIds.includes(group.id)}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) handleInputChange('groupIds', [...formData.groupIds, group.id]);
-                                                    else handleInputChange('groupIds', formData.groupIds.filter(id => id !== group.id));
-                                                }}
-                                                className="w-5 h-5 rounded border-gray-300 text-gray-900 focus:ring-gray-900 mr-3"
-                                            />
-                                            <span className="font-bold text-gray-700">{group.name}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                                {errors.groupIds && <span className="text-rose-600 text-xs font-bold mt-2 block">{errors.groupIds}</span>}
-                            </motion.div>
-                        )}
+                        <div className="pt-4 border-t border-gray-200">
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 block">Target Groups (Assign / Repost to Specific Groups)</label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-2">
+                                {groups.length === 0 ? (
+                                    <div className="text-gray-500 font-medium italic">No targetable groups available.</div>
+                                ) : groups.map(group => (
+                                    <label key={group.id} className="flex items-center p-4 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-gray-900 transition">
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.groupIds.includes(group.id)}
+                                            onChange={(e) => {
+                                                if (e.target.checked) handleInputChange('groupIds', [...formData.groupIds, group.id]);
+                                                else handleInputChange('groupIds', formData.groupIds.filter(id => id !== group.id));
+                                            }}
+                                            className="w-5 h-5 rounded border-gray-300 text-gray-900 focus:ring-gray-900 mr-3"
+                                        />
+                                        <span className="font-bold text-gray-700">{group.name}</span>
+                                    </label>
+                                ))}
+                            </div>
+                            {errors.groupIds && <span className="text-rose-600 text-xs font-bold mt-2 block">{errors.groupIds}</span>}
+                        </div>
                     </div>
 
                     {/* Actions */}

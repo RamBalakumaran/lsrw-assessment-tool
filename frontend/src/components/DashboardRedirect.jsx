@@ -10,7 +10,7 @@ const DashboardRedirect = () => {
         if (userStr) {
             try {
                 const user = JSON.parse(userStr);
-                if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
+                if (['ADMIN', 'SUPER_ADMIN', 'DEPT_ADMIN'].includes(user.role)) {
                     navigate('/admin/dashboard', { replace: true });
                 } else if (user.role === 'TEACHER') {
                     navigate('/teacher/dashboard', { replace: true });

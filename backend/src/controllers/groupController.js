@@ -444,3 +444,27 @@ exports.confirmBulkImport = async (req, res) => {
     return res.status(500).json({ error: 'Server error during import confirmation' });
   }
 };
+
+// POST /api/groups/:id/tasks/:taskId
+exports.assignTaskToGroup = async (req, res) => {
+  const { id, taskId } = req.params;
+  try {
+    const group = await db.Group.findByPk(id);
+    if (!group) return res.status(404).json({ error: 'Group not found' });
+
+    if (!userCanAccessGroup(group, req.user)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const task = await db.Task.findByPk(taskId);
+    if (!task) return res.status(404).json({ error: 'Task not found' });
+
+    await group.addTask(task);
+
+    const updatedGroup = await getGroupWithDetails(id);
+    return res.json(serializeGroup(updatedGroup));
+  } catch (err) {
+    console.error('Error assigning task to group:', err);
+    return res.status(500).json({ error: 'Server error assigning task to group' });
+  }
+};

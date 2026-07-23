@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import { Layers, Plus, Search, ChevronRight, Users, Edit2, Trash2, X, Loader2, Upload } from 'lucide-react';
+import { Layers, Plus, Search, ChevronRight, Users, Edit2, Trash2, X, Loader2, Upload, UserPlus, FileText, Target } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
 import BulkImportModal from '../components/BulkImportModal';
@@ -26,6 +26,11 @@ const TeacherGroups = () => {
     const [showBulkImport, setShowBulkImport] = useState(false);
     const [showStudentList, setShowStudentList] = useState(false);
     const [selectedStudentId, setSelectedStudentId] = useState(null);
+
+    // Task management
+    const [showAssignTaskModal, setShowAssignTaskModal] = useState(false);
+    const [allTasks, setAllTasks] = useState([]);
+    const [assignTaskLoading, setAssignTaskLoading] = useState(false);
 
     const fetchData = async () => {
         setLoading(true);
@@ -136,7 +141,7 @@ const TeacherGroups = () => {
         }
     };
 
-    const [inviteForm, setInviteForm] = useState({ firstName: '', lastName: '', email: '', password: 'password123' });
+    const [inviteForm, setInviteForm] = useState({ firstName: '', lastName: '', email: '', registrationNumber: '', academicYear: '', password: '123456' });
     const [isInviting, setIsInviting] = useState(false);
 
     const handleInviteStudent = async (e) => {
@@ -147,7 +152,7 @@ const TeacherGroups = () => {
                 role: 'STUDENT',
                 groupId: selectedGroup.id
             });
-            setInviteForm({ firstName: '', lastName: '', email: '', password: 'password123' });
+            setInviteForm({ firstName: '', lastName: '', email: '', registrationNumber: '', academicYear: '', password: '123456' });
             setIsInviting(false);
             fetchData();
         } catch (error) {
@@ -167,13 +172,36 @@ const TeacherGroups = () => {
         }
     };
 
+    const handleOpenAssignTaskModal = async () => {
+        setShowAssignTaskModal(true);
+        setAssignTaskLoading(true);
+        try {
+            const res = await api.get('/tasks');
+            setAllTasks(res.data);
+        } catch (err) {
+            console.error("Failed to fetch tasks", err);
+        } finally {
+            setAssignTaskLoading(false);
+        }
+    };
+
+    const handleAssignTask = async (taskId) => {
+        try {
+            await api.post(`/groups/${selectedGroup.id}/tasks/${taskId}`);
+            setShowAssignTaskModal(false);
+            fetchData();
+        } catch (err) {
+            alert(err.response?.data?.error || "Error assigning task");
+        }
+    };
+
     const filteredGroups = groups.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
     return (
         <div className="flex bg-gray-50 min-h-screen font-sans">
             <Sidebar role="TEACHER" />
 
-            <main className="flex-1 p-10 overflow-y-auto">
+            <main className="flex-1 p-6 md:p-10 overflow-y-auto min-w-0">
                 {selectedGroup ? (
                     // GROUP DRILLDOWN
                     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
@@ -181,9 +209,9 @@ const TeacherGroups = () => {
                             <span className="mr-2">←</span> Back to My Groups
                         </button>
                         
-                        <header className="mb-10 flex justify-between items-start">
+                        <header className="mb-10 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-6">
                             <div>
-                                <h1 className="text-4xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+                                <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight flex flex-wrap items-center gap-3">
                                     {selectedGroup.name}
                                     <span className={`text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider ${
                                         selectedGroup.status === 'INACTIVE' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-700'
@@ -193,7 +221,7 @@ const TeacherGroups = () => {
                                 </h1>
                                 <p className="text-gray-500 font-medium mt-1">Manage students assigned to this group.</p>
                             </div>
-                            <div className="flex gap-3">
+                            <div className="flex flex-wrap gap-3">
                                 <button 
                                     onClick={handleToggleGroupStatus} 
                                     className={`px-4 py-2 rounded-xl font-bold transition flex items-center gap-2 ${
@@ -210,20 +238,97 @@ const TeacherGroups = () => {
                             </div>
                         </header>
 
-                        <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm max-w-3xl">
-                            <div className="flex justify-between items-center mb-6">
+                        <div className="bg-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-gray-100 shadow-sm max-w-3xl">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
                                 <div>
                                     <h3 className="text-xl font-black text-gray-900 font-sans">Group Students</h3>
                                     <p className="text-xs text-gray-400 font-bold mt-1">
                                         {selectedGroup.members?.length || 0} students enrolled
                                     </p>
                                 </div>
-                                <button 
-                                    onClick={() => setShowBulkImport(true)}
-                                    className="text-xs font-black text-primary-600 hover:text-primary-700 flex items-center gap-1 transition uppercase tracking-wider bg-primary-50 px-3 py-2 rounded-xl"
-                                >
-                                    <Upload size={12} /> Bulk Import
-                                </button>
+                                <div className="flex flex-wrap gap-2 self-start sm:self-auto">
+                                    <button 
+                                        onClick={() => setIsInviting(!isInviting)}
+                                        className="text-xs font-black text-gray-700 hover:text-black flex items-center gap-1 transition uppercase tracking-wider bg-gray-100 px-3 py-2 rounded-xl"
+                                    >
+                                        <UserPlus size={14} /> Add Single Student
+                                    </button>
+                                    <button 
+                                        onClick={() => setShowBulkImport(true)}
+                                        className="text-xs font-black text-primary-600 hover:text-primary-700 flex items-center gap-1 transition uppercase tracking-wider bg-primary-50 px-3 py-2 rounded-xl"
+                                    >
+                                        <Upload size={14} /> Bulk Import
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Inline Single Student Add Form */}
+                            {isInviting && (
+                                <form onSubmit={handleInviteStudent} className="mb-6 p-6 bg-gray-50 border border-gray-100 rounded-3xl space-y-4">
+                                    <h4 className="font-black text-sm text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                                        <UserPlus size={16} className="text-primary-600" />
+                                        Add Single Student (One-by-One)
+                                    </h4>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Registration Number *</label>
+                                            <input 
+                                                type="text" 
+                                                required 
+                                                value={inviteForm.registrationNumber || ''} 
+                                                onChange={e => setInviteForm({ ...inviteForm, registrationNumber: e.target.value })} 
+                                                placeholder="e.g. 21CS001" 
+                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl font-bold text-sm" 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Academic Year *</label>
+                                            <input 
+                                                type="text" 
+                                                required 
+                                                value={inviteForm.academicYear || ''} 
+                                                onChange={e => setInviteForm({ ...inviteForm, academicYear: e.target.value })} 
+                                                placeholder="e.g. III" 
+                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl font-bold text-sm" 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">First Name</label>
+                                            <input 
+                                                type="text" 
+                                                value={inviteForm.firstName || ''} 
+                                                onChange={e => setInviteForm({ ...inviteForm, firstName: e.target.value })} 
+                                                placeholder="First name" 
+                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl font-bold text-sm" 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Last Name</label>
+                                            <input 
+                                                type="text" 
+                                                value={inviteForm.lastName || ''} 
+                                                onChange={e => setInviteForm({ ...inviteForm, lastName: e.target.value })} 
+                                                placeholder="Last name" 
+                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl font-bold text-sm" 
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end gap-3 pt-2">
+                                        <button type="button" onClick={() => setIsInviting(false)} className="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-900">Cancel</button>
+                                        <button type="submit" className="px-5 py-2.5 bg-primary-600 text-white font-black text-xs rounded-xl hover:bg-primary-700">Add Student</button>
+                                    </div>
+                                </form>
+                            )}
+
+                            {/* Search & Add Existing Students One-by-One or Multi-Select */}
+                            <div className="mb-6">
+                                <MultiSelectSearchList 
+                                    items={students.filter(s => !selectedGroup.members?.some(m => m.id === s.id))}
+                                    placeholder="Search existing students by name or email to add..."
+                                    buttonText="Add Selected Students"
+                                    buttonColor="bg-primary-600 hover:bg-primary-700"
+                                    onAddSelected={handleAddMembersBulk}
+                                />
                             </div>
 
                             <div className="space-y-3">
@@ -231,18 +336,18 @@ const TeacherGroups = () => {
                                     return (
                                         <div 
                                             key={member.id} 
-                                            className="flex justify-between items-center p-4 border border-gray-100 rounded-2xl bg-gray-50/50 hover:bg-gray-50 cursor-pointer transition-all"
+                                            className="flex justify-between items-center p-4 border border-gray-100 rounded-2xl bg-gray-50/50 hover:bg-gray-50 cursor-pointer transition-all gap-4"
                                             onClick={() => setSelectedStudentId(member.id)}
                                         >
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-xl bg-primary-100 text-primary-600 font-black flex items-center justify-center">
+                                            <div className="flex items-center gap-4 min-w-0">
+                                                <div className="w-10 h-10 rounded-xl bg-primary-100 text-primary-600 font-black flex items-center justify-center shrink-0">
                                                     {member.firstName ? member.firstName[0].toUpperCase() : 'S'}
                                                 </div>
-                                                <div>
-                                                    <div className="font-bold text-gray-900 hover:text-primary-600 transition-colors font-sans">
+                                                <div className="min-w-0">
+                                                    <div className="font-bold text-gray-900 hover:text-primary-600 transition-colors font-sans truncate">
                                                         {member.firstName} {member.lastName}
                                                     </div>
-                                                    <div className="text-xs text-gray-400 font-medium mt-0.5">{member.email}</div>
+                                                    <div className="text-xs text-gray-400 font-medium mt-0.5 truncate">{member.email}</div>
                                                 </div>
                                             </div>
                                             <button 
@@ -314,16 +419,64 @@ const TeacherGroups = () => {
                                 ))}
                             </div>
                         </div>
+
+                        {/* GROUP TASKS SECTION */}
+                        <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm max-w-3xl mt-6">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+                                <div>
+                                    <h3 className="text-xl font-black text-gray-900 font-sans">Group Tasks</h3>
+                                    <p className="text-sm font-medium text-gray-500">Tasks assigned specifically to this group.</p>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    <button 
+                                        onClick={handleOpenAssignTaskModal}
+                                        className="text-xs font-black text-gray-700 hover:text-black flex items-center gap-1 transition uppercase tracking-wider bg-gray-100 px-3 py-2 rounded-xl"
+                                    >
+                                        <FileText size={14} /> Assign Existing Task
+                                    </button>
+                                    <button 
+                                        onClick={() => navigate('/teacher/tasks', { state: { prefillGroupId: selectedGroup.id } })}
+                                        className="text-xs font-black text-primary-600 hover:text-primary-700 flex items-center gap-1 transition uppercase tracking-wider bg-primary-50 px-3 py-2 rounded-xl"
+                                    >
+                                        <Target size={14} /> Create New Task
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            {selectedGroup.tasks && selectedGroup.tasks.length > 0 ? (
+                                <div className="space-y-3">
+                                    {selectedGroup.tasks.map(task => (
+                                        <div key={task.id} className="flex justify-between items-center p-4 border border-gray-100 rounded-2xl bg-gray-50 hover:border-gray-200 transition">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-xl bg-primary-100 text-primary-600 font-black flex items-center justify-center text-lg">
+                                                    {(task.type || 'T')[0]}
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-gray-900 flex items-center gap-2">
+                                                        {task.title}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500 font-medium uppercase tracking-widest">{task.type} • {task.difficultyLevel}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center p-6 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-sm font-bold text-gray-400">
+                                    No tasks assigned to this group yet.
+                                </div>
+                            )}
+                        </div>
                     </motion.div>
                 ) : (
                     // MAIN GROUPS LIST
                     <>
-                        <header className="flex justify-between items-center mb-10">
+                        <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6 mb-10">
                             <div>
                                 <h1 className="text-4xl font-black text-gray-900 tracking-tight">My Groups</h1>
                                 <p className="text-gray-500 font-medium">Create custom groups to organize your students.</p>
                             </div>
-                            <button onClick={() => setShowGroupModal(true)} className="px-6 py-3 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition shadow-lg shadow-primary-500/30 flex items-center gap-2">
+                            <button onClick={() => setShowGroupModal(true)} className="px-6 py-3 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition shadow-lg shadow-primary-500/30 flex items-center gap-2 self-start sm:self-auto">
                                 <Plus size={20} />
                                 <span>Create Group</span>
                             </button>
@@ -402,7 +555,53 @@ const TeacherGroups = () => {
                         </motion.div>
                     </div>
                 )}
+            </AnimatePresence>
 
+            {/* Assign Task Modal */}
+            <AnimatePresence>
+                {showAssignTaskModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setShowAssignTaskModal(false)} />
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl p-10 flex flex-col max-h-[90vh]">
+                            <button onClick={() => setShowAssignTaskModal(false)} className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-900"><X size={24} /></button>
+                            <h2 className="text-3xl font-black text-gray-900 mb-2">Assign Task</h2>
+                            <p className="text-gray-500 font-medium mb-6">Select an existing task to assign to {selectedGroup?.name}.</p>
+                            
+                            <div className="overflow-y-auto flex-1">
+                                {assignTaskLoading ? (
+                                    <div className="flex justify-center p-10"><Loader2 className="animate-spin text-primary-500" size={32} /></div>
+                                ) : allTasks.filter(t => !selectedGroup?.tasks?.some(st => st.id === t.id)).length === 0 ? (
+                                    <div className="p-10 text-center bg-gray-50 rounded-[2rem] border border-dashed border-gray-200">
+                                        <FileText size={48} className="mx-auto text-gray-300 mb-4" />
+                                        <p className="text-gray-500 font-medium">No available tasks to assign.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {allTasks.filter(t => !selectedGroup?.tasks?.some(st => st.id === t.id)).map(task => (
+                                            <div key={task.id} onClick={() => handleAssignTask(task.id)} className="flex justify-between items-center p-4 border border-gray-100 rounded-2xl bg-white hover:border-primary-500 hover:shadow-md cursor-pointer transition">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-xl bg-primary-50 text-primary-600 font-black flex items-center justify-center text-lg">
+                                                        {(task.type || 'T')[0]}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-bold text-gray-900">{task.title}</div>
+                                                        <div className="text-xs text-gray-500 font-medium uppercase tracking-widest">{task.type} • {task.difficultyLevel}</div>
+                                                    </div>
+                                                </div>
+                                                <div className="text-primary-600 bg-primary-50 px-3 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider">
+                                                    Assign
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
                 {/* Bulk Import Modal */}
                 {showBulkImport && selectedGroup && (
                     <BulkImportModal 

@@ -46,20 +46,7 @@ exports.setupProfile = async (req, res) => {
     user.forcePasswordReset = false;
     await user.save();
 
-    // Map department to a Group membership
-    if (department && department.trim()) {
-      const groupName = department.trim();
-      let group = await db.Group.findOne({ where: { name: groupName } });
-      if (!group) {
-        group = await db.Group.create({ name: groupName });
-      }
-      
-      if (user.role === 'STUDENT') {
-        await group.addMember(user);
-      } else if (user.role === 'TEACHER') {
-        await group.addAdmin(user);
-      }
-    }
+
 
     return res.json({ 
       success: true, 
