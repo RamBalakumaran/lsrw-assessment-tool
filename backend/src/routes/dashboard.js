@@ -244,10 +244,11 @@ router.get('/admin', authMiddleware, async (req, res) => {
             if (user) {
                 topActiveStudents.push({
                     id: user.id,
-                    name: `${user.firstName} ${user.lastName}`,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
                     email: user.email,
-                    attemptsCount: parseInt(item.getDataValue('attemptsCount')),
-                    avgScore: Math.round(parseFloat(item.getDataValue('avgScore')) || 0)
+                    submissionsCount: parseInt(item.getDataValue('attemptsCount')),
+                    averageScore: Math.round(parseFloat(item.getDataValue('avgScore')) || 0)
                 });
             }
         }

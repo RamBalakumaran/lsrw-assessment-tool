@@ -10,7 +10,7 @@ router.get('/my-groups', authMiddleware, groupController.getMyGroups);
 router.get('/', authMiddleware, groupController.getGroups);
 router.get('/:id', authMiddleware, groupController.getGroupById);
 router.post('/', authMiddleware, groupController.createGroup);
-router.put('/:id', authMiddleware, groupController.updateGroup);
+router.put('/:id', authMiddleware, groupController.updateGroup);
 router.delete('/:id', authMiddleware, groupController.deleteGroup);
 
 router.post('/:id/members', authMiddleware, groupController.addGroupMember);
