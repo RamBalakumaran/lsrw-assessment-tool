@@ -7,6 +7,7 @@ import { Headphones, Play, ShieldCheck, Music } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
 import FullscreenProctorGuard from '../components/FullscreenProctorGuard';
+import SubmissionSuccessModal from '../components/SubmissionSuccessModal';
 
 const getYoutubeId = (url) => {
     if (!url) return null;
@@ -56,6 +57,7 @@ const ListeningTest = () => {
     const [startTime, setStartTime] = useState(0);
     const [playCount, setPlayCount] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [showCelebration, setShowCelebration] = useState(false);
 
     // Fallback topics if backend is empty
     const defaultTopics = [
@@ -76,6 +78,162 @@ const ListeningTest = () => {
             ]
         }
     ];
+
+    // Media 50% Completion Tracking States
+    const [mediaProgress, setMediaProgress] = useState(0); // 0 to 100
+    const [isUnlocked, setIsUnlocked] = useState(false);
+    const [watchedSeconds, setWatchedSeconds] = useState(0);
+    const [totalDuration, setTotalDuration] = useState(0);
+    const accumulatedWatchedRef = React.useRef(0);
+    const lastValidTimeRef = React.useRef(0);
+    const playerRef = React.useRef(null);
+    const syncTimeoutRef = React.useRef(null);
+
+    // Fetch task media progress from backend & localStorage on topic selection
+    useEffect(() => {
+        if (!selectedTopic) return;
+
+        // If task has no audio/video, unlock immediately
+        if (!selectedTopic.audioUrl) {
+            setIsUnlocked(true);
+            setMediaProgress(100);
+            return;
+        }
+
+        // Restore local progress fallback
+        const localKey = `media_progress_${selectedTopic.id}`;
+        const storedLocal = localStorage.getItem(localKey);
+        if (storedLocal) {
+            try {
+                const parsed = JSON.parse(storedLocal);
+                const restoredWatched = parsed.watchedTime || 0;
+                const restoredProg = parsed.progress || 0;
+                accumulatedWatchedRef.current = restoredWatched;
+                setWatchedSeconds(restoredWatched);
+                setMediaProgress(restoredProg);
+                if (parsed.unlocked || restoredProg >= 50) setIsUnlocked(true);
+            } catch(e) {}
+        }
+
+        // Fetch backend progress
+        api.get(`/attempts/media-progress/${selectedTopic.id}`)
+            .then(res => {
+                if (res.data) {
+                    const bProg = res.data.progress || 0;
+                    if (res.data.unlocked || bProg >= 50) {
+                        setIsUnlocked(true);
+                        setMediaProgress(prev => Math.max(prev, 100));
+                    } else if (bProg > 0) {
+                        setMediaProgress(prev => Math.max(prev, bProg));
+                    }
+                }
+            })
+            .catch(err => console.error("Error fetching media progress:", err));
+    }, [selectedTopic]);
+
+    // Save and sync progress safely (prevent decreasing)
+    const updateProgress = React.useCallback((watchedSecs, durationSecs) => {
+        if (!durationSecs || durationSecs <= 0 || !selectedTopic) return;
+
+        const currentProg = Math.min(100, Math.max(0, (watchedSecs / durationSecs) * 100));
+        
+        setTotalDuration(durationSecs);
+        setMediaProgress(prev => {
+            const nextProg = Math.max(prev, currentProg);
+            const unlockedNow = nextProg >= 50;
+
+            if (unlockedNow) setIsUnlocked(true);
+
+            // Save local storage
+            localStorage.setItem(`media_progress_${selectedTopic.id}`, JSON.stringify({
+                watchedTime: watchedSecs,
+                progress: nextProg,
+                unlocked: unlockedNow
+            }));
+
+            return nextProg;
+        });
+
+        // Debounced sync to backend
+        if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+        syncTimeoutRef.current = setTimeout(() => {
+            api.post('/attempts/media-progress', {
+                taskId: selectedTopic.id,
+                watchedTime: watchedSecs,
+                totalDuration: durationSecs
+            }).then(res => {
+                if (res.data && res.data.unlocked) {
+                    setIsUnlocked(true);
+                }
+            }).catch(e => console.error("Error syncing media progress:", e));
+        }, 1000);
+    }, [selectedTopic]);
+
+    // Load YouTube IFrame API if YouTube URL
+    useEffect(() => {
+        if (!selectedTopic?.audioUrl) return;
+        const youtubeId = getYoutubeId(selectedTopic.audioUrl);
+        if (!youtubeId) return;
+
+        let interval;
+        const initYT = () => {
+            const container = document.getElementById(`yt-player-${selectedTopic.id}`);
+            if (window.YT && window.YT.Player && container) {
+                playerRef.current = new window.YT.Player(`yt-player-${selectedTopic.id}`, {
+                    events: {
+                        'onStateChange': (event) => {
+                            // YT.PlayerState.PLAYING === 1
+                            if (event.data === 1) {
+                                if (interval) clearInterval(interval);
+                                interval = setInterval(() => {
+                                    if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+                                        const currentTime = playerRef.current.getCurrentTime() || 0;
+                                        const dur = playerRef.current.getDuration() || 0;
+
+                                        if (dur > 0) {
+                                            const diff = currentTime - lastValidTimeRef.current;
+                                            
+                                            // Normal playback forward (1 sec interval with up to 3 sec window)
+                                            if (diff > 0 && diff <= 3) {
+                                                accumulatedWatchedRef.current += diff;
+                                                setWatchedSeconds(accumulatedWatchedRef.current);
+                                                updateProgress(accumulatedWatchedRef.current, dur);
+                                            } else if (diff > 3) {
+                                                // User jumped/seeked forward -> do NOT count skipped gap
+                                            } else if (diff < 0) {
+                                                // User seeked backward -> keep accumulated watched time intact
+                                            }
+                                            lastValidTimeRef.current = currentTime;
+                                        }
+                                    }
+                                }, 1000);
+                            } else {
+                                // Paused (2), Ended (0), Buffering (3) -> stop timer loop
+                                if (interval) clearInterval(interval);
+                                if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+                                    lastValidTimeRef.current = playerRef.current.getCurrentTime() || 0;
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        };
+
+        if (!window.YT || !window.YT.Player) {
+            window.onYouTubeIframeAPIReady = initYT;
+            const tag = document.createElement('script');
+            tag.src = "https://www.youtube.com/iframe_api";
+            const firstScriptTag = document.getElementsByTagName('script')[0];
+            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        } else {
+            initYT();
+        }
+
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [selectedTopic, updateProgress]);
 
     const [topics, setTopics] = useState([]);
 
@@ -158,7 +316,6 @@ const ListeningTest = () => {
             };
 
             setReport(reportData);
-            setPhase('report');
 
             try {
                 api.post('/attempts/submit', {
@@ -170,6 +327,8 @@ const ListeningTest = () => {
             } catch (e) {
                 console.error("Failed to submit attempt", e);
             }
+
+            setShowCelebration(true);
         } else {
             selectedTopic.questions.forEach(q => criteria[q.type] = 0);
 
@@ -207,7 +366,6 @@ const ListeningTest = () => {
             };
 
             setReport(reportData);
-            setPhase('report');
 
             try {
                 api.post('/attempts/submit', {
@@ -219,7 +377,24 @@ const ListeningTest = () => {
             } catch (e) {
                 console.error("Failed to submit attempt", e);
             }
+
+            setShowCelebration(true);
         }
+    };
+
+    const handleMediaTimeUpdate = (e) => {
+        const video = e.target;
+        const current = video.currentTime;
+        const dur = video.duration;
+
+        // Skip forward check
+        const diff = current - lastValidTimeRef.current;
+        if (diff > 0 && diff < 3) {
+            accumulatedWatchedRef.current += diff;
+            setWatchedSeconds(accumulatedWatchedRef.current);
+            updateProgress(accumulatedWatchedRef.current, dur);
+        }
+        lastValidTimeRef.current = current;
     };
 
     const renderMedia = (url) => {
@@ -227,27 +402,28 @@ const ListeningTest = () => {
 
         if (youtubeId) {
             return (
-                <div className="relative w-full max-w-3xl mx-auto overflow-hidden rounded-[2rem] shadow-lg mb-10 bg-gray-900 border-4 border-gray-900" style={{ paddingTop: '56.25%' }}>
+                <div className="relative w-full max-w-3xl mx-auto overflow-hidden rounded-[2rem] shadow-lg mb-6 bg-gray-900 border-4 border-gray-900" style={{ paddingTop: '56.25%' }}>
                     <iframe
+                        id={`yt-player-${selectedTopic.id}`}
                         className="absolute top-0 left-0 w-full h-full"
-                        src={`https://www.youtube.com/embed/${youtubeId}?rel=0`}
-                        title="YouTube video player"
+                        src={`https://www.youtube-nocookie.com/embed/${youtubeId}?enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&rel=0&autoplay=0`}
+                        title="Learning Video"
                         frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         allowFullScreen
-                        onLoad={() => setPlayCount(p => p + 1)}
-                    ></iframe>
+                    />
                 </div>
             );
         }
 
         if (url && url.match(/\.(mp4|webm|ogg|mov)$/i)) {
             return (
-                <div className="w-full max-w-3xl mx-auto rounded-[2rem] shadow-lg mb-10 bg-gray-900 overflow-hidden border-4 border-gray-900">
+                <div className="w-full max-w-3xl mx-auto rounded-[2rem] shadow-lg mb-6 bg-gray-900 overflow-hidden border-4 border-gray-900">
                     <video
                         controls
                         className="w-full outline-none"
                         onPlay={() => setPlayCount(p => p + 1)}
+                        onTimeUpdate={handleMediaTimeUpdate}
                     >
                         <source src={url} />
                         Your browser does not support the video tag.
@@ -257,7 +433,7 @@ const ListeningTest = () => {
         }
 
         return (
-            <div className="bg-gray-50 p-10 rounded-[2rem] border border-gray-100 mb-10 max-w-2xl mx-auto">
+            <div className="bg-gray-50 p-10 rounded-[2rem] border border-gray-100 mb-6 max-w-2xl mx-auto">
                 <div className="flex items-center space-x-4 mb-6 justify-center">
                     <Music className="text-primary-500" size={24} />
                     <span className="font-bold text-gray-700 uppercase tracking-widest text-sm">Audio Track Ready</span>
@@ -266,6 +442,7 @@ const ListeningTest = () => {
                     controls
                     className="w-full h-12 rounded-full"
                     onPlay={() => setPlayCount(p => p + 1)}
+                    onTimeUpdate={handleMediaTimeUpdate}
                 >
                     <source src={url} />
                     Your browser does not support audio playback.
@@ -290,10 +467,14 @@ const ListeningTest = () => {
 
     if (phase === 'listen' || phase === 'quiz') {
         return (
-            <FullscreenProctorGuard
-                title={selectedTopic?.title}
-                onExit={handleExit}
-            >
+            <>
+                <SubmissionSuccessModal
+                    isOpen={showCelebration}
+                    onComplete={() => {
+                        setShowCelebration(false);
+                        setPhase('report');
+                    }}
+                />
                 {phase === 'listen' ? (
                     <div className="max-w-4xl mx-auto px-6 py-12">
                         <motion.div
@@ -306,15 +487,39 @@ const ListeningTest = () => {
                                     <Headphones size={40} />
                                 </div>
                                 <h2 className="text-4xl font-black text-gray-900 mb-4">{selectedTopic.title}</h2>
-                                <p className="text-gray-500 text-lg mb-10 max-w-xl mx-auto">
+                                <p className="text-gray-500 text-lg mb-8 max-w-xl mx-auto">
                                     {selectedTopic.audioUrl 
-                                        ? "Listen to the media carefully. You can replay the track if needed, but it may affect your final score assessment."
+                                        ? "Listen to the media carefully. You must complete at least 50% of the content to unlock the assessment."
                                         : "Get ready to listen to the dictation sentences. Each question will play its own audio clip."
                                     }
                                 </p>
 
                                 {selectedTopic.audioUrl ? (
-                                    renderMedia(selectedTopic.audioUrl)
+                                    <>
+                                        {renderMedia(selectedTopic.audioUrl)}
+
+                                        {/* Learning Progress Indicator */}
+                                        <div className="max-w-xl mx-auto bg-gray-50 p-6 rounded-2xl border border-gray-100 mb-8">
+                                            <div className="flex justify-between items-center text-xs font-black uppercase tracking-wider mb-2">
+                                                <span className="text-gray-500">Learning Progress</span>
+                                                <span className={isUnlocked ? "text-emerald-600 font-extrabold" : "text-amber-600"}>
+                                                    {Math.round(mediaProgress)}% / 50% Required {isUnlocked && '• UNLOCKED 🟢'}
+                                                </span>
+                                            </div>
+                                            <div className="w-full bg-gray-200 h-3 rounded-full overflow-hidden">
+                                                <div 
+                                                    className={`h-full transition-all duration-300 ${isUnlocked ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                                                    style={{ width: `${Math.min(100, mediaProgress)}%` }}
+                                                />
+                                            </div>
+                                            {totalDuration > 0 && (
+                                                <div className="text-[11px] font-bold text-gray-400 mt-2 flex justify-between">
+                                                    <span>Watched: {Math.round(watchedSeconds)}s</span>
+                                                    <span>Total: {Math.round(totalDuration)}s</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </>
                                 ) : (
                                     <div className="bg-gray-50 p-8 rounded-[2rem] border border-gray-100 mb-10 max-w-xl mx-auto text-center">
                                         <p className="text-gray-700 font-bold text-lg leading-relaxed">
@@ -326,16 +531,36 @@ const ListeningTest = () => {
                                     </div>
                                 )}
 
-                                <div className="flex flex-col items-center space-y-6">
-                                    <button
-                                        onClick={() => {
-                                            setPhase('quiz');
-                                            setStartTime(Date.now());
-                                        }}
-                                        className="px-12 py-5 bg-gray-900 text-white rounded-2xl font-black text-xl hover:bg-black transition transform hover:-translate-y-1 active:scale-95 flex items-center shadow-xl shadow-gray-900/20"
-                                    >
-                                        Proceed to Questions <Play className="ml-3 h-5 w-5 fill-current" />
-                                    </button>
+                                <div className="flex flex-col items-center space-y-4">
+                                    {isUnlocked ? (
+                                        <motion.div
+                                            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                        >
+                                            <button
+                                                onClick={() => {
+                                                    setPhase('quiz');
+                                                    setStartTime(Date.now());
+                                                }}
+                                                className="px-12 py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-xl transition transform hover:-translate-y-1 active:scale-95 flex items-center shadow-xl shadow-emerald-600/20"
+                                            >
+                                                🟢 Start Assessment <Play className="ml-3 h-5 w-5 fill-current" />
+                                            </button>
+                                        </motion.div>
+                                    ) : (
+                                        <div className="text-center space-y-3">
+                                            <button
+                                                disabled
+                                                className="px-12 py-5 bg-gray-200 text-gray-400 rounded-2xl font-black text-xl cursor-not-allowed flex items-center shadow-none border border-gray-300"
+                                            >
+                                                🔒 Start Assessment
+                                            </button>
+                                            <p className="text-xs font-bold text-amber-600 max-w-md bg-amber-50 px-4 py-2 rounded-xl border border-amber-200">
+                                                Please complete at least 50% of the learning content to unlock this assessment.
+                                            </p>
+                                        </div>
+                                    )}
 
                                     <div className="flex items-center space-x-2 text-emerald-600 font-bold bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100 italic">
                                         <ShieldCheck size={18} />
@@ -346,26 +571,40 @@ const ListeningTest = () => {
                         </motion.div>
                     </div>
                 ) : (
-                    <SmartQuiz questions={selectedTopic.questions} onComplete={handleComplete} />
+                    <FullscreenProctorGuard
+                        title={selectedTopic?.title}
+                        onExit={handleExit}
+                    >
+                        <SmartQuiz questions={selectedTopic.questions} onComplete={handleComplete} />
+                    </FullscreenProctorGuard>
                 )}
-            </FullscreenProctorGuard>
-        );
-    }
+        </>
+    );
+}
 
     return (
-        <DetailedReport
-            {...report}
-            onRetry={() => {
-                if (id) {
-                    navigate('/listening');
-                } else {
-                    setPhase('topic');
-                    setReport(null);
-                    setPlayCount(0);
-                }
-            }}
-            onHome={() => navigate('/student/dashboard')}
-        />
+        <>
+            <SubmissionSuccessModal
+                isOpen={showCelebration}
+                onComplete={() => {
+                    setShowCelebration(false);
+                    setPhase('report');
+                }}
+            />
+            <DetailedReport
+                {...report}
+                onRetry={() => {
+                    if (id) {
+                        navigate('/listening');
+                    } else {
+                        setPhase('topic');
+                        setReport(null);
+                        setPlayCount(0);
+                    }
+                }}
+                onHome={() => navigate('/student/dashboard')}
+            />
+        </>
     );
 };
 

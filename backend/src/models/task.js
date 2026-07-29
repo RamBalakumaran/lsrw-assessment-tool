@@ -9,13 +9,13 @@ module.exports = (sequelize, DataTypes) => {
     title: { type: DataTypes.STRING, allowNull: false },
     description: { type: DataTypes.TEXT },
     lsrwComponent: {
-      type: DataTypes.ENUM('LISTENING', 'SPEAKING', 'READING', 'WRITING', 'Listening', 'Speaking', 'Reading', 'Writing'),
+      type: DataTypes.ENUM('LISTENING', 'SPEAKING', 'READING', 'WRITING'),
       allowNull: false,
       field: 'type',
     },
     assessmentType: { type: DataTypes.STRING, field: 'subType' },
     difficultyLevel: {
-      type: DataTypes.ENUM('BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'Beginner', 'Intermediate', 'Advanced'),
+      type: DataTypes.ENUM('BEGINNER', 'INTERMEDIATE', 'ADVANCED'),
       defaultValue: 'INTERMEDIATE',
       field: 'difficulty',
     },
@@ -29,7 +29,7 @@ module.exports = (sequelize, DataTypes) => {
     passage: { type: DataTypes.TEXT },
     audioUrl: { type: DataTypes.STRING },
     status: {
-      type: DataTypes.ENUM('DRAFT', 'PUBLISHED', 'ARCHIVED', 'Draft', 'Published', 'Archived'),
+      type: DataTypes.ENUM('DRAFT', 'PUBLISHED', 'ARCHIVED'),
       defaultValue: 'DRAFT',
       get() {
         const rawValue = this.getDataValue('status');
@@ -51,7 +51,7 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     visibilityScope: {
-      type: DataTypes.ENUM('GLOBAL', 'ORGANIZATION', 'DEPARTMENT', 'GROUP', 'Global', 'GroupSpecific'),
+      type: DataTypes.ENUM('GLOBAL', 'ORGANIZATION', 'DEPARTMENT', 'GROUP'),
       defaultValue: 'GLOBAL',
       get() {
         const rawValue = this.getDataValue('visibilityScope');

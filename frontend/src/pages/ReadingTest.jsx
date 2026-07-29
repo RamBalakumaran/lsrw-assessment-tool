@@ -1,11 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
-  BookOpen,
   ArrowLeft,
-  CheckCircle,
-  TrendingUp,
   Zap,
   Clock,
   BookOpenCheck
@@ -15,6 +12,7 @@ import SmartQuiz from '../components/SmartQuiz';
 import DetailedReport from '../components/DetailedReport';
 import api from '../utils/api';
 import FullscreenProctorGuard from '../components/FullscreenProctorGuard';
+import SubmissionSuccessModal from '../components/SubmissionSuccessModal';
 
 const ReadingTest = () => {
   const { id } = useParams();
@@ -24,8 +22,9 @@ const ReadingTest = () => {
   const [report, setReport] = useState(null);
   const [readStartTime, setReadStartTime] = useState(0);
   const [readTime, setReadTime] = useState(0);
+  const [showCelebration, setShowCelebration] = useState(false);
 
-  const defaultTopics = [
+  const defaultTopics = useMemo(() => [
     {
       id: "1", title: "Technology", desc: "Foundations of Cloud Computing and Architectural Models.", color: '#3b82f6',
       passage: "Cloud computing provides on-demand computing resources over the internet, essentially shifting local infrastructure to remote data centers. It offers three primary service models: Infrastructure as a Service (IaaS), Platform as a Service (PaaS), and Software as a Service (SaaS). Each model provides different levels of control and flexibility, allowing businesses to scale resources dynamically without maintaining physical hardware.",
@@ -42,7 +41,7 @@ const ReadingTest = () => {
         { id: "q2", type: "Competitive Logic", text: "Under this strategy, what happens to existing rivals?", opts: ["They become more powerful", "They become irrelevant", "They merge together"], correctAnswer: "Becomes irrelevant", time: 15 }
       ]
     }
-  ];
+  ], []);
 
   const [topics, setTopics] = useState([]);
 
@@ -76,7 +75,7 @@ const ReadingTest = () => {
       }
     };
     fetchTasks();
-  }, [id]);
+  }, [id, defaultTopics]);
 
   const startReading = () => {
     setPhase('read');
@@ -131,7 +130,6 @@ const ReadingTest = () => {
     };
 
     setReport(reportData);
-    setPhase('report');
 
     // Submit attempt to backend
     try {
@@ -144,6 +142,8 @@ const ReadingTest = () => {
     } catch (e) {
       console.error("Failed to submit attempt", e);
     }
+
+    setShowCelebration(true);
   };
 
   const handleExit = () => {
@@ -161,88 +161,106 @@ const ReadingTest = () => {
 
   if (phase === 'read' || phase === 'quiz') {
     return (
-      <FullscreenProctorGuard
-        title={selectedTopic?.title}
-        onExit={handleExit}
-      >
-        {phase === 'read' ? (
-          <div className="max-w-4xl mx-auto px-6 py-12">
-            <div className="flex justify-between items-center mb-10">
-              <button
-                onClick={() => setPhase('topic')}
-                className="flex items-center text-gray-500 hover:text-primary-600 transition font-bold text-xs uppercase tracking-widest"
+      <>
+        <SubmissionSuccessModal
+          isOpen={showCelebration}
+          onComplete={() => {
+            setShowCelebration(false);
+            setPhase('report');
+          }}
+        />
+        <FullscreenProctorGuard
+          title={selectedTopic?.title}
+          onExit={handleExit}
+        >
+          {phase === 'read' ? (
+            <div className="max-w-4xl mx-auto px-6 py-12">
+              <div className="flex justify-between items-center mb-10">
+                <button
+                  onClick={() => setPhase('topic')}
+                  className="flex items-center text-gray-500 hover:text-primary-600 transition font-bold text-xs uppercase tracking-widest"
+                >
+                  <ArrowLeft className="mr-2" size={16} /> Choose Topic
+                </button>
+                <div className="flex items-center space-x-2 text-primary-600 font-bold bg-primary-50 px-4 py-2 rounded-xl text-sm border border-primary-100">
+                  <Clock size={16} />
+                  <span>Timer Active</span>
+                </div>
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white rounded-[3rem] shadow-xl border border-gray-100 overflow-hidden"
               >
-                <ArrowLeft className="mr-2" size={16} /> Choose Topic
-              </button>
-              <div className="flex items-center space-x-2 text-primary-600 font-bold bg-primary-50 px-4 py-2 rounded-xl text-sm border border-primary-100">
-                <Clock size={16} />
-                <span>Timer Active</span>
-              </div>
+                <div className="p-12 md:p-16">
+                  <div className="flex items-center space-x-3 mb-8">
+                    <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
+                      <BookOpenCheck size={20} />
+                    </div>
+                    <span className="font-black text-gray-400 text-xs uppercase tracking-widest">Passage Analysis</span>
+                  </div>
+
+                  <h2 className="text-3xl font-black text-gray-900 mb-8 border-b border-gray-100 pb-6">{selectedTopic.title}</h2>
+
+                  <div className="text-xl text-gray-800 leading-relaxed font-medium mb-12 space-y-4">
+                    {selectedTopic.passage || "No passage text available."}
+                  </div>
+
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-10 border-t border-gray-100">
+                    <div className="flex items-center space-x-6">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-gray-400 uppercase">Estimated Length</span>
+                        <span className="text-lg font-black text-gray-900">{(selectedTopic.passage || '').split(/\s+/).filter(Boolean).length} Words</span>
+                      </div>
+                      <div className="h-8 w-px bg-gray-100"></div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-gray-400 uppercase">Difficulty</span>
+                        <span className="text-lg font-black text-gray-900">Intermediate</span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={finishReading}
+                      className="px-12 py-5 bg-gray-900 text-white rounded-2xl font-black text-xl hover:bg-black transition transform active:scale-[0.98] shadow-xl shadow-gray-900/20 flex items-center"
+                    >
+                      Success, I've Finished <Zap className="ml-3 h-5 w-5 fill-current text-amber-400" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
             </div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-[3rem] shadow-xl border border-gray-100 overflow-hidden"
-            >
-              <div className="p-12 md:p-16">
-                <div className="flex items-center space-x-3 mb-8">
-                  <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
-                    <BookOpenCheck size={20} />
-                  </div>
-                  <span className="font-black text-gray-400 text-xs uppercase tracking-widest">Passage Analysis</span>
-                </div>
-
-                <h2 className="text-3xl font-black text-gray-900 mb-8 border-b border-gray-100 pb-6">{selectedTopic.title}</h2>
-
-                <div className="text-xl text-gray-800 leading-relaxed font-medium mb-12 space-y-4">
-                  {selectedTopic.passage || "No passage text available."}
-                </div>
-
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-10 border-t border-gray-100">
-                  <div className="flex items-center space-x-6">
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold text-gray-400 uppercase">Estimated Length</span>
-                      <span className="text-lg font-black text-gray-900">{(selectedTopic.passage || '').split(/\s+/).filter(Boolean).length} Words</span>
-                    </div>
-                    <div className="h-8 w-px bg-gray-100"></div>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold text-gray-400 uppercase">Difficulty</span>
-                      <span className="text-lg font-black text-gray-900">Intermediate</span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={finishReading}
-                    className="px-12 py-5 bg-gray-900 text-white rounded-2xl font-black text-xl hover:bg-black transition transform active:scale-[0.98] shadow-xl shadow-gray-900/20 flex items-center"
-                  >
-                    Success, I've Finished <Zap className="ml-3 h-5 w-5 fill-current text-amber-400" />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        ) : (
-          <SmartQuiz questions={selectedTopic.questions} onComplete={handleComplete} />
-        )}
-      </FullscreenProctorGuard>
+          ) : (
+            <SmartQuiz questions={selectedTopic.questions} onComplete={handleComplete} />
+          )}
+        </FullscreenProctorGuard>
+      </>
     );
   }
 
   return (
-    <DetailedReport
-      {...report}
-      title="Reading"
-      onRetry={() => {
-        if (id) {
-          navigate('/reading');
-        } else {
-          setPhase('topic');
-          setReport(null);
-        }
-      }}
-      onHome={() => navigate('/student/dashboard')}
-    />
+    <>
+      <SubmissionSuccessModal
+        isOpen={showCelebration}
+        onComplete={() => {
+          setShowCelebration(false);
+          setPhase('report');
+        }}
+      />
+      <DetailedReport
+        {...report}
+        title="Reading"
+        onRetry={() => {
+          if (id) {
+            navigate('/reading');
+          } else {
+            setPhase('topic');
+            setReport(null);
+          }
+        }}
+        onHome={() => navigate('/student/dashboard')}
+      />
+    </>
   );
 };
 

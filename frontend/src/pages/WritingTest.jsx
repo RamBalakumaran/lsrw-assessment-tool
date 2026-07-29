@@ -16,6 +16,7 @@ import DetailedReport from '../components/DetailedReport';
 import api from '../utils/api';
 import FullscreenProctorGuard from '../components/FullscreenProctorGuard';
 import SmartQuiz from '../components/SmartQuiz';
+import SubmissionSuccessModal from '../components/SubmissionSuccessModal';
 
 const WritingTest = () => {
   const { id } = useParams();
@@ -23,6 +24,7 @@ const WritingTest = () => {
   const [phase, setPhase] = useState('topic');
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [text, setText] = useState("");
+  const [showCelebration, setShowCelebration] = useState(false);
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState(null);
   const [timeLeft, setTimeLeft] = useState(300);
@@ -129,7 +131,7 @@ const WritingTest = () => {
           data.criteria['Task Fulfillment'] < 50 ? "Focus more on the specific core keywords of the prompt." : "Clear alignment with the assigned topic."
         ]
       });
-      setPhase('report');
+      setShowCelebration(true);
 
     } catch (e) {
       alert("Assessment System Offline: " + e.message);
@@ -182,7 +184,6 @@ const WritingTest = () => {
     };
 
     setReportData(reportDataObj);
-    setPhase('report');
 
     // Submit attempt to backend
     try {
@@ -195,6 +196,7 @@ const WritingTest = () => {
     } catch (e) {
       console.error("Failed to submit attempt", e);
     }
+    setShowCelebration(true);
   };
 
   const handleExit = () => {
@@ -212,7 +214,15 @@ const WritingTest = () => {
 
   if (phase === 'intro') {
     return (
-      <div className="max-w-4xl mx-auto px-6 py-12">
+      <>
+        <SubmissionSuccessModal
+          isOpen={showCelebration}
+          onComplete={() => {
+            setShowCelebration(false);
+            setPhase('report');
+          }}
+        />
+        <div className="max-w-4xl mx-auto px-6 py-12">
         <div className="flex justify-between items-center mb-10">
           <button
             onClick={() => {
@@ -294,27 +304,45 @@ const WritingTest = () => {
             </div>
           </div>
         </motion.div>
-      </div>
+        </div>
+      </>
     );
   }
 
   if (phase === 'quiz') {
     return (
-      <FullscreenProctorGuard
-        title={selectedTopic?.title}
-        onExit={handleExit}
-      >
-        <SmartQuiz questions={selectedTopic.questions} onComplete={handleQuizComplete} />
-      </FullscreenProctorGuard>
+      <>
+        <SubmissionSuccessModal
+          isOpen={showCelebration}
+          onComplete={() => {
+            setShowCelebration(false);
+            setPhase('report');
+          }}
+        />
+        <FullscreenProctorGuard
+          title={selectedTopic?.title}
+          onExit={handleExit}
+        >
+          <SmartQuiz questions={selectedTopic.questions} onComplete={handleQuizComplete} />
+        </FullscreenProctorGuard>
+      </>
     );
   }
 
   if (phase === 'write') {
     return (
-      <FullscreenProctorGuard
-        title={selectedTopic?.title}
-        onExit={handleExit}
-      >
+      <>
+        <SubmissionSuccessModal
+          isOpen={showCelebration}
+          onComplete={() => {
+            setShowCelebration(false);
+            setPhase('report');
+          }}
+        />
+        <FullscreenProctorGuard
+          title={selectedTopic?.title}
+          onExit={handleExit}
+        >
         <div className="max-w-6xl mx-auto px-6 py-12">
           {/* Header Navigation */}
           <div className="flex justify-between items-center mb-8">
@@ -419,25 +447,35 @@ const WritingTest = () => {
           </div>
         </div>
       </FullscreenProctorGuard>
-    );
-  }
+    </>
+  );
+}
 
   return (
-    <DetailedReport
-      {...reportData}
-      title="Writing"
-      onRetry={() => {
-        if (id) {
-          navigate('/writing');
-        } else {
-          setPhase('topic');
-          setReportData(null);
-          setText("");
-          setTimeLeft(300);
-        }
-      }}
-      onHome={() => navigate('/student/dashboard')}
-    />
+    <>
+      <SubmissionSuccessModal
+        isOpen={showCelebration}
+        onComplete={() => {
+          setShowCelebration(false);
+          setPhase('report');
+        }}
+      />
+      <DetailedReport
+        {...reportData}
+        title="Writing"
+        onRetry={() => {
+          if (id) {
+            navigate('/writing');
+          } else {
+            setPhase('topic');
+            setReportData(null);
+            setText("");
+            setTimeLeft(300);
+          }
+        }}
+        onHome={() => navigate('/student/dashboard')}
+      />
+    </>
   );
 };
 

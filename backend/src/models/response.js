@@ -22,6 +22,8 @@ module.exports = (sequelize, DataTypes) => {
     teacherFeedback: { type: DataTypes.TEXT },
     manualScore: { type: DataTypes.FLOAT },
     recordingUrl: { type: DataTypes.STRING },
+    mediaProgress: { type: DataTypes.FLOAT, defaultValue: 0 },
+    mediaUnlocked: { type: DataTypes.BOOLEAN, defaultValue: false },
     // Timestamp of submission
     submittedAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
   }, {

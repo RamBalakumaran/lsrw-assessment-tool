@@ -3,8 +3,6 @@ const router = express.Router();
 const db = require('../models');
 const { authMiddleware } = require('../../middleware/auth');
 const { Sequelize } = require('../models');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
 // GET /api/dashboard/teacher
 router.get('/teacher', authMiddleware, async (req, res) => {
     try {
@@ -432,14 +430,17 @@ router.get('/student', authMiddleware, async (req, res) => {
         // 3. Fetch individually assigned tasks
         let individuallyAssignedTasks = [];
         if (individuallyAssignedTaskIds.length > 0) {
-            individuallyAssignedTasks = await prisma.task.findMany({
-                where: { id: { in: individuallyAssignedTaskIds } }
+            individuallyAssignedTasks = await db.Task.findAll({
+                where: { id: individuallyAssignedTaskIds }
             });
         }
 
         // 4. Fetch Global tasks (only Published ones)
-        const globalTasks = await prisma.task.findMany({
-            where: { visibilityScope: 'GLOBAL', status: 'PUBLISHED' }
+        const globalTasks = await db.Task.findAll({
+            where: {
+                visibilityScope: { [db.Sequelize.Op.in]: ['GLOBAL', 'Global'] },
+                status: { [db.Sequelize.Op.in]: ['PUBLISHED', 'Published'] }
+            }
         });
         const pendingGlobalTasks = globalTasks.filter(task => !completedTaskIds.includes(task.id));
         const formattedGlobalTasks = pendingGlobalTasks.map(t => ({
@@ -452,13 +453,16 @@ router.get('/student', authMiddleware, async (req, res) => {
         const groupCards = [];
         let allGroupTasks = [];
         for (const group of user.groupMemberships) {
-            const tasksForGroup = await prisma.task.findMany({
-                where: { 
-                    status: 'PUBLISHED',
-                    groupAssignments: {
-                        some: { groupId: group.id }
-                    }
-                }
+            const tasksForGroup = await db.Task.findAll({
+                where: {
+                    status: { [db.Sequelize.Op.in]: ['PUBLISHED', 'Published'] }
+                },
+                include: [{
+                    model: db.Group,
+                    as: 'targetGroups',
+                    where: { id: group.id },
+                    attributes: []
+                }]
             });
             const pendingGroupTasks = tasksForGroup.filter(task => !completedTaskIds.includes(task.id));
             const formattedGroupTasks = pendingGroupTasks.map(t => ({

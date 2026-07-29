@@ -82,7 +82,7 @@ const StudentDashboard = () => {
   const [groupCards, setGroupCards] = useState([]);
 
   // States for accordions
-  const [isGlobalExpanded, setIsGlobalExpanded] = useState(false);
+  const [isGlobalExpanded, setIsGlobalExpanded] = useState(true);
   const [expandedGroups, setExpandedGroups] = useState({});
 
   const toggleGroup = (groupId) => {
@@ -103,8 +103,16 @@ const StudentDashboard = () => {
         setUser(dashRes.data.user);
         setStats(dashRes.data.stats);
         setGlobalTasks(dashRes.data.globalTasks || []);
-        setGroupCards(dashRes.data.groupCards || []);
+        const fetchedGroupCards = dashRes.data.groupCards || [];
+        setGroupCards(fetchedGroupCards);
         setAssignedTasks(dashRes.data.assignedTasks || []);
+
+        // Expand all group cards by default
+        const initialExpanded = {};
+        fetchedGroupCards.forEach(g => {
+          initialExpanded[g.id] = true;
+        });
+        setExpandedGroups(initialExpanded);
         
         // Filter attempts that are completed
         const completedAttempts = (attemptsRes.data || []).filter(a => a.status === 'COMPLETED');
@@ -211,6 +219,45 @@ const StudentDashboard = () => {
           ))}
         </div>
 
+        {/* Assigned Tasks Section (Directly assigned tasks) */}
+        {assignedTasks && assignedTasks.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-6">Assigned Tasks</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {assignedTasks.map((assignment, idx) => {
+                const tObj = assignment.task || assignment;
+                return (
+                  <motion.div
+                    key={assignment.id || idx}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-[2rem] text-white flex justify-between items-center shadow-lg shadow-blue-500/20 group/card hover:scale-[1.01] transition-transform duration-300"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center font-black text-xl border border-white/20">
+                        {tObj?.type?.[0] || tObj?.lsrwComponent?.[0] || 'A'}
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-black text-blue-200 uppercase tracking-widest leading-none mb-1 flex items-center gap-1.5">
+                          <span>Assigned Task</span>
+                          {(tObj?.type || tObj?.lsrwComponent) && <span>• {tObj.type || tObj.lsrwComponent}</span>}
+                        </div>
+                        <h4 className="text-xl font-black leading-tight">{tObj?.title || 'Untitled Task'}</h4>
+                      </div>
+                    </div>
+                    <Link
+                      to={getModuleLink(tObj)}
+                      className="p-3 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition transform group-hover/card:translate-x-1"
+                    >
+                      <ArrowRight size={18} />
+                    </Link>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Global Tasks Card Section */}
         <div className="mb-12">
           <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm transition-all duration-300">
@@ -241,33 +288,36 @@ const StudentDashboard = () => {
                 <div className="mt-8 pt-8 border-t border-gray-100">
                     {globalTasks.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {globalTasks.map((assignment, idx) => (
-                          <motion.div
-                            key={assignment.id || idx}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="bg-indigo-600 p-6 rounded-[2rem] text-white flex justify-between items-center shadow-lg shadow-indigo-500/20 group/card hover:scale-[1.01] transition-transform duration-300"
-                          >
-                            <div className="flex items-center space-x-4">
-                              <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center font-black text-xl border border-white/20">
-                                {assignment.task?.type?.[0] || assignment.task?.lsrwComponent?.[0] || 'G'}
-                              </div>
-                              <div>
-                                <div className="text-[10px] font-black text-indigo-200 uppercase tracking-widest leading-none mb-1 flex items-center gap-1.5">
-                                  <span>Global Task</span>
-                                  {assignment.task?.type && <span>• {assignment.task.type}</span>}
-                                </div>
-                                <h4 className="text-xl font-black leading-tight">{assignment.task?.title}</h4>
-                              </div>
-                            </div>
-                            <Link
-                              to={getModuleLink(assignment.task)}
-                              className="p-3 bg-white text-indigo-600 rounded-xl hover:bg-indigo-50 transition transform group-hover/card:translate-x-1"
+                        {globalTasks.map((assignment, idx) => {
+                          const tObj = assignment.task || assignment;
+                          return (
+                            <motion.div
+                              key={assignment.id || idx}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="bg-indigo-600 p-6 rounded-[2rem] text-white flex justify-between items-center shadow-lg shadow-indigo-500/20 group/card hover:scale-[1.01] transition-transform duration-300"
                             >
-                              <ArrowRight size={18} />
-                            </Link>
-                          </motion.div>
-                        ))}
+                              <div className="flex items-center space-x-4">
+                                <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center font-black text-xl border border-white/20">
+                                  {tObj?.type?.[0] || tObj?.lsrwComponent?.[0] || 'G'}
+                                </div>
+                                <div>
+                                  <div className="text-[10px] font-black text-indigo-200 uppercase tracking-widest leading-none mb-1 flex items-center gap-1.5">
+                                    <span>Global Task</span>
+                                    {(tObj?.type || tObj?.lsrwComponent) && <span>• {tObj.type || tObj.lsrwComponent}</span>}
+                                  </div>
+                                  <h4 className="text-xl font-black leading-tight">{tObj?.title || 'Untitled Task'}</h4>
+                                </div>
+                              </div>
+                              <Link
+                                to={getModuleLink(tObj)}
+                                className="p-3 bg-white text-indigo-600 rounded-xl hover:bg-indigo-50 transition transform group-hover/card:translate-x-1"
+                              >
+                                <ArrowRight size={18} />
+                              </Link>
+                            </motion.div>
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="py-8 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-xs font-bold text-gray-400">

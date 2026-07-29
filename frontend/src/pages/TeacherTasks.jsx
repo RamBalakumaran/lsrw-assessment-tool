@@ -351,12 +351,35 @@ const TeacherTasks = () => {
                                                      <p className="text-sm font-bold text-gray-800 bg-gray-50 p-4 rounded-xl border border-gray-100/50 whitespace-pre-wrap leading-relaxed">{task.passage}</p>
                                                  </div>
                                              )}
-                                             {task.audioUrl && (
-                                                 <div>
-                                                     <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Audio Source</div>
-                                                     <audio controls src={task.audioUrl} className="w-full max-w-md h-10 rounded-xl" />
-                                                 </div>
-                                             )}
+                                             {task.audioUrl && (() => {
+                                                 const youtubeRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+                                                 const match = task.audioUrl.match(youtubeRegExp);
+                                                 const youtubeId = (match && match[2].length === 11) ? match[2] : null;
+
+                                                 if (youtubeId) {
+                                                     return (
+                                                         <div>
+                                                             <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Video / Audio Source (YouTube)</div>
+                                                             <div className="relative w-full max-w-xl overflow-hidden rounded-2xl shadow-md bg-gray-900 border border-gray-800" style={{ paddingTop: '56.25%' }}>
+                                                                 <iframe
+                                                                     className="absolute top-0 left-0 w-full h-full"
+                                                                     src={`https://www.youtube.com/embed/${youtubeId}?rel=0`}
+                                                                     title="YouTube video player"
+                                                                     frameBorder="0"
+                                                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                                     allowFullScreen
+                                                                 ></iframe>
+                                                             </div>
+                                                         </div>
+                                                     );
+                                                 }
+                                                 return (
+                                                     <div>
+                                                         <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Audio Source</div>
+                                                         <audio controls src={task.audioUrl} className="w-full max-w-md h-10 rounded-xl" />
+                                                     </div>
+                                                 );
+                                             })()}
                                              {task.imageUrl && (
                                                  <div>
                                                      <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Reference Image</div>

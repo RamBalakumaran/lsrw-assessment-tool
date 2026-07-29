@@ -9,6 +9,7 @@ import TopicSelection from '../components/TopicSelection';
 import DetailedReport from '../components/DetailedReport';
 import api from '../utils/api';
 import FullscreenProctorGuard from '../components/FullscreenProctorGuard';
+import SubmissionSuccessModal from '../components/SubmissionSuccessModal';
 
 const TestInterface = () => {
     const { id } = useParams();
@@ -18,6 +19,7 @@ const TestInterface = () => {
     const [loading, setLoading] = useState(false);
     const [report, setReport] = useState(null);
     const [timeLeft, setTimeLeft] = useState(null);
+    const [showCelebration, setShowCelebration] = useState(false);
 
     // Sequential Assessment States
     const [currentQIndex, setCurrentQIndex] = useState(0);
@@ -129,7 +131,7 @@ const TestInterface = () => {
                     ...(data.mistakes?.length > 0 ? [`Identified ${data.mistakes.length} structural points for refinement.`] : ["Structure is highly consistent."])
                 ]
             });
-            setPhase('report');
+            setShowCelebration(true);
         } catch (e) {
             console.error(e);
             const serverError = e.response?.data?.raw || e.response?.data?.error || e.message;
@@ -225,7 +227,7 @@ const TestInterface = () => {
                 avg(totals.relevance) < 6 ? "Ensure you repeat the sentences exactly as requested." : "Excellent sentence repetition and accuracy."
             ]
         });
-        setPhase('report');
+        setShowCelebration(true);
         setLoading(false);
     };
 
@@ -326,10 +328,18 @@ const TestInterface = () => {
 
     if (phase === 'record') {
         return (
-            <FullscreenProctorGuard
-                title={selectedTopic?.title}
-                onExit={handleExit}
-            >
+            <>
+                <SubmissionSuccessModal
+                    isOpen={showCelebration}
+                    onComplete={() => {
+                        setShowCelebration(false);
+                        setPhase('report');
+                    }}
+                />
+                <FullscreenProctorGuard
+                    title={selectedTopic?.title}
+                    onExit={handleExit}
+                >
                 <div className="max-w-4xl mx-auto px-6 py-12">
                     <div className="flex justify-between items-center mb-10">
                         <button
@@ -697,23 +707,33 @@ const TestInterface = () => {
                     )}
                 </div>
             </FullscreenProctorGuard>
-        );
-    }
+        </>
+    );
+}
 
     return (
-        <DetailedReport
-            {...report}
-            transcript={report?.transcript}
-            onRetry={() => {
-                if (id) {
-                    navigate('/speaking');
-                } else {
-                    setPhase('topic');
-                    setReport(null);
-                }
-            }}
-            onHome={() => navigate('/student/dashboard')}
-        />
+        <>
+            <SubmissionSuccessModal
+                isOpen={showCelebration}
+                onComplete={() => {
+                    setShowCelebration(false);
+                    setPhase('report');
+                }}
+            />
+            <DetailedReport
+                {...report}
+                transcript={report?.transcript}
+                onRetry={() => {
+                    if (id) {
+                        navigate('/speaking');
+                    } else {
+                        setPhase('topic');
+                        setReport(null);
+                    }
+                }}
+                onHome={() => navigate('/student/dashboard')}
+            />
+        </>
     );
 };
 

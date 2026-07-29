@@ -40,6 +40,10 @@ const FullscreenProctorGuard = ({ children, title, onExit }) => {
         };
 
         const handleBlur = () => {
+            // Ignore blur event if focus shifted to an embedded iframe (e.g. YouTube player interaction)
+            if (document.activeElement && document.activeElement.tagName === 'IFRAME') {
+                return;
+            }
             setViolations(v => v + 1);
             setShowViolationWarning(true);
         };

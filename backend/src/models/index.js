@@ -74,6 +74,10 @@ db.sequelize.sync()
       console.log('Added yearOfStudy column to users table');
     } catch (e) {}
     try {
+      await db.sequelize.query("ALTER TABLE `users` ADD COLUMN `registrationNumber` VARCHAR(255) NULL;");
+      console.log('Added registrationNumber column to users table');
+    } catch (e) {}
+    try {
       await db.sequelize.query("ALTER TABLE `groups` ADD COLUMN `status` VARCHAR(255) DEFAULT 'ACTIVE';");
       console.log('Added status column to groups table');
     } catch (e) {}
@@ -96,6 +100,14 @@ db.sequelize.sync()
     try {
       await db.sequelize.query("ALTER TABLE `tasks` ADD COLUMN `audioUrl` VARCHAR(255) NULL;");
       console.log('Added audioUrl column to tasks table');
+    } catch (e) {}
+    try {
+      await db.sequelize.query("ALTER TABLE `responses` ADD COLUMN `mediaProgress` FLOAT DEFAULT 0;");
+      console.log('Added mediaProgress column to responses table');
+    } catch (e) {}
+    try {
+      await db.sequelize.query("ALTER TABLE `responses` ADD COLUMN `mediaUnlocked` TINYINT(1) DEFAULT 0;");
+      console.log('Added mediaUnlocked column to responses table');
     } catch (e) {}
   })
   .catch(err => console.warn('DB sync warning (non-fatal):', err.message));

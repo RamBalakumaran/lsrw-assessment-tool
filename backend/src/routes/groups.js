@@ -16,9 +16,8 @@ router.delete('/:id', authMiddleware, groupController.deleteGroup);
 router.post('/:id/members', authMiddleware, groupController.addGroupMember);
 router.delete('/:id/members/:userId', authMiddleware, groupController.removeGroupMember);
 
-router.post('/:id/remove-admin', authMiddleware, groupController.removeAdmin);
+router.post('/:id/remove-admin', authMiddleware, groupController.removeGroupAdmin);
 router.post('/:id/tasks/:taskId', authMiddleware, groupController.assignTaskToGroup);
-router.post('/bulk-import', authMiddleware, groupController.bulkImportConfirmation);
 
 router.post('/:id/admins', authMiddleware, groupController.addGroupAdmin);
 router.delete('/:id/admins/:userId', authMiddleware, groupController.removeGroupAdmin);
