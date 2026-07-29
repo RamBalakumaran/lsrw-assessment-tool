@@ -11,7 +11,7 @@ import {
   FileText
 } from 'lucide-react';
 
-const DetailedReport = ({ title, score, isPass: isPassProp, metrics, mistakes, criteria, recommendations, transcript, onRetry, onHome }) => {
+const DetailedReport = ({ title, score, isPass: isPassProp, metrics, mistakes, criteria, recommendations, transcript, recordingUrl, recordingUrls, onRetry, onHome }) => {
   const isPass = isPassProp !== undefined ? isPassProp : (typeof score === 'number' ? score >= 60 : parseFloat(score) >= 60);
 
   return (
@@ -67,6 +67,33 @@ const DetailedReport = ({ title, score, isPass: isPassProp, metrics, mistakes, c
               </div>
               <div className="p-8 bg-gray-50 rounded-[2rem] border border-gray-100 italic text-gray-600 leading-relaxed text-lg">
                 "{transcript}"
+              </div>
+            </section>
+          )}
+
+          {/* Recording Playback */}
+          {(recordingUrl || (recordingUrls && recordingUrls.length > 0)) && (
+            <section>
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-primary-100 text-primary-600 flex items-center justify-center">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"></path></svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900">Audio Recording</h3>
+              </div>
+              <div className="p-8 bg-gray-50 rounded-[2rem] border border-gray-100 space-y-4">
+                {recordingUrl && (
+                  <audio controls src={process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL.replace('/api', '')}${recordingUrl}` : `http://localhost:5000${recordingUrl}`} className="w-full" />
+                )}
+                {recordingUrls && recordingUrls.length > 0 && (
+                  <div className="space-y-4">
+                    {recordingUrls.map((url, idx) => (
+                      <div key={idx}>
+                        <div className="text-sm font-bold text-gray-500 mb-1">Recording {idx + 1}</div>
+                        <audio controls src={process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL.replace('/api', '')}${url}` : `http://localhost:5000${url}`} className="w-full" />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </section>
           )}

@@ -60,7 +60,8 @@ router.post('/assess-speaking', authMiddleware, upload.single('audio'), async (r
     pythonProcess.stderr.on('data', (data) => { console.error("Python Error:", data.toString()); });
 
     pythonProcess.on('close', async (code) => {
-        if (fs.existsSync(audioPath)) fs.unlinkSync(audioPath);
+        const fileName = path.basename(audioPath);
+        const recordingUrl = `/uploads/${fileName}`;
 
         try {
             const result = JSON.parse(dataString);
@@ -74,11 +75,13 @@ router.post('/assess-speaking', authMiddleware, upload.single('audio'), async (r
                     answer: result.transcription || "",
                     aiResults: result,
                     feedback: JSON.stringify(result),
+                    recordingUrl: recordingUrl,
                     submittedAt: new Date()
                 });
             }
 
-            res.json(result);
+            // Return recording URL to the frontend
+            res.json({ ...result, recordingUrl });
         } catch (e) {
             res.status(500).json({ error: "Analysis failed", raw: dataString });
         }

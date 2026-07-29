@@ -280,6 +280,18 @@ const StudentHistory = () => {
                                     </div>
                                 )}
 
+                                {selectedAttempt.recordingUrl && (
+                                    <div className="mb-8 space-y-6">
+                                        <h4 className="text-xl font-black text-gray-900 flex items-center">
+                                            <svg className="w-5 h-5 mr-2 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"></path></svg>
+                                            Audio Recording
+                                        </h4>
+                                        <div className="bg-gray-50 border border-gray-100 rounded-[2rem] p-8 shadow-sm">
+                                            <audio controls src={process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL.replace('/api', '')}${selectedAttempt.recordingUrl}` : `http://localhost:5000${selectedAttempt.recordingUrl}`} className="w-full" />
+                                        </div>
+                                    </div>
+                                )}
+
                                 {selectedAttempt.teacherFeedback && (
                                     <div className="mb-8 space-y-6">
                                         <h4 className="text-xl font-black text-gray-900 flex items-center">

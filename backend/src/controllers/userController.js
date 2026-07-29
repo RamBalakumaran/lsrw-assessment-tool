@@ -152,6 +152,7 @@ exports.getUserPerformance = async (req, res) => {
         lsrwComponent,
         score: resp.score,
         feedback: feedbackText,
+        recordingUrl: resp.recordingUrl,
         submittedAt: resp.submittedAt
       });
     }

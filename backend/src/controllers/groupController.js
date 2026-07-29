@@ -10,7 +10,7 @@ const groupInclude = [
   { model: db.Task, as: 'tasks', through: { attributes: [] } }
 ];
 
-const isPlatformAdmin = (user) => user?.role === 'ADMIN';
+const isPlatformAdmin = (user) => ['ADMIN', 'SUPER_ADMIN', 'DEPT_ADMIN'].includes(user?.role);
 
 const getRequestedUserIds = (body, singleKey = 'userId', multiKey = 'userIds') => {
   if (Array.isArray(body[multiKey])) return body[multiKey].filter(Boolean);

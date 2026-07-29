@@ -124,6 +124,8 @@ exports.getAllTasks = async (req, res) => {
     
     const formattedTasks = tasks.map(t => {
       const tJson = typeof t.toJSON === 'function' ? t.toJSON() : t;
+      tJson.type = (tJson.lsrwComponent || tJson.type || '').toUpperCase();
+      tJson.difficulty = (tJson.difficultyLevel || tJson.difficulty || '').toUpperCase();
       tJson.createdByRole = t.creator ? t.creator.role : (t.createdByRole || 'TEACHER');
       tJson.groupIds = t.targetGroups ? t.targetGroups.map(g => g.id) : [];
       return tJson;
@@ -150,6 +152,8 @@ exports.createTask = async (req, res) => {
     }
 
     const taskJson = task.toJSON();
+    taskJson.type = (taskJson.lsrwComponent || taskJson.type || '').toUpperCase();
+    taskJson.difficulty = (taskJson.difficultyLevel || taskJson.difficulty || '').toUpperCase();
     taskJson.groupIds = groupIds || [];
     taskJson.createdByRole = req.user.role;
 
@@ -181,6 +185,8 @@ exports.updateTask = async (req, res) => {
     }
 
     const taskJson = task.toJSON();
+    taskJson.type = (taskJson.lsrwComponent || taskJson.type || '').toUpperCase();
+    taskJson.difficulty = (taskJson.difficultyLevel || taskJson.difficulty || '').toUpperCase();
     taskJson.groupIds = groupIds || [];
     const creator = await db.User.findByPk(task.creatorId);
     taskJson.createdByRole = creator ? creator.role : 'TEACHER';

@@ -97,6 +97,7 @@ const TestInterface = () => {
                 isPass: overall9 >= 6.0,
                 title: isRepeatTask ? "Repeat Sentence" : "Speaking",
                 transcript: data.transcription || "",
+                recordingUrl: data.recordingUrl,
                 metrics: isRepeatTask ? [
                     { label: "Estimated WPM", value: data.wpm || 0 },
                     { label: "Fluency Score", value: `${fluency9.toFixed(1)}/9.0` },
@@ -143,6 +144,7 @@ const TestInterface = () => {
         let totals = { wpm: 0, fluency: 0, vocab: 0, grammar: 0, pauses: 0, relevance: 0, score: 0 };
         let fullTranscript = [];
         let allMistakes = [];
+        let allRecordingUrls = [];
         let valid = 0;
 
         for (let i = 0; i < blobs.length; i++) {
@@ -166,6 +168,7 @@ const TestInterface = () => {
                     totals.relevance += metrics.relevance || 0;
                     totals.score += data.overall_score || 0;
                     fullTranscript.push(`[Sentence ${i+1}]: ${data.transcription}`);
+                    if (data.recordingUrl) allRecordingUrls.push(data.recordingUrl);
                     if (data.mistakes) allMistakes.push(...data.mistakes);
                     valid++;
                 }
@@ -195,6 +198,7 @@ const TestInterface = () => {
             isPass: overall9 >= 6.0,
             title: isRepeatTask ? "Repeat Sentences" : "Speaking",
             transcript: fullTranscript.join('\n\n'),
+            recordingUrls: allRecordingUrls,
             metrics: isRepeatTask ? [
                 { label: "Avg WPM", value: Math.round(avg(totals.wpm)) },
                 { label: "Avg Fluency Score", value: `${fluency9.toFixed(1)}/9.0` },

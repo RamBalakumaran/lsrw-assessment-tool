@@ -262,6 +262,12 @@ const StudentPerformanceModal = ({ studentId, onClose }) => {
                                                     </span>
                                                 </div>
                                                 {renderFeedback(act.feedback)}
+                                                {act.recordingUrl && (
+                                                    <div className="mt-3">
+                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Audio Recording</span>
+                                                        <audio controls src={process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL.replace('/api', '')}${act.recordingUrl}` : `http://localhost:5000${act.recordingUrl}`} className="h-8 max-w-sm" />
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3 self-end md:self-auto">
