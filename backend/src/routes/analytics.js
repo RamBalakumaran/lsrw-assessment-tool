@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../models');
+const { Op } = require('sequelize');
 
 router.get('/teacher', async (req, res) => {
     try {
@@ -50,6 +51,123 @@ router.get('/teacher', async (req, res) => {
     } catch (error) {
         console.error("Analytics Error:", error);
         res.status(500).json({ error: "Failed to load analytics" });
+    }
+});
+
+router.get('/compare', async (req, res) => {
+    try {
+        const { mode, ids, contextId, role, dateFrom, dateTo } = req.query;
+        // ids might be empty for 'overall' mode
+        const idList = ids ? ids.split(',').filter(Boolean) : [];
+        if (mode !== 'overall' && idList.length === 0) return res.json([]);
+
+        let results = [];
+        
+        const dateFilter = {};
+        if (dateFrom || dateTo) {
+            dateFilter.submittedAt = {};
+            if (dateFrom) dateFilter.submittedAt[Op.gte] = new Date(dateFrom);
+            if (dateTo) {
+                const end = new Date(dateTo);
+                end.setHours(23, 59, 59, 999);
+                dateFilter.submittedAt[Op.lte] = end;
+            }
+        }
+
+        if (mode === 'overall') {
+            let whereClause = {};
+            if (role === 'STUDENT') {
+                if (!contextId || contextId === 'undefined') return res.json([]);
+                whereClause = { userId: contextId, ...dateFilter };
+            } else if (contextId && contextId !== 'undefined') {
+                whereClause = { userId: contextId, ...dateFilter };
+            } else {
+                whereClause = { ...dateFilter };
+            }
+            // Add teacher-specific logic here if needed (e.g. students in their groups)
+
+            const responses = await db.Response.findAll({ where: whereClause });
+            const tasks = await db.Task.findAll();
+            const taskMap = {};
+            tasks.forEach(t => taskMap[t.id] = t.type || 'SPEAKING');
+
+            const stats = {
+                'LISTENING': { total: 0, count: 0, name: 'Listening' },
+                'SPEAKING': { total: 0, count: 0, name: 'Speaking' },
+                'READING': { total: 0, count: 0, name: 'Reading' },
+                'WRITING': { total: 0, count: 0, name: 'Writing' }
+            };
+
+            responses.forEach(r => {
+                const type = taskMap[r.taskId];
+                if (type && stats[type]) {
+                    stats[type].total += (r.score || 0);
+                    stats[type].count += 1;
+                }
+            });
+
+            results = Object.values(stats).map(s => ({
+                name: s.name,
+                score: s.count > 0 ? Math.round(s.total / s.count) : 0
+            }));
+        }
+        else if (mode === 'student-tasks') {
+            if (!contextId || contextId === 'undefined') return res.json([]);
+            
+            const responses = await db.Response.findAll({
+                where: {
+                    userId: contextId,
+                    taskId: idList,
+                    ...dateFilter
+                }
+            });
+
+            const tasks = await db.Task.findAll({ where: { id: idList } });
+            const grouped = {};
+            tasks.forEach(t => grouped[t.id] = { total: 0, count: 0, name: t.title });
+
+            responses.forEach(r => {
+                if (grouped[r.taskId]) {
+                    grouped[r.taskId].total += (r.score || 0);
+                    grouped[r.taskId].count += 1;
+                }
+            });
+
+            results = Object.keys(grouped).map(id => ({
+                id,
+                name: grouped[id].name,
+                score: grouped[id].count > 0 ? Math.round(grouped[id].total / grouped[id].count) : 0
+            }));
+        } 
+        else if (mode === 'teacher-students' || mode === 'admin-teachers') {
+            const responses = await db.Response.findAll({
+                where: { 
+                    userId: idList,
+                    ...dateFilter
+                }
+            });
+            const users = await db.User.findAll({ where: { id: idList } });
+            const grouped = {};
+            users.forEach(u => grouped[u.id] = { total: 0, count: 0, name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email });
+
+            responses.forEach(r => {
+                if (grouped[r.userId]) {
+                    grouped[r.userId].total += (r.score || 0);
+                    grouped[r.userId].count += 1;
+                }
+            });
+
+            results = Object.keys(grouped).map(id => ({
+                id,
+                name: grouped[id].name,
+                score: grouped[id].count > 0 ? Math.round(grouped[id].total / grouped[id].count) : 0
+            }));
+        }
+
+        res.json(results);
+    } catch (error) {
+        console.error("Comparison Analytics Error:", error);
+        res.status(500).json({ error: "Failed to load comparison data" });
     }
 });
 

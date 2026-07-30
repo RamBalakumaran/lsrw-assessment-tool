@@ -22,6 +22,7 @@ import ListeningTest from './pages/ListeningTest';
 import ReadingTest from './pages/ReadingTest';
 import WritingTest from './pages/WritingTest';
 import ProtectedRoute from './components/ProtectedRoute';
+import PerformanceComparison from './pages/PerformanceComparison';
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardRedirect />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/reset-password" element={<PasswordReset />} />
+          <Route path="/comparison" element={<PerformanceComparison />} />
 
           {/* Admin Routes */}
           <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SUPER_ADMIN', 'DEPT_ADMIN']} />}>

@@ -29,6 +29,7 @@ const Sidebar = ({ role }) => {
         { title: "Overview", icon: <LayoutDashboard />, link: "/admin/dashboard" },
         { title: "User Management", icon: <Users />, link: "/admin/users" },
         { title: "Global Tasks", icon: <BookOpen />, link: "/admin/tasks" },
+        { title: "Compare", icon: <Activity />, link: "/comparison" },
     ];
 
     const teacherLinks = [
@@ -36,12 +37,14 @@ const Sidebar = ({ role }) => {
         { title: "My Groups", icon: <Layers />, link: "/teacher/groups" },
         { title: "LSRW Tasks", icon: <BookOpen />, link: "/teacher/tasks" },
         { title: "Performance", icon: <BarChart />, link: "/teacher/performance" },
+        { title: "Compare", icon: <Activity />, link: "/comparison" },
     ];
 
     const studentLinks = [
         { title: "Overview", icon: <LayoutDashboard />, link: "/student/dashboard" },
         { title: "My Progress", icon: <BarChart />, link: "/student/history" },
         { title: "LSRW Modules", icon: <Layers />, link: "/student/dashboard" },
+        { title: "Compare", icon: <Activity />, link: "/comparison" },
     ];
 
     const links = ['ADMIN', 'SUPER_ADMIN', 'DEPT_ADMIN'].includes(role)

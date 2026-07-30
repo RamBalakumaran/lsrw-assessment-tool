@@ -151,12 +151,6 @@ const Login = () => {
                         )}
                     </button>
                 </form>
-
-                <div className="text-center mt-12 bg-gray-50 p-6 rounded-[2rem] border border-gray-100">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">
-                        New Researcher? <Link to="/register" className="text-primary-600 font-black hover:underline ml-2">Request Access</Link>
-                    </p>
-                </div>
             </motion.div>
         </div>
     );

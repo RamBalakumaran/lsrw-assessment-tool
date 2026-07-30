@@ -71,7 +71,9 @@ export default function ReadingAssessment({ tenantId, passageId }) {
 
   const startAttempt = async () => {
     try {
-      const r = await api.post('/reading/attempts/start', { tenant_id: tenantId, user_id: localStorage.getItem('userId'), assessment_id: null, passage_id: passageId });
+      const userStr = localStorage.getItem('user');
+      const userId = userStr ? JSON.parse(userStr).id : null;
+      const r = await api.post('/reading/attempts/start', { tenant_id: tenantId, user_id: userId, assessment_id: null, passage_id: passageId });
       setAttemptId(r.data.attempt_id);
       setStartTime(Date.now());
       setPhase('reading');
@@ -86,7 +88,9 @@ export default function ReadingAssessment({ tenantId, passageId }) {
 
   const submitAnswers = async () => {
     try {
-      const payload = { tenant_id: tenantId, responses: Object.keys(answers).map(qid => ({ question_id: qid, selected_answer: answers[qid], user_id: localStorage.getItem('userId') })) };
+      const userStr = localStorage.getItem('user');
+      const userId = userStr ? JSON.parse(userStr).id : null;
+      const payload = { tenant_id: tenantId, responses: Object.keys(answers).map(qid => ({ question_id: qid, selected_answer: answers[qid], user_id: userId })) };
       await api.post(`/reading/attempts/${attemptId}/submit`, payload);
       const res = await api.get(`/reading/attempts/${attemptId}/result?tenant_id=${tenantId}`);
       setResult(res.data);

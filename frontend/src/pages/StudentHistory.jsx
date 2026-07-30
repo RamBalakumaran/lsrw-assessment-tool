@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../utils/api';
 import { Loader2 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
@@ -8,7 +8,11 @@ import {
     ChevronRight,
     Download,
     Trophy,
-    Target
+    Target,
+    Search,
+    Filter,
+    ArrowUpDown,
+    X
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -59,12 +63,88 @@ const StudentHistory = () => {
     const [loading, setLoading] = useState(true);
     const [selectedAttempt, setSelectedAttempt] = useState(null);
 
+    // Filter and Sort states
+    const [searchTerm, setSearchTerm] = useState('');
+    const [domainFilter, setDomainFilter] = useState('ALL');
+    const [resultCondition, setResultCondition] = useState('ALL'); // ALL, GREATER, LESS, EQUAL
+    const [resultValue, setResultValue] = useState('');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
+    const [sortField, setSortField] = useState('date'); // module, domain, result, date
+    const [sortDirection, setSortDirection] = useState('desc'); // asc, desc
+
+    const filteredAndSortedAttempts = useMemo(() => {
+        let result = [...attempts];
+
+        if (searchTerm) {
+            const lowerSearch = searchTerm.toLowerCase();
+            result = result.filter(a => (a.task?.title || "Speaking Session").toLowerCase().includes(lowerSearch));
+        }
+
+        if (domainFilter !== 'ALL') {
+            result = result.filter(a => (a.task?.type || "SPEAKING").toUpperCase() === domainFilter);
+        }
+
+        if (resultCondition !== 'ALL' && resultValue !== '') {
+            const val = parseFloat(resultValue);
+            if (!isNaN(val)) {
+                result = result.filter(a => {
+                    const score = Math.round(a.score || 0);
+                    if (resultCondition === 'GREATER') return score > val;
+                    if (resultCondition === 'GREATER_EQUAL') return score >= val;
+                    if (resultCondition === 'LESS') return score < val;
+                    if (resultCondition === 'LESS_EQUAL') return score <= val;
+                    if (resultCondition === 'EQUAL') return score === val;
+                    return true;
+                });
+            }
+        }
+
+        if (dateFrom) {
+            const from = new Date(dateFrom).getTime();
+            result = result.filter(a => new Date(a.submittedAt).getTime() >= from);
+        }
+        if (dateTo) {
+            const to = new Date(dateTo).getTime();
+            result = result.filter(a => new Date(a.submittedAt).getTime() <= to + 86400000);
+        }
+
+        result.sort((a, b) => {
+            let valA, valB;
+            switch (sortField) {
+                case 'module':
+                    valA = (a.task?.title || "Speaking Session").toLowerCase();
+                    valB = (b.task?.title || "Speaking Session").toLowerCase();
+                    break;
+                case 'domain':
+                    valA = (a.task?.type || "SPEAKING").toLowerCase();
+                    valB = (b.task?.type || "SPEAKING").toLowerCase();
+                    break;
+                case 'result':
+                    valA = Math.round(a.score || 0);
+                    valB = Math.round(b.score || 0);
+                    break;
+                case 'date':
+                default:
+                    valA = new Date(a.submittedAt).getTime();
+                    valB = new Date(b.submittedAt).getTime();
+                    break;
+            }
+
+            if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+            if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        return result;
+    }, [attempts, searchTerm, domainFilter, resultCondition, resultValue, dateFrom, dateTo, sortField, sortDirection]);
+
     const handleExport = () => {
-        if (!attempts.length) return;
+        if (!filteredAndSortedAttempts.length) return;
         const headers = ["Task Title", "Module Type", "Score", "Date", "Status"];
         const csvContent = [
             headers.join(","),
-            ...attempts.map(a => [
+            ...filteredAndSortedAttempts.map(a => [
                 `"${a.task?.title || 'Practice Session'}"`,
                 a.task?.type || 'SPEAKING',
                 Math.round(a.score || 0),
@@ -170,6 +250,109 @@ const StudentHistory = () => {
                     </div>
                 </div>
 
+                {/* Filters & Sorting */}
+                <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm mb-8">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-xl font-black text-gray-900 flex items-center">
+                            <Filter className="mr-2 text-primary-500" size={20} />
+                            Filter & Sort Options
+                        </h3>
+                        <button
+                            onClick={() => {
+                                setSearchTerm('');
+                                setDomainFilter('ALL');
+                                setResultCondition('ALL');
+                                setResultValue('');
+                                setDateFrom('');
+                                setDateTo('');
+                            }}
+                            className="text-sm font-bold text-gray-500 hover:text-rose-500 transition flex items-center"
+                        >
+                            <X size={16} className="mr-1" /> Clear Filters
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {/* Module Search */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-black uppercase tracking-widest text-gray-400">Assessment Module</label>
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                <input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="Search module..."
+                                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-500 outline-none transition"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Domain Filter */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-black uppercase tracking-widest text-gray-400">Skill Domain</label>
+                            <select
+                                value={domainFilter}
+                                onChange={(e) => setDomainFilter(e.target.value)}
+                                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-500 outline-none transition appearance-none cursor-pointer"
+                            >
+                                <option value="ALL">All Domains</option>
+                                <option value="SPEAKING">Speaking</option>
+                                <option value="LISTENING">Listening</option>
+                                <option value="READING">Reading</option>
+                                <option value="WRITING">Writing</option>
+                            </select>
+                        </div>
+
+                        {/* Result Filter */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-black uppercase tracking-widest text-gray-400">Result Filter</label>
+                            <div className="flex space-x-2">
+                                <select
+                                    value={resultCondition}
+                                    onChange={(e) => setResultCondition(e.target.value)}
+                                    className="w-1/2 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-500 outline-none transition appearance-none cursor-pointer"
+                                >
+                                    <option value="ALL">Any</option>
+                                    <option value="GREATER">{'>'} Than</option>
+                                    <option value="GREATER_EQUAL">{'>='} Than</option>
+                                    <option value="LESS">{'<'} Than</option>
+                                    <option value="LESS_EQUAL">{'<='} Than</option>
+                                    <option value="EQUAL">Equal</option>
+                                </select>
+                                <input
+                                    type="number"
+                                    value={resultValue}
+                                    onChange={(e) => setResultValue(e.target.value)}
+                                    placeholder="Score %"
+                                    disabled={resultCondition === 'ALL'}
+                                    className="w-1/2 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-500 outline-none transition disabled:opacity-50"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Date Filter */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-black uppercase tracking-widest text-gray-400">Date Range</label>
+                            <div className="flex space-x-2 items-center">
+                                <input
+                                    type="date"
+                                    value={dateFrom}
+                                    onChange={(e) => setDateFrom(e.target.value)}
+                                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none transition text-gray-600"
+                                />
+                                <span className="text-gray-400 font-bold">-</span>
+                                <input
+                                    type="date"
+                                    value={dateTo}
+                                    onChange={(e) => setDateTo(e.target.value)}
+                                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none transition text-gray-600"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Attempt Table */}
                 <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
                     <div className="px-10 py-8 border-b border-gray-50 flex justify-between items-center">
@@ -183,15 +366,43 @@ const StudentHistory = () => {
                     <table className="w-full text-left">
                         <thead className="bg-gray-50/50">
                             <tr>
-                                <th className="px-10 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Assessment Module</th>
-                                <th className="px-10 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Skill Domain</th>
-                                <th className="px-10 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Result</th>
-                                <th className="px-10 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Date</th>
+                                {
+                                    [
+                                        { label: 'Assessment Module', field: 'module' },
+                                        { label: 'Skill Domain', field: 'domain' },
+                                        { label: 'Result', field: 'result' },
+                                        { label: 'Date', field: 'date' }
+                                    ].map((col) => (
+                                        <th 
+                                            key={col.field} 
+                                            onClick={() => {
+                                                if (sortField === col.field) {
+                                                    setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                                                } else {
+                                                    setSortField(col.field);
+                                                    setSortDirection('desc');
+                                                }
+                                            }}
+                                            className="px-10 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none cursor-pointer hover:text-gray-700 transition select-none group"
+                                        >
+                                            <div className="flex items-center space-x-2">
+                                                <span>{col.label}</span>
+                                                <ArrowUpDown size={12} className={`transition ${sortField === col.field ? 'text-primary-500 opacity-100' : 'opacity-0 group-hover:opacity-50'}`} />
+                                            </div>
+                                        </th>
+                                    ))
+                                }
                                 <th className="px-10 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none"></th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                            {attempts.map((attempt, i) => (
+                            {filteredAndSortedAttempts.length === 0 ? (
+                                <tr>
+                                    <td colSpan="5" className="px-10 py-12 text-center text-gray-500 font-medium">
+                                        No sessions match your filters.
+                                    </td>
+                                </tr>
+                            ) : filteredAndSortedAttempts.map((attempt, i) => (
                                 <tr key={i} className="group hover:bg-gray-50/50 transition-colors">
                                     <td className="px-10 py-6">
                                         <span className="font-bold text-gray-900 text-lg">{attempt.task?.title || "Speaking Session"}</span>
