@@ -9,6 +9,7 @@ import {
     Plus,
     TrendingUp,
     Users,
+    Download
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
@@ -64,6 +65,22 @@ const AdminDashboard = () => {
         window.location.href = '/admin/tasks';
     };
 
+    const handleDownloadReport = async () => {
+        try {
+            const response = await api.get('/reports/progress', { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'global_progress_report.csv');
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+        } catch (error) {
+            console.error("Error downloading report:", error);
+            alert("Failed to download report");
+        }
+    };
+
     const statCards = useMemo(() => {
         return [
             { label: 'Students', value: stats?.totalStudents || 0, icon: <Users />, color: 'sky' },
@@ -105,6 +122,13 @@ const AdminDashboard = () => {
                             <Globe size={18} />
                             <span>Scope: NEC Global</span>
                         </div>
+                        <button
+                            onClick={handleDownloadReport}
+                            className="flex items-center space-x-2 bg-indigo-50 text-indigo-600 px-6 py-3 rounded-2xl font-bold hover:bg-indigo-100 transition shadow-sm"
+                        >
+                            <Download size={18} />
+                            <span>Download Report</span>
+                        </button>
                         <button
                             onClick={navigateToCreate}
                             className="flex items-center space-x-2 px-6 py-3 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition shadow-lg shadow-primary-500/30"

@@ -7,7 +7,8 @@ import {
     ChevronRight,
     Search,
     Filter,
-    ArrowUpRight
+    ArrowUpRight,
+    Download
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
@@ -72,6 +73,22 @@ const TeacherDashboard = () => {
         };
         fetchTeacherData();
     }, []);
+
+    const handleDownloadReport = async () => {
+        try {
+            const response = await api.get('/reports/progress', { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'group_progress_report.csv');
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+        } catch (error) {
+            console.error("Error downloading report:", error);
+            alert("Failed to download report");
+        }
+    };
 
     // Apply Search and Filter
     useEffect(() => {
@@ -140,6 +157,13 @@ const TeacherDashboard = () => {
                     </div>
 
                     <div className="flex items-center space-x-4 w-full sm:w-auto">
+                        <button
+                            onClick={handleDownloadReport}
+                            className="flex items-center space-x-2 bg-indigo-50 text-indigo-600 px-4 py-3 rounded-2xl font-bold text-sm hover:bg-indigo-100 transition"
+                        >
+                            <Download size={18} />
+                            <span className="hidden sm:inline">Download Report</span>
+                        </button>
                         <div className="relative w-full sm:w-auto">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                             <input

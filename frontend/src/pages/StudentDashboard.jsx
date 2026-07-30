@@ -19,7 +19,8 @@ import {
   Globe,
   Users,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Download
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
@@ -82,7 +83,7 @@ const StudentDashboard = () => {
   const [groupCards, setGroupCards] = useState([]);
 
   // States for accordions
-  const [isGlobalExpanded, setIsGlobalExpanded] = useState(true);
+  const [isGlobalExpanded, setIsGlobalExpanded] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState({});
 
   const toggleGroup = (groupId) => {
@@ -107,10 +108,10 @@ const StudentDashboard = () => {
         setGroupCards(fetchedGroupCards);
         setAssignedTasks(dashRes.data.assignedTasks || []);
 
-        // Expand all group cards by default
+        // Collapse all group cards by default
         const initialExpanded = {};
         fetchedGroupCards.forEach(g => {
-          initialExpanded[g.id] = true;
+          initialExpanded[g.id] = false;
         });
         setExpandedGroups(initialExpanded);
         
@@ -126,6 +127,22 @@ const StudentDashboard = () => {
     
     fetchDashboardData();
   }, []);
+
+  const handleDownloadReport = async () => {
+    try {
+      const response = await api.get('/reports/progress', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'progress_report.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (error) {
+      console.error("Error downloading report:", error);
+      alert("Failed to download report");
+    }
+  };
 
   const getModuleLink = (task) => {
     if (!task) return "/";
@@ -184,13 +201,22 @@ const StudentDashboard = () => {
             <p className="text-gray-500 font-medium text-lg mt-1">Ready to push your boundaries today?</p>
           </div>
 
-          <div className="flex items-center space-x-6 bg-white p-3 rounded-[2rem] border border-gray-100 shadow-sm">
-            <div className="text-right pl-4">
-              <div className="font-black text-gray-900 leading-none">{user.firstName} {user.lastName}</div>
-              <div className="text-[10px] font-black uppercase text-gray-400 mt-1 tracking-widest">{user.plan}</div>
-            </div>
-            <div className="w-14 h-14 rounded-2xl bg-primary-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-primary-500/30">
-              {user?.firstName?.[0] || ''}{user?.lastName?.[0] || ''}
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={handleDownloadReport}
+              className="flex items-center space-x-2 bg-indigo-50 text-indigo-600 px-4 py-3 rounded-2xl font-bold text-sm hover:bg-indigo-100 transition"
+            >
+              <Download size={18} />
+              <span>Download Report</span>
+            </button>
+            <div className="flex items-center space-x-6 bg-white p-3 rounded-[2rem] border border-gray-100 shadow-sm">
+              <div className="text-right pl-4">
+                <div className="font-black text-gray-900 leading-none">{user.firstName} {user.lastName}</div>
+                <div className="text-[10px] font-black uppercase text-gray-400 mt-1 tracking-widest">{user.plan}</div>
+              </div>
+              <div className="w-14 h-14 rounded-2xl bg-primary-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-primary-500/30">
+                {user?.firstName?.[0] || ''}{user?.lastName?.[0] || ''}
+              </div>
             </div>
           </div>
         </header>
@@ -219,44 +245,7 @@ const StudentDashboard = () => {
           ))}
         </div>
 
-        {/* Assigned Tasks Section (Directly assigned tasks) */}
-        {assignedTasks && assignedTasks.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-6">Assigned Tasks</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {assignedTasks.map((assignment, idx) => {
-                const tObj = assignment.task || assignment;
-                return (
-                  <motion.div
-                    key={assignment.id || idx}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-[2rem] text-white flex justify-between items-center shadow-lg shadow-blue-500/20 group/card hover:scale-[1.01] transition-transform duration-300"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center font-black text-xl border border-white/20">
-                        {tObj?.type?.[0] || tObj?.lsrwComponent?.[0] || 'A'}
-                      </div>
-                      <div>
-                        <div className="text-[10px] font-black text-blue-200 uppercase tracking-widest leading-none mb-1 flex items-center gap-1.5">
-                          <span>Assigned Task</span>
-                          {(tObj?.type || tObj?.lsrwComponent) && <span>• {tObj.type || tObj.lsrwComponent}</span>}
-                        </div>
-                        <h4 className="text-xl font-black leading-tight">{tObj?.title || 'Untitled Task'}</h4>
-                      </div>
-                    </div>
-                    <Link
-                      to={getModuleLink(tObj)}
-                      className="p-3 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition transform group-hover/card:translate-x-1"
-                    >
-                      <ArrowRight size={18} />
-                    </Link>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* Assigned Tasks Section (Directly assigned tasks) HIDDEN AS PER REQUEST */}
 
         {/* Global Tasks Card Section */}
         <div className="mb-12">
