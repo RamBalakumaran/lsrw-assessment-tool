@@ -23,7 +23,8 @@ const RecordPage = () => {
     formData.append('targetText', targetText);
 
     try {
-      const res = await fetch('http://localhost:5000/api/evaluate', {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      const res = await fetch(`${apiUrl}/evaluate`, {
         method: 'POST',
         body: formData
       });

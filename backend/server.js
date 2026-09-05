@@ -43,5 +43,17 @@ app.use('/api/admin', adminRoute);
 app.use('/api/bulk-import', bulkImportRoute);
 app.use('/api/users', usersRoute);
 
+const { initDbAndSeed } = require('./scripts/init_db_and_seed');
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+
+async function startServer() {
+    try {
+        await initDbAndSeed();
+        app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+    } catch (err) {
+        console.error("Failed to start server due to initialization error:", err);
+        process.exit(1);
+    }
+}
+
+startServer();

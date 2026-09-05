@@ -12,7 +12,8 @@ const WritingPage = () => {
     setResult(null); // Clear previous results while loading
 
     try {
-      const res = await fetch('http://localhost:5000/api/writing/analyze', {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      const res = await fetch(`${apiUrl}/writing/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text })

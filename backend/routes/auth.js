@@ -96,6 +96,10 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ error: 'Email or registration number is required.' });
         }
 
+        if (!normalizedEmail.endsWith('@nec.edu.in')) {
+            return res.status(400).json({ error: 'Only @nec.edu.in emails are allowed to register.' });
+        }
+
         const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
         if (existingUser) {
             return res.status(400).json({ error: 'User already exists.' });
