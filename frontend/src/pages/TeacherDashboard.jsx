@@ -433,9 +433,37 @@ const TeacherDashboard = () => {
                                     <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">Recent Performance</h4>
                                     <div className="space-y-4">
                                         {selectedStudent.recentAttempts.map((attempt, idx) => (
-                                            <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
-                                                <div className="font-bold text-gray-900 truncate mr-2">{attempt.task?.title || 'Practice Session'}</div>
-                                                <div className="text-primary-600 font-black shrink-0">{attempt.status === 'ASSIGNED' ? 'PENDING' : `${attempt.score || 0}%`}</div>
+                                            <div key={idx} className="flex flex-col p-4 bg-gray-50 rounded-2xl">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="font-bold text-gray-900 truncate mr-2">{attempt.task?.title || 'Practice Session'}</div>
+                                                    <div className="text-primary-600 font-black shrink-0">{attempt.status === 'ASSIGNED' ? 'PENDING' : `${attempt.score || 0}%`}</div>
+                                                </div>
+                                                
+                                                {attempt.recordingUrl && (
+                                                    <div className="mt-2">
+                                                        <audio controls src={process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL.replace('/api', '')}${attempt.recordingUrl}` : `http://localhost:5000${attempt.recordingUrl}`} className="w-full h-8" />
+                                                    </div>
+                                                )}
+                                                {attempt.answer && !attempt.recordingUrl && (
+                                                    <div className="mt-2 text-sm text-gray-600 bg-white p-3 rounded-xl border border-gray-100 whitespace-pre-wrap">
+                                                        <span className="font-bold text-gray-400 block mb-1 text-xs uppercase">Typed Answer</span>
+                                                        {attempt.answer}
+                                                    </div>
+                                                )}
+                                                {attempt.studentAnswers && (
+                                                    <div className="mt-2 space-y-1">
+                                                        <span className="font-bold text-gray-400 block mb-1 text-xs uppercase">MCQ Responses</span>
+                                                        {typeof attempt.studentAnswers === 'object' ? Object.entries(attempt.studentAnswers).map(([qId, ans]) => (
+                                                            <div key={qId} className="text-xs text-gray-600 bg-white p-2 rounded-lg border border-gray-100">
+                                                                <span className="font-bold">Q{qId}:</span> {typeof ans === 'object' ? JSON.stringify(ans) : ans}
+                                                            </div>
+                                                        )) : (
+                                                            <div className="text-xs text-gray-600 bg-white p-2 rounded-lg border border-gray-100">
+                                                                {JSON.stringify(attempt.studentAnswers)}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
                                         {selectedStudent.recentAttempts.length === 0 && (

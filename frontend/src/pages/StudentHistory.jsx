@@ -477,7 +477,9 @@ const StudentHistory = () => {
                                                 <p className="text-gray-600 font-medium leading-relaxed">{selectedAttempt.aiResults}</p>
                                             ) : (
                                                 <div className="space-y-6">
-                                                    {Object.entries(selectedAttempt.aiResults).map(([key, value]) => (
+                                                    {Object.entries(selectedAttempt.aiResults)
+                                                        .filter(([key]) => !(selectedAttempt.recordingUrl && (key === 'transcription' || key === 'stt')))
+                                                        .map(([key, value]) => (
                                                         <div key={key} className="flex flex-col bg-gray-50 p-6 rounded-[1.5rem] border border-gray-100">
                                                             <span className="text-xs font-black uppercase tracking-widest text-gray-400 mb-1">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
                                                             <div className="w-full">

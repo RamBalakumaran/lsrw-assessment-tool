@@ -57,7 +57,7 @@ const DetailedReport = ({ title, score, isPass: isPassProp, metrics, mistakes, c
         <div className="p-12 space-y-12">
 
           {/* Transcript Section (Optional) */}
-          {transcript && (
+          {transcript && !(recordingUrl || (recordingUrls && recordingUrls.length > 0)) && (
             <section>
               <div className="flex items-center space-x-3 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-primary-100 text-primary-600 flex items-center justify-center">

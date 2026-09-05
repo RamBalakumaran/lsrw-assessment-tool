@@ -3,7 +3,7 @@ import api from '../utils/api';
 import { X, Target, Award, BarChart, Loader2, Calendar, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const renderFeedback = (feedback) => {
+const renderFeedback = (feedback, act) => {
     if (!feedback) return null;
     
     // Try to parse feedback as JSON
@@ -34,7 +34,7 @@ const renderFeedback = (feedback) => {
         const metrics = data.metrics || {};
         return (
             <div className="mt-2 bg-slate-50/50 border border-slate-100 p-3 rounded-xl max-w-md space-y-2">
-                {data.transcription && (
+                {data.transcription && (!act || !act.recordingUrl) && (
                     <div>
                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Transcription</span>
                         <p className="text-xs text-slate-700 font-medium italic bg-white p-2 rounded-lg border border-slate-100 leading-relaxed">
@@ -261,11 +261,31 @@ const StudentPerformanceModal = ({ studentId, onClose }) => {
                                                         <Calendar size={12} /> {new Date(act.submittedAt).toLocaleDateString()}
                                                     </span>
                                                 </div>
-                                                {renderFeedback(act.feedback)}
+                                                {renderFeedback(act.feedback, act)}
                                                 {act.recordingUrl && (
                                                     <div className="mt-3">
                                                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Audio Recording</span>
                                                         <audio controls src={process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL.replace('/api', '')}${act.recordingUrl}` : `http://localhost:5000${act.recordingUrl}`} className="h-8 max-w-sm" />
+                                                    </div>
+                                                )}
+                                                {act.answer && !act.recordingUrl && (
+                                                    <div className="mt-3 bg-white p-3 rounded-xl border border-slate-100 max-w-md">
+                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Typed Answer</span>
+                                                        <p className="text-xs text-slate-700 font-medium whitespace-pre-wrap">{act.answer}</p>
+                                                    </div>
+                                                )}
+                                                {act.studentAnswers && (
+                                                    <div className="mt-3 bg-white p-3 rounded-xl border border-slate-100 max-w-md space-y-1.5">
+                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">MCQ Responses</span>
+                                                        {typeof act.studentAnswers === 'object' ? Object.entries(act.studentAnswers).map(([qId, ans]) => (
+                                                            <div key={qId} className="text-[10px] text-slate-600">
+                                                                <span className="font-bold">Q{qId}:</span> {typeof ans === 'object' ? JSON.stringify(ans) : ans}
+                                                            </div>
+                                                        )) : (
+                                                            <div className="text-[10px] text-slate-600">
+                                                                {JSON.stringify(act.studentAnswers)}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
