@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import { Layers, Plus, Search, ChevronRight, Users, Edit2, Trash2, X, Loader2, Upload, UserPlus, FileText, Target } from 'lucide-react';
+import { Layers, Plus, Search, ChevronRight, Users, Edit2, Trash2, X, Loader2, Upload, UserPlus, FileText, Target, Download, BarChart2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
 import BulkImportModal from '../components/BulkImportModal';
 import MultiSelectSearchList from '../components/MultiSelectSearchList';
 import StudentPerformanceModal from '../components/StudentPerformanceModal';
+import * as XLSX from 'xlsx';
 
 const TeacherGroups = () => {
     const currentUser = JSON.parse(localStorage.getItem('user'));
@@ -31,6 +32,51 @@ const TeacherGroups = () => {
     const [showAssignTaskModal, setShowAssignTaskModal] = useState(false);
     const [allTasks, setAllTasks] = useState([]);
     const [assignTaskLoading, setAssignTaskLoading] = useState(false);
+
+    // Reports Tab
+    const [activeTab, setActiveTab] = useState('OVERVIEW');
+    const [reportConfig, setReportConfig] = useState({
+        taskIds: [],
+        includeData: 'FINAL_ONLY',
+        consolidation: 'BEST'
+    });
+    const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+    const [reportPreview, setReportPreview] = useState(null);
+    const [reportError, setReportError] = useState(null);
+
+    // Compute rowspans for preview
+    const processedPreview = React.useMemo(() => {
+        if (!reportPreview) return [];
+        const processed = [];
+        let i = 0;
+        while (i < reportPreview.length) {
+            const studentName = reportPreview[i]["Student Name"];
+            let studentRowCount = 0;
+            while (i + studentRowCount < reportPreview.length && reportPreview[i + studentRowCount]["Student Name"] === studentName) {
+                studentRowCount++;
+            }
+            
+            let j = 0;
+            while (j < studentRowCount) {
+                const taskName = reportPreview[i + j]["Task"];
+                let taskRowCount = 0;
+                while (j + taskRowCount < studentRowCount && reportPreview[i + j + taskRowCount]["Task"] === taskName) {
+                    taskRowCount++;
+                }
+                
+                for (let k = 0; k < taskRowCount; k++) {
+                    processed.push({
+                        ...reportPreview[i + j + k],
+                        _studentRowSpan: (j === 0 && k === 0) ? studentRowCount : 0,
+                        _taskRowSpan: (k === 0) ? taskRowCount : 0
+                    });
+                }
+                j += taskRowCount;
+            }
+            i += studentRowCount;
+        }
+        return processed;
+    }, [reportPreview]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -195,6 +241,119 @@ const TeacherGroups = () => {
         }
     };
 
+    const handleGenerateCustomReport = async () => {
+        setIsGeneratingReport(true);
+        setReportError(null);
+        setReportPreview(null);
+        try {
+            const res = await api.post(`/reports/group/${selectedGroup.id}/custom`, reportConfig);
+            const data = res.data;
+            if (!data || data.length === 0) {
+                setReportError("No data available for the selected configuration.");
+                return;
+            }
+            setReportPreview(data);
+        } catch (error) {
+            console.error("Error generating report:", error);
+            setReportError(error.response?.data?.error || "Failed to generate report.");
+        } finally {
+            setIsGeneratingReport(false);
+        }
+    };
+
+    const handleDownloadReport = () => {
+        if (!reportPreview || reportPreview.length === 0) return;
+        
+        // 1. Prepare data for Excel
+        const excelData = [];
+        
+        // Add Titles
+        excelData.push(["NATIONAL ENGINEERING COLLEGE KOVILPATTI , 628 503"]);
+        excelData.push([`Group Name : ${selectedGroup.name}`]);
+        
+        // Headers
+        const dataHeaders = ["Student Name", "Reg No", "Email", "Task", "Attempt Type", "Score", "Submitted At"];
+        excelData.push(dataHeaders);
+        
+        // Add Data
+        reportPreview.forEach(row => {
+            excelData.push([
+                row["Student Name"],
+                row["Reg No"] || '',
+                row["Email"],
+                row["Task"],
+                row["Attempt Type"],
+                row["Score"],
+                row["Submitted At"]
+            ]);
+        });
+
+        // Create Worksheet
+        const ws = XLSX.utils.aoa_to_sheet(excelData);
+
+        // Merge Cells Configuration
+        const merges = [];
+        
+        // Title merges
+        merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }); // Row 1 across all 7 cols
+        merges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }); // Row 2 across all 7 cols
+        
+        // Data row merges
+        let i = 0;
+        const dataStartRow = 3; // 0, 1 are titles, 2 is header
+        
+        while (i < reportPreview.length) {
+            const studentName = reportPreview[i]["Student Name"];
+            let studentRowCount = 0;
+            while (i + studentRowCount < reportPreview.length && reportPreview[i + studentRowCount]["Student Name"] === studentName) {
+                studentRowCount++;
+            }
+            
+            if (studentRowCount > 1) {
+                merges.push({ s: { r: dataStartRow + i, c: 0 }, e: { r: dataStartRow + i + studentRowCount - 1, c: 0 } });
+                merges.push({ s: { r: dataStartRow + i, c: 1 }, e: { r: dataStartRow + i + studentRowCount - 1, c: 1 } });
+                merges.push({ s: { r: dataStartRow + i, c: 2 }, e: { r: dataStartRow + i + studentRowCount - 1, c: 2 } });
+            }
+
+            let j = 0;
+            while (j < studentRowCount) {
+                const taskName = reportPreview[i + j]["Task"];
+                let taskRowCount = 0;
+                while (j + taskRowCount < studentRowCount && reportPreview[i + j + taskRowCount]["Task"] === taskName) {
+                    taskRowCount++;
+                }
+                
+                if (taskRowCount > 1) {
+                    merges.push({ s: { r: dataStartRow + i + j, c: 3 }, e: { r: dataStartRow + i + j + taskRowCount - 1, c: 3 } });
+                }
+                j += taskRowCount;
+            }
+            i += studentRowCount;
+        }
+        
+        ws['!merges'] = merges;
+        
+        // Apply column widths
+        ws['!cols'] = [
+            { wch: 20 }, // Student Name
+            { wch: 15 }, // Reg No
+            { wch: 25 }, // Email
+            { wch: 40 }, // Task
+            { wch: 20 }, // Attempt Type
+            { wch: 10 }, // Score
+            { wch: 20 }  // Submitted At
+        ];
+
+        // Style alignments (optional, handled automatically mostly)
+
+        // Create Workbook
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Report");
+        
+        // Save File
+        XLSX.writeFile(wb, `${selectedGroup.name}_Task_Report.xlsx`);
+    };
+
     const filteredGroups = groups.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
     return (
@@ -205,7 +364,7 @@ const TeacherGroups = () => {
                 {selectedGroup ? (
                     // GROUP DRILLDOWN
                     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
-                        <button onClick={() => setSelectedGroup(null)} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 font-bold transition">
+                        <button onClick={() => { setSelectedGroup(null); setActiveTab('OVERVIEW'); }} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 font-bold transition">
                             <span className="mr-2">←</span> Back to My Groups
                         </button>
                         
@@ -238,7 +397,24 @@ const TeacherGroups = () => {
                             </div>
                         </header>
 
-                        <div className="bg-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-gray-100 shadow-sm max-w-3xl">
+                        <div className="flex space-x-2 mb-8 bg-gray-50 p-1.5 rounded-2xl w-max border border-gray-100">
+                            <button 
+                                onClick={() => setActiveTab('OVERVIEW')} 
+                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'OVERVIEW' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                            >
+                                <Layers size={16} /> Overview
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('REPORTS')} 
+                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'REPORTS' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                            >
+                                <BarChart2 size={16} /> Reports
+                            </button>
+                        </div>
+
+                        {activeTab === 'OVERVIEW' ? (
+                            <>
+                                <div className="bg-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-gray-100 shadow-sm max-w-3xl">
                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
                                 <div>
                                     <h3 className="text-xl font-black text-gray-900 font-sans">Group Students</h3>
@@ -467,6 +643,161 @@ const TeacherGroups = () => {
                                 </div>
                             )}
                         </div>
+                            </>
+                        ) : (
+                            <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm max-w-3xl">
+                                <h3 className="text-2xl font-black text-gray-900 mb-6">Group Reports & Analytics</h3>
+                                
+                                <div className="space-y-6">
+                                    <div>
+                                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3 block">Select Tasks to Include</label>
+                                        <div className="max-h-60 overflow-y-auto border border-gray-100 rounded-2xl bg-gray-50 p-4 space-y-2">
+                                            {selectedGroup.tasks && selectedGroup.tasks.length > 0 ? (
+                                                <>
+                                                    <div className="flex items-center gap-3">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={reportConfig.taskIds.length === selectedGroup.tasks.length}
+                                                            onChange={(e) => {
+                                                                if (e.target.checked) setReportConfig({...reportConfig, taskIds: selectedGroup.tasks.map(t => t.id)});
+                                                                else setReportConfig({...reportConfig, taskIds: []});
+                                                            }}
+                                                            className="w-5 h-5 rounded-md border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                                                        />
+                                                        <span className="font-bold text-gray-700">Select All Tasks</span>
+                                                    </div>
+                                                    <hr className="border-gray-200 my-3" />
+                                                    {selectedGroup.tasks.map(task => (
+                                                        <div key={task.id} className="flex items-center gap-3">
+                                                            <input 
+                                                                type="checkbox" 
+                                                                checked={reportConfig.taskIds.includes(task.id)}
+                                                                onChange={(e) => {
+                                                                    const newIds = e.target.checked 
+                                                                        ? [...reportConfig.taskIds, task.id]
+                                                                        : reportConfig.taskIds.filter(id => id !== task.id);
+                                                                    setReportConfig({...reportConfig, taskIds: newIds});
+                                                                }}
+                                                                className="w-5 h-5 rounded-md border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                                                            />
+                                                            <span className="font-medium text-gray-900">{task.title}</span>
+                                                            <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider">({task.type})</span>
+                                                        </div>
+                                                    ))}
+                                                </>
+                                            ) : (
+                                                <p className="text-gray-400 font-medium">No tasks assigned to this group yet.</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Data to Include</label>
+                                            <select 
+                                                value={reportConfig.includeData}
+                                                onChange={(e) => setReportConfig({...reportConfig, includeData: e.target.value})}
+                                                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition text-sm text-gray-900 cursor-pointer"
+                                            >
+                                                <option value="FINAL_ONLY">Final Score Only</option>
+                                                <option value="ALL_ATTEMPTS">All Attempts Details</option>
+                                                <option value="BOTH">Both (Final + All Attempts)</option>
+                                            </select>
+                                        </div>
+                                        
+                                        {(reportConfig.includeData === 'FINAL_ONLY' || reportConfig.includeData === 'BOTH') && (
+                                            <div>
+                                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Consolidation Method</label>
+                                                <select 
+                                                    value={reportConfig.consolidation}
+                                                    onChange={(e) => setReportConfig({...reportConfig, consolidation: e.target.value})}
+                                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition text-sm text-gray-900 cursor-pointer"
+                                                >
+                                                    <option value="BEST">Best Score (Max)</option>
+                                                    <option value="AVERAGE">Average of Attempts</option>
+                                                    <option value="FIRST">First Attempt</option>
+                                                    <option value="LAST">Last Attempt</option>
+                                                </select>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {reportError && (
+                                        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-600 text-sm font-bold">
+                                            {reportError}
+                                        </div>
+                                    )}
+
+                                    <button 
+                                        onClick={handleGenerateCustomReport}
+                                        disabled={reportConfig.taskIds.length === 0 || isGeneratingReport}
+                                        className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black hover:bg-black transition shadow-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-4"
+                                    >
+                                        {isGeneratingReport ? <Loader2 className="animate-spin" size={20} /> : <BarChart2 size={20} />}
+                                        {isGeneratingReport ? 'Generating Preview...' : 'Generate Report Preview'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'REPORTS' && reportPreview && reportPreview.length > 0 && (
+                            <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm max-w-full mt-6 overflow-hidden">
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+                                    <div>
+                                        <h3 className="text-xl font-black text-gray-900">Report Preview</h3>
+                                        <p className="text-sm font-medium text-gray-500">Showing top {Math.min(reportPreview.length, 50)} rows.</p>
+                                    </div>
+                                    <button 
+                                        onClick={handleDownloadReport}
+                                        className="px-6 py-3 bg-primary-600 text-white rounded-xl font-black hover:bg-primary-700 transition shadow-lg shadow-primary-500/30 flex items-center gap-2"
+                                    >
+                                        <Download size={18} />
+                                        Download Full Excel
+                                    </button>
+                                </div>
+
+                                <div className="overflow-x-auto rounded-2xl border border-gray-100">
+                                    <table className="w-full text-left text-sm whitespace-nowrap">
+                                        <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider font-black">
+                                            <tr>
+                                                <th className="px-6 py-4">Student Name</th>
+                                                <th className="px-6 py-4">Reg No</th>
+                                                <th className="px-6 py-4">Email</th>
+                                                <th className="px-6 py-4">Task</th>
+                                                <th className="px-6 py-4">Attempt Type</th>
+                                                <th className="px-6 py-4">Score</th>
+                                                <th className="px-6 py-4">Submitted At</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100 text-gray-900 font-medium">
+                                            {processedPreview.slice(0, 50).map((row, idx) => {
+                                                const shouldRenderStudent = row._studentRowSpan > 0;
+                                                const shouldRenderTask = row._taskRowSpan > 0;
+                                                return (
+                                                    <tr key={idx} className="hover:bg-gray-50 transition border-b border-gray-100">
+                                                        {shouldRenderStudent && (
+                                                            <>
+                                                                <td rowSpan={row._studentRowSpan} className="px-6 py-4 border-r border-gray-100 align-top bg-white font-bold">{row["Student Name"]}</td>
+                                                                <td rowSpan={row._studentRowSpan} className="px-6 py-4 border-r border-gray-100 align-top bg-white">{row["Reg No"] || '-'}</td>
+                                                                <td rowSpan={row._studentRowSpan} className="px-6 py-4 border-r border-gray-100 align-top bg-white">{row["Email"]}</td>
+                                                            </>
+                                                        )}
+                                                        {shouldRenderTask && (
+                                                            <td rowSpan={row._taskRowSpan} className="px-6 py-4 border-r border-gray-100 align-top max-w-[250px] whitespace-normal bg-white">
+                                                                {row["Task"]}
+                                                            </td>
+                                                        )}
+                                                        <td className="px-6 py-4 truncate max-w-[150px] text-gray-500">{row["Attempt Type"]}</td>
+                                                        <td className="px-6 py-4 font-bold">{row["Score"]}</td>
+                                                        <td className="px-6 py-4 text-gray-500">{row["Submitted At"]}</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
                     </motion.div>
                 ) : (
                     // MAIN GROUPS LIST

@@ -14,6 +14,7 @@ import {
     Menu,
     X
 } from 'lucide-react';
+import NotificationBell from './NotificationBell';
 
 const Sidebar = ({ role }) => {
     const location = useLocation();
@@ -89,6 +90,9 @@ const Sidebar = ({ role }) => {
                     <div className="flex items-center space-x-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
                         <Shield size={10} className="text-primary-500" />
                         <span>AI Powered Assessment</span>
+                    </div>
+                    <div className="mt-6">
+                        <NotificationBell />
                     </div>
                 </div>
 

@@ -248,6 +248,8 @@ model Task {
   startDate       DateTime?
   endDate         DateTime?
   imageUrl        String?      @db.Text
+  category        String       @default("PRACTICE")
+  priority        String       @default("MEDIUM")
   questionsJson   Json?        @map("questions")
   
   // Assignments (one-to-many relationships)
@@ -483,4 +485,19 @@ model ReadingResponse {
   responseTimestamp DateTime? @map("response_timestamp")
 
   @@map("reading_responses")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Char(36)
+  userId    String   @db.Char(36)
+  title     String
+  message   String   @db.Text
+  type      String   @default("INFO")
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("notifications")
 }

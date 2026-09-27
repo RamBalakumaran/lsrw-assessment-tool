@@ -20,7 +20,8 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
-  Download
+  Download,
+  Search
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
@@ -85,6 +86,12 @@ const StudentDashboard = () => {
   // States for accordions
   const [isGlobalExpanded, setIsGlobalExpanded] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState({});
+  const [globalCategoryTab, setGlobalCategoryTab] = useState('ASSESSMENT');
+  const [globalLsrwTab, setGlobalLsrwTab] = useState('LISTENING');
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+  const [groupCategoryTab, setGroupCategoryTab] = useState({});
+  const [groupLsrwTab, setGroupLsrwTab] = useState({});
+  const [groupSearchQueries, setGroupSearchQueries] = useState({});
 
   const toggleGroup = (groupId) => {
     setExpandedGroups(prev => ({
@@ -141,6 +148,22 @@ const StudentDashboard = () => {
     } catch (error) {
       console.error("Error downloading report:", error);
       alert("Failed to download report");
+    }
+  };
+
+  const handleDownloadAttemptPdf = async (attemptId, taskTitle) => {
+    try {
+        const response = await api.get(`/reports/attempt/${attemptId}/pdf`, { responseType: 'blob' });
+        const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `Report_${(taskTitle || 'Task').replace(/\s+/g, '_')}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+    } catch (error) {
+        console.error("Error downloading PDF:", error);
+        alert("Failed to download PDF report");
     }
   };
 
@@ -260,7 +283,7 @@ const StudentDashboard = () => {
                 </div>
                 <div>
                   <h2 className="text-2xl font-black text-gray-900 tracking-tight group-hover:text-indigo-600 transition-colors">Global Tasks</h2>
-                  <p className="text-xs font-bold text-gray-400 mt-1">Platform-wide assessment tasks available to all students</p>
+                  <p className="text-xs font-bold text-gray-400 mt-1">Platform-wide assessment and practice tasks</p>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
@@ -275,44 +298,143 @@ const StudentDashboard = () => {
 
             {isGlobalExpanded && (
                 <div className="mt-8 pt-8 border-t border-gray-100">
-                    {globalTasks.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {globalTasks.map((assignment, idx) => {
-                          const tObj = assignment.task || assignment;
-                          return (
-                            <motion.div
-                              key={assignment.id || idx}
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className="bg-indigo-600 p-6 rounded-[2rem] text-white flex justify-between items-center shadow-lg shadow-indigo-500/20 group/card hover:scale-[1.01] transition-transform duration-300"
+                    <div className="flex space-x-4 mb-6 bg-gray-50 p-2 rounded-2xl w-max">
+                        {['ASSESSMENT', 'PRACTICE'].map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => setGlobalCategoryTab(cat)}
+                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-colors ${globalCategoryTab === cat ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
                             >
-                              <div className="flex items-center space-x-4">
-                                <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center font-black text-xl border border-white/20">
-                                  {tObj?.type?.[0] || tObj?.lsrwComponent?.[0] || 'G'}
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8 border-b border-gray-100 pb-4">
+                        <div className="flex space-x-2">
+                            {['LISTENING', 'SPEAKING', 'READING', 'WRITING'].map(lsrw => (
+                                <button
+                                    key={lsrw}
+                                    onClick={() => setGlobalLsrwTab(lsrw)}
+                                    className={`px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-widest transition-colors ${globalLsrwTab === lsrw ? 'bg-indigo-50 text-indigo-700' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-700'}`}
+                                >
+                                    {lsrw}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                            <input 
+                                type="text"
+                                placeholder="Search global tasks..."
+                                value={globalSearchQuery}
+                                onChange={e => setGlobalSearchQuery(e.target.value)}
+                                className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-full md:w-64 transition-all shadow-sm"
+                            />
+                        </div>
+                    </div>
+
+                    {(() => {
+                        const filteredTasks = globalTasks.filter(t => {
+                            const tObj = t.task || t;
+                            
+                            if (tObj.status && tObj.status.toUpperCase() !== 'PUBLISHED') return false;
+
+                            const catMatch = (tObj.category || 'PRACTICE') === globalCategoryTab;
+                            const lsrwMatch = (tObj.type || tObj.lsrwComponent || '').toUpperCase() === globalLsrwTab;
+                            const searchMatch = !globalSearchQuery || (tObj.title || '').toLowerCase().includes(globalSearchQuery.toLowerCase());
+                            
+                            return catMatch && lsrwMatch && searchMatch;
+                        });
+
+                        if (filteredTasks.length === 0) {
+                            return (
+                                <div className="py-12 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-xs font-bold text-gray-400">
+                                    No {globalCategoryTab.toLowerCase()} tasks found for {globalLsrwTab.toLowerCase()}.
                                 </div>
-                                <div>
-                                  <div className="text-[10px] font-black text-indigo-200 uppercase tracking-widest leading-none mb-1 flex items-center gap-1.5">
-                                    <span>Global Task</span>
-                                    {(tObj?.type || tObj?.lsrwComponent) && <span>• {tObj.type || tObj.lsrwComponent}</span>}
-                                  </div>
-                                  <h4 className="text-xl font-black leading-tight">{tObj?.title || 'Untitled Task'}</h4>
+                            );
+                        }
+
+                        // Group by subType
+                        const grouped = filteredTasks.reduce((acc, t) => {
+                            const tObj = t.task || t;
+                            const subType = tObj.subType || tObj.assessmentType || 'Other';
+                            if (!acc[subType]) acc[subType] = [];
+                            acc[subType].push(t);
+                            return acc;
+                        }, {});
+
+                        return Object.entries(grouped).map(([subType, tasksInGroup]) => (
+                            <div key={subType} className="mb-8 last:mb-0">
+                                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4 border-l-4 border-indigo-200 pl-3">{subType.replace(/_/g, ' ')}</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {tasksInGroup.map((assignment, idx) => {
+                                        const tObj = assignment.task || assignment;
+                                        
+                                        // Simple countdown logic if endDate exists
+                                        let timeRemaining = null;
+                                        if (tObj.endDate) {
+                                            const end = new Date(tObj.endDate);
+                                            const now = new Date();
+                                            const diffMs = end - now;
+                                            if (diffMs > 0) {
+                                                const diffMins = Math.floor(diffMs / 60000);
+                                                const diffHours = Math.floor(diffMins / 60);
+                                                if (diffHours > 24) timeRemaining = `${Math.floor(diffHours / 24)} days left`;
+                                                else if (diffHours > 0) timeRemaining = `${diffHours} hrs left`;
+                                                else timeRemaining = `${diffMins} mins left`;
+                                            } else {
+                                                timeRemaining = 'Closed';
+                                            }
+                                        }
+
+                                        let isLocked = false;
+                                        if (tObj.startDate && new Date(tObj.startDate) > new Date()) {
+                                            isLocked = true;
+                                            timeRemaining = 'Scheduled';
+                                        }
+                                        if (timeRemaining === 'Closed') {
+                                            isLocked = true;
+                                        }
+
+                                        return (
+                                            <motion.div
+                                                key={assignment.id || idx}
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className={`p-6 rounded-[2rem] text-white flex justify-between items-center shadow-lg group/card transition-all duration-300 ${isLocked ? 'bg-gray-400 opacity-70 cursor-not-allowed shadow-none' : tObj.priority === 'HIGH' ? 'bg-rose-500 shadow-rose-500/20 hover:scale-[1.01]' : tObj.priority === 'LOW' ? 'bg-emerald-500 shadow-emerald-500/20 hover:scale-[1.01]' : 'bg-indigo-600 shadow-indigo-500/20 hover:scale-[1.01]'}`}
+                                            >
+                                                <div className="flex items-center space-x-4">
+                                                    <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center font-black text-xl border border-white/20">
+                                                        {tObj?.type?.[0] || tObj?.lsrwComponent?.[0] || 'G'}
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-[10px] font-black text-white/70 uppercase tracking-widest leading-none mb-1 flex items-center gap-1.5">
+                                                            <span>Priority: {tObj.priority || 'MEDIUM'}</span>
+                                                            {timeRemaining && <span>• {timeRemaining}</span>}
+                                                        </div>
+                                                        <h4 className="text-xl font-black leading-tight">{tObj?.title || 'Untitled Task'}</h4>
+                                                    </div>
+                                                </div>
+                                                {isLocked ? (
+                                                    <div className="p-3 bg-white/20 rounded-xl text-white">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                                    </div>
+                                                ) : (
+                                                    <Link
+                                                        to={getModuleLink(tObj)}
+                                                        className={`p-3 bg-white rounded-xl transition transform group-hover/card:translate-x-1 ${tObj.priority === 'HIGH' ? 'text-rose-500 hover:bg-rose-50' : tObj.priority === 'LOW' ? 'text-emerald-500 hover:bg-emerald-50' : 'text-indigo-600 hover:bg-indigo-50'}`}
+                                                    >
+                                                        <ArrowRight size={18} />
+                                                    </Link>
+                                                )}
+                                            </motion.div>
+                                        );
+                                    })}
                                 </div>
-                              </div>
-                              <Link
-                                to={getModuleLink(tObj)}
-                                className="p-3 bg-white text-indigo-600 rounded-xl hover:bg-indigo-50 transition transform group-hover/card:translate-x-1"
-                              >
-                                <ArrowRight size={18} />
-                              </Link>
-                            </motion.div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="py-8 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-xs font-bold text-gray-400">
-                        No global tasks currently pending.
-                      </div>
-                    )}
+                            </div>
+                        ));
+                    })()}
                 </div>
             )}
           </div>
@@ -357,41 +479,144 @@ const StudentDashboard = () => {
 
                 {expandedGroups[groupCard.id] && (
                     <div className="mt-8 pt-8 border-t border-gray-100">
-                        {groupCard.tasks && groupCard.tasks.length > 0 ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {groupCard.tasks.map((assignment, tIdx) => (
-                              <motion.div
-                                key={assignment.id || tIdx}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                className="bg-primary-600 p-6 rounded-[2rem] text-white flex justify-between items-center shadow-lg shadow-primary-500/20 group/card hover:scale-[1.01] transition-transform duration-300"
-                              >
-                                <div className="flex items-center space-x-4">
-                                  <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center font-black text-xl border border-white/20">
-                                    {assignment.task?.type?.[0] || assignment.task?.lsrwComponent?.[0] || 'T'}
-                                  </div>
-                                  <div>
-                                    <div className="text-[10px] font-black text-primary-200 uppercase tracking-widest leading-none mb-1 flex items-center gap-1.5">
-                                      <span>Group Task</span>
-                                      {assignment.task?.type && <span>• {assignment.task.type}</span>}
+                        {(() => {
+                            const currentCatTab = groupCategoryTab[groupCard.id] || 'ASSESSMENT';
+                            const currentLsrwTab = groupLsrwTab[groupCard.id] || 'LISTENING';
+                            const currentSearchQuery = groupSearchQueries[groupCard.id] || '';
+                            
+                            const filteredTasks = (groupCard.tasks || []).filter(t => {
+                                const tObj = t.task || t;
+                                if (tObj.status && tObj.status.toUpperCase() !== 'PUBLISHED') return false;
+                                const catMatch = (tObj.category || 'PRACTICE') === currentCatTab;
+                                const lsrwMatch = (tObj.type || tObj.lsrwComponent || '').toUpperCase() === currentLsrwTab;
+                                const searchMatch = !currentSearchQuery || (tObj.title || '').toLowerCase().includes(currentSearchQuery.toLowerCase());
+                                return catMatch && lsrwMatch && searchMatch;
+                            });
+
+                            return (
+                                <>
+                                    <div className="flex space-x-4 mb-6 bg-gray-50 p-2 rounded-2xl w-max">
+                                        {['ASSESSMENT', 'PRACTICE'].map(cat => (
+                                            <button
+                                                key={cat}
+                                                onClick={() => setGroupCategoryTab(prev => ({...prev, [groupCard.id]: cat}))}
+                                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-colors ${currentCatTab === cat ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                                            >
+                                                {cat}
+                                            </button>
+                                        ))}
                                     </div>
-                                    <h4 className="text-xl font-black leading-tight">{assignment.task?.title}</h4>
-                                  </div>
-                                </div>
-                                <Link
-                                  to={getModuleLink(assignment.task)}
-                                  className="p-3 bg-white text-primary-600 rounded-xl hover:bg-primary-50 transition transform group-hover/card:translate-x-1"
-                                >
-                                  <ArrowRight size={18} />
-                                </Link>
-                              </motion.div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="py-8 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-xs font-bold text-gray-400">
-                            No active tasks assigned to this group.
-                          </div>
-                        )}
+
+                                    <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8 border-b border-gray-100 pb-4">
+                                        <div className="flex space-x-2">
+                                            {['LISTENING', 'SPEAKING', 'READING', 'WRITING'].map(lsrw => (
+                                                <button
+                                                    key={lsrw}
+                                                    onClick={() => setGroupLsrwTab(prev => ({...prev, [groupCard.id]: lsrw}))}
+                                                    className={`px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-widest transition-colors ${currentLsrwTab === lsrw ? 'bg-primary-50 text-primary-700' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-700'}`}
+                                                >
+                                                    {lsrw}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <div className="relative">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                            <input 
+                                                type="text"
+                                                placeholder={`Search ${groupCard.name}...`}
+                                                value={currentSearchQuery}
+                                                onChange={e => setGroupSearchQueries(prev => ({...prev, [groupCard.id]: e.target.value}))}
+                                                className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 w-full md:w-64 transition-all shadow-sm"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {filteredTasks.length === 0 ? (
+                                        <div className="py-12 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-xs font-bold text-gray-400">
+                                            No {currentCatTab.toLowerCase()} tasks found for {currentLsrwTab.toLowerCase()}.
+                                        </div>
+                                    ) : (
+                                        (() => {
+                                            const grouped = filteredTasks.reduce((acc, t) => {
+                                                const tObj = t.task || t;
+                                                const subType = tObj.subType || tObj.assessmentType || 'Other';
+                                                if (!acc[subType]) acc[subType] = [];
+                                                acc[subType].push(t);
+                                                return acc;
+                                            }, {});
+
+                                            return Object.entries(grouped).map(([subType, tasksInGroup]) => (
+                                                <div key={subType} className="mb-8 last:mb-0">
+                                                    <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4 border-l-4 border-primary-200 pl-3">{subType.replace(/_/g, ' ')}</h3>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                        {tasksInGroup.map((assignment, tIdx) => {
+                                                            const tObj = assignment.task || assignment;
+                                                            let timeRemaining = null;
+                                                            if (tObj.endDate) {
+                                                                const end = new Date(tObj.endDate);
+                                                                const now = new Date();
+                                                                const diffMs = end - now;
+                                                                if (diffMs > 0) {
+                                                                    const diffMins = Math.floor(diffMs / 60000);
+                                                                    const diffHours = Math.floor(diffMins / 60);
+                                                                    if (diffHours > 24) timeRemaining = `${Math.floor(diffHours / 24)} days left`;
+                                                                    else if (diffHours > 0) timeRemaining = `${diffHours} hrs left`;
+                                                                    else timeRemaining = `${diffMins} mins left`;
+                                                                } else {
+                                                                    timeRemaining = 'Closed';
+                                                                }
+                                                            }
+                                                            let isLocked = false;
+                                                            if (tObj.startDate && new Date(tObj.startDate) > new Date()) {
+                                                                isLocked = true;
+                                                                timeRemaining = 'Scheduled';
+                                                            }
+                                                            if (timeRemaining === 'Closed') {
+                                                                isLocked = true;
+                                                            }
+
+                                                            return (
+                                                                <motion.div
+                                                                    key={assignment.id || tIdx}
+                                                                    initial={{ opacity: 0, y: 10 }}
+                                                                    animate={{ opacity: 1, y: 0 }}
+                                                                    className={`p-6 rounded-[2rem] text-white flex justify-between items-center shadow-lg group/card transition-all duration-300 ${isLocked ? 'bg-gray-400 opacity-70 cursor-not-allowed shadow-none' : tObj.priority === 'HIGH' ? 'bg-rose-500 shadow-rose-500/20 hover:scale-[1.01]' : tObj.priority === 'LOW' ? 'bg-emerald-500 shadow-emerald-500/20 hover:scale-[1.01]' : 'bg-primary-600 shadow-primary-500/20 hover:scale-[1.01]'}`}
+                                                                >
+                                                                    <div className="flex items-center space-x-4">
+                                                                        <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center font-black text-xl border border-white/20">
+                                                                            {tObj?.type?.[0] || tObj?.lsrwComponent?.[0] || 'T'}
+                                                                        </div>
+                                                                        <div>
+                                                                            <div className="text-[10px] font-black text-white/70 uppercase tracking-widest leading-none mb-1 flex items-center gap-1.5">
+                                                                                <span>Priority: {tObj.priority || 'MEDIUM'}</span>
+                                                                                {timeRemaining && <span>• {timeRemaining}</span>}
+                                                                            </div>
+                                                                            <h4 className="text-xl font-black leading-tight">{tObj?.title || 'Untitled Task'}</h4>
+                                                                        </div>
+                                                                    </div>
+                                                                    {isLocked ? (
+                                                                        <div className="p-3 bg-white/20 rounded-xl text-white">
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <Link
+                                                                            to={getModuleLink(tObj)}
+                                                                            className={`p-3 bg-white rounded-xl transition transform group-hover/card:translate-x-1 ${tObj.priority === 'HIGH' ? 'text-rose-500 hover:bg-rose-50' : tObj.priority === 'LOW' ? 'text-emerald-500 hover:bg-emerald-50' : 'text-primary-600 hover:bg-primary-50'}`}
+                                                                        >
+                                                                            <ArrowRight size={18} />
+                                                                        </Link>
+                                                                    )}
+                                                                </motion.div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ));
+                                        })()
+                                    )}
+                                </>
+                            );
+                        })()}
                     </div>
                 )}
               </motion.div>
@@ -472,9 +697,18 @@ const StudentDashboard = () => {
                           <h2 className="text-3xl font-black text-gray-900">{selectedAttempt.task?.title || "Practice Session"}</h2>
                           <p className="text-gray-500 font-medium uppercase tracking-widest text-xs mt-2">{selectedAttempt.task?.type || "SPEAKING"} • {new Date(selectedAttempt.submittedAt).toLocaleDateString()}</p>
                       </div>
-                      <button onClick={() => setSelectedAttempt(null)} className="p-3 bg-white text-gray-400 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition shadow-sm border border-gray-100">
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
-                      </button>
+                      <div className="flex items-center gap-4">
+                          <button 
+                              onClick={() => handleDownloadAttemptPdf(selectedAttempt.id, selectedAttempt.task?.title)} 
+                              className="px-5 py-2.5 bg-primary-600 text-white font-bold text-sm rounded-xl hover:bg-primary-700 transition shadow-lg shadow-primary-500/30 flex items-center gap-2"
+                          >
+                              <Download size={16} />
+                              Download PDF Report
+                          </button>
+                          <button onClick={() => setSelectedAttempt(null)} className="p-3 bg-white text-gray-400 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition shadow-sm border border-gray-100">
+                              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                          </button>
+                      </div>
                   </div>
 
                   <div className="p-10 overflow-y-auto">

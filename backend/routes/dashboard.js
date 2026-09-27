@@ -437,9 +437,16 @@ router.get('/student', authMiddleware, async (req, res) => {
             });
         }
 
-        // 4. Fetch Global tasks (only Published ones)
+        // 4. Fetch Global and Organization tasks (only Published ones)
         const globalTasks = await prisma.task.findMany({
-            where: { visibilityScope: 'GLOBAL', status: 'PUBLISHED' }
+            where: {
+                status: 'PUBLISHED',
+                OR: [
+                    { visibilityScope: 'GLOBAL' },
+                    { visibilityScope: 'ORGANIZATION', organizationId: user.organizationId },
+                    { visibilityScope: 'ORGANIZATION', organizationId: null }
+                ]
+            }
         });
         const pendingGlobalTasks = globalTasks.filter(task => !completedTaskIds.includes(task.id));
         const formattedGlobalTasks = pendingGlobalTasks.map(t => ({

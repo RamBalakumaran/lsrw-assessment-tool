@@ -164,6 +164,22 @@ const StudentHistory = () => {
         document.body.removeChild(link);
     };
 
+    const handleDownloadAttemptPdf = async (attemptId, taskTitle) => {
+        try {
+            const response = await api.get(`/reports/attempt/${attemptId}/pdf`, { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Report_${(taskTitle || 'Task').replace(/\s+/g, '_')}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+        } catch (error) {
+            console.error("Error downloading PDF:", error);
+            alert("Failed to download PDF report");
+        }
+    };
+
     useEffect(() => {
         const fetchAttempts = async () => {
             try {
@@ -449,9 +465,18 @@ const StudentHistory = () => {
                                     <h2 className="text-3xl font-black text-gray-900">{selectedAttempt.task?.title || "Practice Session"}</h2>
                                     <p className="text-gray-500 font-medium uppercase tracking-widest text-xs mt-2">{selectedAttempt.task?.type || "SPEAKING"} • {new Date(selectedAttempt.submittedAt).toLocaleDateString()}</p>
                                 </div>
-                                <button onClick={() => setSelectedAttempt(null)} className="p-3 bg-white text-gray-400 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition shadow-sm border border-gray-100">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                </button>
+                                <div className="flex items-center gap-4">
+                                    <button 
+                                        onClick={() => handleDownloadAttemptPdf(selectedAttempt.id, selectedAttempt.task?.title)} 
+                                        className="px-5 py-2.5 bg-primary-600 text-white font-bold text-sm rounded-xl hover:bg-primary-700 transition shadow-lg shadow-primary-500/30 flex items-center gap-2"
+                                    >
+                                        <Download size={16} />
+                                        Download PDF Report
+                                    </button>
+                                    <button onClick={() => setSelectedAttempt(null)} className="p-3 bg-white text-gray-400 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition shadow-sm border border-gray-100">
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="p-10 overflow-y-auto">

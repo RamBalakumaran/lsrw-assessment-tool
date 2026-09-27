@@ -15,6 +15,8 @@ const dashboardRoute = require('./routes/dashboard');
 const adminRoute = require('./routes/admin');
 const bulkImportRoute = require('./routes/bulkImport');
 const usersRoute = require('./routes/users');
+const notificationsRoute = require('./src/routes/notifications');
+const reportsRoute = require('./routes/reports');
 
 const app = express();
 
@@ -42,6 +44,8 @@ app.use('/api/dashboard', dashboardRoute);
 app.use('/api/admin', adminRoute);
 app.use('/api/bulk-import', bulkImportRoute);
 app.use('/api/users', usersRoute);
+app.use('/api/notifications', notificationsRoute);
+app.use('/api/reports', reportsRoute);
 
 const { initDbAndSeed } = require('./scripts/init_db_and_seed');
 const PORT = process.env.PORT || 5000;

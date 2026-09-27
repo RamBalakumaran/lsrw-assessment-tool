@@ -135,6 +135,25 @@ router.post('/submit', authMiddleware, async (req, res) => {
                 submittedAt: new Date()
             });
         }
+        
+        // Notify the student
+        await db.Notification.create({
+            userId: req.user.id,
+            title: 'Task Completed',
+            message: `You have successfully completed ${task ? `'${task.title}'` : 'the task'}.`,
+            type: 'SUCCESS'
+        });
+
+        // Notify the teacher (creator of the task)
+        if (task && task.creatorId) {
+            await db.Notification.create({
+                userId: task.creatorId,
+                title: 'Student Completed Task',
+                message: `A student has completed the task '${task.title}'.`,
+                type: 'INFO',
+                link: `/admin/responses/${attempt.id}`
+            });
+        }
 
         res.status(201).json(attempt);
     } catch (error) {

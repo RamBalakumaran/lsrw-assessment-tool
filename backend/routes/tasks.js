@@ -68,7 +68,11 @@ router.post('/', authMiddleware, authorize(['ADMIN', 'DEPT_ADMIN', 'TEACHER']), 
             questions = [],
             passingScore = 60,
             showAnswers = false,
-            showScores = true
+            showScores = true,
+            category = 'PRACTICE',
+            priority = 'MEDIUM',
+            startDate,
+            endDate
         } = req.body;
 
         const userId = req.user.id;
@@ -105,11 +109,6 @@ router.post('/', authMiddleware, authorize(['ADMIN', 'DEPT_ADMIN', 'TEACHER']), 
         }
 
         // Validate visibility scope permissions
-        if (visibilityScope === 'GLOBAL' && req.user.role !== 'SUPER_ADMIN') {
-            return res.status(403).json({
-                error: 'Only Super Admin can create Global scope tasks'
-            });
-        }
 
         if (visibilityScope === 'DEPARTMENT') {
             if (!departmentIds || departmentIds.length === 0) {
@@ -169,7 +168,7 @@ router.post('/', authMiddleware, authorize(['ADMIN', 'DEPT_ADMIN', 'TEACHER']), 
                 subType,
                 difficulty,
                 timeLimit,
-                status: 'DRAFT',
+                status: req.body.status || 'DRAFT',
                 audioUrl,
                 audioFileName,
                 passage,
@@ -178,6 +177,10 @@ router.post('/', authMiddleware, authorize(['ADMIN', 'DEPT_ADMIN', 'TEACHER']), 
                 passingScore,
                 showAnswers,
                 showScores,
+                category,
+                priority,
+                startDate: startDate ? new Date(startDate) : null,
+                endDate: endDate ? new Date(endDate) : null,
                 organizationId: orgId,
                 visibilityScope,
                 createdById: userId,
@@ -221,6 +224,25 @@ router.post('/', authMiddleware, authorize(['ADMIN', 'DEPT_ADMIN', 'TEACHER']), 
             { type, subType, visibilityScope, title },
             req
         );
+
+        if (visibilityScope === 'GROUP' && groupIds.length > 0) {
+            const groupMembers = await prisma.groupMembership.findMany({
+                where: { groupId: { in: groupIds }, role: 'MEMBER' }
+            });
+            const memberIds = [...new Set(groupMembers.map(m => m.userId))];
+            
+            if (memberIds.length > 0) {
+                await prisma.notification.createMany({
+                    data: memberIds.map(mId => ({
+                        userId: mId,
+                        title: 'New Task Uploaded',
+                        message: `A new task '${title}' has been assigned to your group.`,
+                        type: 'INFO',
+                        link: `/student/tasks`
+                    }))
+                });
+            }
+        }
 
         res.status(201).json(task);
     } catch (error) {
@@ -437,6 +459,58 @@ router.patch('/:id/publish', authMiddleware, async (req, res) => {
 });
 
 /**
+ * Toggle task status (DRAFT / PUBLISHED)
+ */
+router.patch('/:id/status', authMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        const userId = req.user.id;
+        const orgId = req.user.organizationId;
+
+        if (!['DRAFT', 'PUBLISHED'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid status' });
+        }
+
+        const whereClause = {
+            id,
+            organizationId: orgId
+        };
+        
+        if (req.user.role === 'TEACHER') {
+            whereClause.createdById = userId;
+        }
+
+        const task = await prisma.task.findFirst({
+            where: whereClause
+        });
+
+        if (!task) {
+            return res.status(404).json({ error: 'Task not found or access denied' });
+        }
+
+        const updated = await prisma.task.update({
+            where: { id },
+            data: { status },
+            include: {
+                questions: true,
+                departmentAssignments: { include: { department: { select: { id: true, name: true } } } },
+                groupAssignments: { include: { group: { select: { id: true, name: true } } } }
+            }
+        });
+
+        if (status === 'PUBLISHED') {
+            await logAudit(userId, 'TASK_PUBLISHED', 'Task', id, { title: task.title }, req);
+        }
+
+        res.json(updated);
+    } catch (error) {
+        console.error('Update status error:', error);
+        res.status(500).json({ error: 'Failed to update status' });
+    }
+});
+
+/**
  * Update a task (draft only)
  */
 router.put('/:id', authMiddleware, async (req, res) => {
@@ -450,12 +524,16 @@ router.put('/:id', authMiddleware, async (req, res) => {
             visibilityScope, departmentIds, groupIds
         } = req.body;
 
+        const whereClause = {
+            id,
+            organizationId: orgId
+        };
+        if (req.user.role === 'TEACHER') {
+            whereClause.createdById = userId;
+        }
+
         const task = await prisma.task.findFirst({
-            where: {
-                id,
-                organizationId: orgId,
-                createdById: userId
-            }
+            where: whereClause
         });
 
         if (!task) {
@@ -530,12 +608,16 @@ router.delete('/:id', authMiddleware, async (req, res) => {
         const userId = req.user.id;
         const orgId = req.user.organizationId;
 
+        const whereClause = {
+            id,
+            organizationId: orgId
+        };
+        if (req.user.role === 'TEACHER') {
+            whereClause.createdById = userId;
+        }
+
         const task = await prisma.task.findFirst({
-            where: {
-                id,
-                organizationId: orgId,
-                createdById: userId
-            }
+            where: whereClause
         });
 
         if (!task) {

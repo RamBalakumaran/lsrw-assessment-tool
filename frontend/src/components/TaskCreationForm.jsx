@@ -59,8 +59,8 @@ const TASK_CONFIG = {
 };
 
 const VISIBILITY_SCOPES = [
-    { value: 'Global', label: 'Global', description: 'Visible to all students.' },
-    { value: 'GroupSpecific', label: 'Group-Specific', description: 'Visible to selected groups only.' }
+    { value: 'GLOBAL', label: 'Global', description: 'Visible to all students.' },
+    { value: 'GROUP', label: 'Group-Specific', description: 'Visible to selected groups only.' }
 ];
 
 const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
@@ -71,7 +71,7 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
         title: '',
         description: '',
         difficultyLevel: 'Beginner',
-        visibilityScope: 'Global',
+        visibilityScope: 'GLOBAL',
         groupIds: [],
         audioUrl: '',
         imageUrl: '',
@@ -82,6 +82,8 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
         passingScore: 60,
         startDate: '',
         endDate: '',
+        category: 'ASSESSMENT',
+        priority: 'MEDIUM',
         questions: [],
         showAnswers: false,
         evaluationRubric: null
@@ -175,7 +177,7 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
             if (config.fields.includes('passage') && !formData.passage?.trim()) newErrors.passage = 'Passage is required for this task';
             if (config.fields.includes('instructions') && !formData.instructions?.trim()) newErrors.instructions = 'Instructions are required for this task';
         }
-        if (formData.visibilityScope === 'GroupSpecific' && (!formData.groupIds || formData.groupIds.length === 0)) {
+        if (formData.visibilityScope === 'GROUP' && (!formData.groupIds || formData.groupIds.length === 0)) {
             newErrors.groupIds = 'Select at least one group';
         }
         setErrors(newErrors);
@@ -193,7 +195,7 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
                 difficulty: formData.difficultyLevel || formData.difficulty,
                 lsrwComponent: taskType.charAt(0).toUpperCase() + taskType.slice(1).toLowerCase(),
                 assessmentType: TASK_CONFIG[taskType].subtypes[subType].label,
-                status: formData.status || 'Draft'
+                status: formData.status || 'PUBLISHED'
             };
             if (!payload.startDate) delete payload.startDate;
             if (!payload.endDate) delete payload.endDate;
@@ -210,9 +212,9 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
                 setSubType(null);
                 setStep(1);
                 setFormData({
-                    title: '', description: '', difficultyLevel: 'Beginner', visibilityScope: 'Global', groupIds: [],
+                    title: '', description: '', difficultyLevel: 'Beginner', visibilityScope: 'GLOBAL', groupIds: [],
                     audioUrl: '', imageUrl: '', passage: '', instructions: '', timeLimit: 120, maxAttempts: 1, passingScore: 60,
-                    startDate: '', endDate: '', questions: [], showAnswers: false, evaluationRubric: null
+                    startDate: '', endDate: '', category: 'ASSESSMENT', priority: 'MEDIUM', questions: [], showAnswers: false, evaluationRubric: null
                 });
                 setSuccess(false);
                 if (onTaskCreated) onTaskCreated(response.data);
@@ -356,6 +358,32 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
                     </div>
 
                     {/* Meta Config */}
+                    <div className="grid grid-cols-2 gap-6">
+                        <div>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Category</label>
+                            <div className="flex gap-4">
+                                {['PRACTICE', 'ASSESSMENT'].map(cat => (
+                                    <label key={cat} className={`flex-1 flex items-center justify-center p-4 border-2 rounded-2xl cursor-pointer transition font-bold ${formData.category === cat ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-100 bg-white text-gray-500 hover:border-gray-200'}`}>
+                                        <input type="radio" name="category" className="hidden" checked={formData.category === cat} onChange={() => handleInputChange('category', cat)} />
+                                        {cat}
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Priority</label>
+                            <select
+                                value={formData.priority}
+                                onChange={(e) => handleInputChange('priority', e.target.value)}
+                                className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition appearance-none cursor-pointer"
+                            >
+                                <option value="LOW">Low</option>
+                                <option value="MEDIUM">Medium</option>
+                                <option value="HIGH">High</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                         <div>
                             <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Difficulty</label>
@@ -396,6 +424,27 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
                                 onChange={(e) => handleInputChange('passingScore', parseInt(e.target.value) || 0)}
                                 className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition"
                                 min="0" max="100"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Start Date (Active From)</label>
+                            <input
+                                type="datetime-local"
+                                value={formData.startDate ? new Date(new Date(formData.startDate).getTime() - new Date(formData.startDate).getTimezoneOffset() * 60000).toISOString().slice(0,16) : ''}
+                                onChange={(e) => handleInputChange('startDate', e.target.value ? new Date(e.target.value).toISOString() : '')}
+                                className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">End Date (Active Until)</label>
+                            <input
+                                type="datetime-local"
+                                value={formData.endDate ? new Date(new Date(formData.endDate).getTime() - new Date(formData.endDate).getTimezoneOffset() * 60000).toISOString().slice(0,16) : ''}
+                                onChange={(e) => handleInputChange('endDate', e.target.value ? new Date(e.target.value).toISOString() : '')}
+                                className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition"
                             />
                         </div>
                     </div>
@@ -490,28 +539,30 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
                             ))}
                         </div>
 
-                        <div className="pt-4 border-t border-gray-200">
-                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 block">Target Groups (Assign / Repost to Specific Groups)</label>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-2">
-                                {groups.length === 0 ? (
-                                    <div className="text-gray-500 font-medium italic">No targetable groups available.</div>
-                                ) : groups.map(group => (
-                                    <label key={group.id} className="flex items-center p-4 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-gray-900 transition">
-                                        <input
-                                            type="checkbox"
-                                            checked={formData.groupIds.includes(group.id)}
-                                            onChange={(e) => {
-                                                if (e.target.checked) handleInputChange('groupIds', [...formData.groupIds, group.id]);
-                                                else handleInputChange('groupIds', formData.groupIds.filter(id => id !== group.id));
-                                            }}
-                                            className="w-5 h-5 rounded border-gray-300 text-gray-900 focus:ring-gray-900 mr-3"
-                                        />
-                                        <span className="font-bold text-gray-700">{group.name}</span>
-                                    </label>
-                                ))}
+                        {formData.visibilityScope === 'GROUP' && (
+                            <div className="pt-4 border-t border-gray-200 mt-4">
+                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 block">Target Groups (Assign / Repost to Specific Groups)</label>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-2">
+                                    {groups.length === 0 ? (
+                                        <div className="text-gray-500 font-medium italic">No targetable groups available.</div>
+                                    ) : groups.map(group => (
+                                        <label key={group.id} className="flex items-center p-4 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-gray-900 transition">
+                                            <input
+                                                type="checkbox"
+                                                checked={formData.groupIds.includes(group.id)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) handleInputChange('groupIds', [...formData.groupIds, group.id]);
+                                                    else handleInputChange('groupIds', formData.groupIds.filter(id => id !== group.id));
+                                                }}
+                                                className="w-5 h-5 rounded border-gray-300 text-gray-900 focus:ring-gray-900 mr-3"
+                                            />
+                                            <span className="font-bold text-gray-700">{group.name}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                                {errors.groupIds && <span className="text-rose-600 text-xs font-bold mt-2 block">{errors.groupIds}</span>}
                             </div>
-                            {errors.groupIds && <span className="text-rose-600 text-xs font-bold mt-2 block">{errors.groupIds}</span>}
-                        </div>
+                        )}
                     </div>
 
                     {/* Actions */}

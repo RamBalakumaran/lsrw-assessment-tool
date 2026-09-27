@@ -128,9 +128,9 @@ const TeacherTasks = () => {
     };
 
     const handleToggleStatus = async (task) => {
-        const newStatus = task.status === 'Published' ? 'Draft' : 'Published';
+        const newStatus = task.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
         try {
-            await api.put(`/tasks/${task.id}`, { status: newStatus });
+            await api.patch(`/tasks/${task.id}/status`, { status: newStatus });
             fetchTasks();
         } catch (error) {
             console.error("Failed to update status:", error);
@@ -255,6 +255,19 @@ const TeacherTasks = () => {
                                                     {(task.assessmentType || task.subType).replace(/_/g, ' ')}
                                                 </span>
                                             )}
+                                            {(() => {
+                                                const now = new Date();
+                                                if (task.startDate && new Date(task.startDate) > now) {
+                                                    return <span className="px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest rounded-lg border italic bg-amber-50 text-amber-600 border-amber-100 flex-shrink-0">Scheduled</span>;
+                                                }
+                                                if (task.endDate && new Date(task.endDate) < now) {
+                                                    return <span className="px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest rounded-lg border italic bg-rose-50 text-rose-600 border-rose-100 flex-shrink-0">Closed</span>;
+                                                }
+                                                if (task.startDate && new Date(task.startDate) <= now && (!task.endDate || new Date(task.endDate) >= now)) {
+                                                    return <span className="px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest rounded-lg border italic bg-emerald-50 text-emerald-600 border-emerald-100 flex-shrink-0">Active</span>;
+                                                }
+                                                return null;
+                                            })()}
                                         </div>
                                         <p className="text-gray-500 font-medium text-sm line-clamp-2 md:line-clamp-1">{task.description}</p>
                                     </div>
@@ -269,8 +282,8 @@ const TeacherTasks = () => {
                                         <div className="flex items-center gap-1.5 flex-shrink-0">
                                             <button
                                                 onClick={() => handleToggleStatus(task)}
-                                                className={`p-2.5 md:p-3 rounded-2xl transition shadow-sm ${task.status === 'Published' ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
-                                                title={task.status === 'Published' ? 'Click to Deactivate' : 'Click to Activate'}
+                                                className={`p-2.5 md:p-3 rounded-2xl transition shadow-sm ${task.status === 'PUBLISHED' ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
+                                                title={task.status === 'PUBLISHED' ? 'Click to Deactivate' : 'Click to Activate'}
                                             >
                                                 <Zap size={18} />
                                             </button>
@@ -317,7 +330,7 @@ const TeacherTasks = () => {
                                              <h4 className="text-xl font-black text-gray-800">Task Preview</h4>
                                          </div>
                                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-white border border-gray-100 px-3 py-1 rounded-full">
-                                             {task.visibilityScope === 'Global' ? 'Public / Global' : `Group Specific (${task.targetGroups?.map(g => g.name).join(', ') || 'No groups assigned'})`}
+                                             {(task.visibilityScope === 'Global' || task.visibilityScope === 'GLOBAL' || task.visibilityScope === 'ORGANIZATION') ? 'Public / Global' : `Group Specific (${task.targetGroups?.map(g => g.name).join(', ') || 'No groups assigned'})`}
                                          </span>
                                      </div>
 

@@ -177,13 +177,24 @@ def analyze_audio(audio_path, topic_title="Speaking Task", topic_desc="", topic_
             pause_penalty = max((pauses_per_min - 8) * 0.4, 0) # penalize heavily after 8 pauses/min
             fluency_score = max(min(fluency_wpm_score - pause_penalty, 10.0), 1.0)
 
-            # Vocabulary: Need ~25 unique words per minute for a perfect score
+            # Vocabulary: Count meaningful unique words (ignoring basic stop words)
             blob = TextBlob(text)
             unique_words = set(blob.words.lower())
-            vocab_score = min((len(unique_words) / max(15, duration_sec / 2.5)) * 10, 10.0)
+            stop_words = {'the', 'is', 'and', 'to', 'of', 'in', 'a', 'for', 'on', 'with', 'as', 'by', 'at', 'it', 'that', 'are', 'this', 'you', 'i', 'he', 'she', 'they', 'we', 'me', 'him', 'her', 'them', 'us', 'am', 'was', 'were', 'be', 'been'}
+            meaningful_words = unique_words - stop_words
+            
+            if len(unique_words) < 5:
+                vocab_score = 1.0
+                grammar_score = 1.0
+            else:
+                # Require roughly 15 meaningful words per 30 seconds for a perfect score
+                vocab_score = min((len(meaningful_words) / max(15.0, duration_sec / 2.0)) * 10, 10.0)
+                vocab_score = max(1.0, vocab_score)
 
-            # Fast Grammar Heuristic
-            grammar_score = min(7.0 + (len(unique_words) / 60.0), 10.0)
+                # Grammar Heuristic: Base score on word count and meaningful words ratio, cap at 10.0
+                grammar_base = 4.0 + (len(unique_words) / 30.0) * 4.0
+                grammar_score = min(grammar_base, 10.0)
+                grammar_score = max(1.0, grammar_score)
 
             # Relevance: Local NLP Relevance Check (No LLM API)
             relevance_score = 1.0

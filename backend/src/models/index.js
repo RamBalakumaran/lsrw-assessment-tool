@@ -23,6 +23,7 @@ db.User = require('./user')(sequelize, Sequelize);
 db.Group = require('./group')(sequelize, Sequelize);
 db.Task = require('./task')(sequelize, Sequelize);
 db.Response = require('./response')(sequelize, Sequelize);
+db.Notification = require('./notification')(sequelize, Sequelize);
 
 // Reading module models
 db.ReadingPassage = require('./reading_passage')(sequelize, Sequelize);
@@ -66,6 +67,9 @@ db.Task.hasMany(db.Response, { foreignKey: 'taskId' });
 db.Response.belongsTo(db.User, { foreignKey: 'userId' });
 db.User.hasMany(db.Response, { foreignKey: 'userId' });
 
+db.Notification.belongsTo(db.User, { foreignKey: 'userId' });
+db.User.hasMany(db.Notification, { foreignKey: 'userId' });
+
 db.sequelize.sync()
   .then(async () => {
     console.log('Database synced');
@@ -108,6 +112,14 @@ db.sequelize.sync()
     try {
       await db.sequelize.query("ALTER TABLE `responses` ADD COLUMN `mediaUnlocked` TINYINT(1) DEFAULT 0;");
       console.log('Added mediaUnlocked column to responses table');
+    } catch (e) {}
+    try {
+      await db.sequelize.query("ALTER TABLE `tasks` ADD COLUMN `category` VARCHAR(255) DEFAULT 'PRACTICE';");
+      console.log('Added category column to tasks table');
+    } catch (e) {}
+    try {
+      await db.sequelize.query("ALTER TABLE `tasks` ADD COLUMN `priority` VARCHAR(255) DEFAULT 'MEDIUM';");
+      console.log('Added priority column to tasks table');
     } catch (e) {}
   })
   .catch(err => console.warn('DB sync warning (non-fatal):', err.message));

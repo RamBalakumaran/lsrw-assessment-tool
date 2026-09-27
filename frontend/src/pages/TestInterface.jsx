@@ -50,9 +50,9 @@ const TestInterface = () => {
     const isMulti = selectedTopic?.questions && selectedTopic.questions.length > 0 && 
                     (selectedTopic.type === 'SPEAKING' || selectedTopic.lsrwComponent === 'Speaking' || isRepeatTask);
 
-    const createZeroReport = (errorMsg) => ({
-        score: 0, title: "Speaking", transcript: "",
-        metrics: [ { label: "Words Per Minute", value: 0 }, { label: "Fluency Rating", value: "0/10" }, { label: "Vocab Diversity", value: "0/10" } ],
+    const createZeroReport = (errorMsg, recordingUrl) => ({
+        score: 0, title: "Speaking", transcript: "", recordingUrl,
+        metrics: [ { label: "Words Per Minute", value: 0 }, { label: "Fluency Rating", value: "0/9.0" }, { label: "Vocab Diversity", value: "0/9.0" } ],
         criteria: { "Pronunciation": 0, "Fluency": 0, "Grammar": 0, "Vocabulary": 0, "Confidence": 0, "Relevance": 0 },
         mistakes: [],
         recommendations: [`⚠️ ${errorMsg}`, "Ensure your device microphone is active and you are in a quiet environment."]
@@ -76,7 +76,7 @@ const TestInterface = () => {
             if (data.error && !data.metrics) {
                 const isNoSpeech = data.error.includes("No speech") || data.error.includes("Could not understand");
                 if (isNoSpeech) {
-                    setReport(createZeroReport(data.error));
+                    setReport(createZeroReport(data.error, data.recordingUrl));
                     setPhase('report');
                 } else {
                     alert("System Analysis Error: " + data.error);

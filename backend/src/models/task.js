@@ -19,6 +19,14 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: 'INTERMEDIATE',
       field: 'difficulty',
     },
+    category: {
+      type: DataTypes.ENUM('PRACTICE', 'ASSESSMENT'),
+      defaultValue: 'PRACTICE',
+    },
+    priority: {
+      type: DataTypes.ENUM('LOW', 'MEDIUM', 'HIGH'),
+      defaultValue: 'MEDIUM',
+    },
     instructions: { type: DataTypes.TEXT },
     imageUrl: { type: DataTypes.TEXT },
     timeLimit: { type: DataTypes.INTEGER, comment: 'Time limit in seconds' },
