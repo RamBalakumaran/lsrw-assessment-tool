@@ -39,6 +39,7 @@ app.use('/api/responses', responseRoutes);
 app.use('/api/bulk-import', bulkImportRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/evaluate', evaluateRoutes);
 app.use('/api/writing', writingRoutes);
 app.use('/api/attempts', attemptsRoutes);

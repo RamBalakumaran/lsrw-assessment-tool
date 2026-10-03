@@ -93,8 +93,19 @@ const TestInterface = () => {
             
             const isRepeatTask = topic?.assessmentType === 'Repeat Sentences' || topic?.subType === 'REPEAT_SENTENCES' || topic?.title?.toLowerCase().includes('repeat');
             const overall9 = isRepeatTask ? (fluency9 + rel9) / 2 : (fluency9 + vocab9 + grammar9 + rel9) / 4;
+            
+            // Dynamic strict recommendations based on score
+            let fluencyRec = "Work on reducing pauses and maintaining a steady pace.";
+            if (metrics.fluency >= 8.5) fluencyRec = "Excellent natural cadence and speaking flow.";
+            else if (metrics.fluency >= 7.0) fluencyRec = "Good speaking pace, but minor hesitations present.";
+            else if (metrics.fluency >= 5.0) fluencyRec = "Average fluency. Try to minimize pauses and filler words.";
+            
+            let relRec = "Your response did not address the topic prompt accurately.";
+            if (metrics.relevance >= 8.5) relRec = "Highly relevant and precise response.";
+            else if (metrics.relevance >= 7.0) relRec = "Mostly relevant, but lacking some key details.";
+            else if (metrics.relevance >= 5.0) relRec = "Somewhat relevant. Focus on directly answering the prompt.";
 
-            setReport({
+            const finalReport = {
                 score: overall9.toFixed(1),
                 isPass: overall9 >= 6.0,
                 title: isRepeatTask ? "Repeat Sentence" : "Speaking",
@@ -125,14 +136,26 @@ const TestInterface = () => {
                     "Relevance": (metrics.relevance || 0) * 10
                 },
                 mistakes: data.mistakes || [],
-                recommendations: [
+                recommendations: data.recommendations || [
                     `Speaking tempo detected at ${data.wpm || 0} vocabulary words per minute with ${metrics.pause_count || 0} distinct pauses.`,
-                    (metrics.fluency || 0) < 6 ? "Work on reducing pauses between sentences." : "Strong natural cadence and flow.",
-                    (metrics.relevance || 0) < 6 ? "Ensure your answer directly addresses the provided topic prompt." : "Excellent topical relevance.",
-                    ...(data.mistakes?.length > 0 ? [`Identified ${data.mistakes.length} structural points for refinement.`] : ["Structure is highly consistent."])
+                    fluencyRec,
+                    relRec,
+                    ...(data.mistakes?.length > 0 ? [`Identified ${data.mistakes.length} structural points for refinement.`] : ["Structure appears consistent."])
                 ]
-            });
+            };
+            
+            setReport(finalReport);
             setShowCelebration(true);
+            
+            if (topic && topic.id) {
+                await api.post('/attempts/submit', {
+                    taskId: topic.id,
+                    score: Math.round(overall9 * 10),
+                    studentAnswers: data.transcription || "",
+                    aiResults: finalReport,
+                    recordingUrl: data.recordingUrl
+                });
+            }
         } catch (e) {
             console.error(e);
             const serverError = e.response?.data?.raw || e.response?.data?.error || e.message;
@@ -186,54 +209,80 @@ const TestInterface = () => {
             return;
         }
 
-        const avg = (val) => val / valid;
-        const fluency9 = (avg(totals.fluency) / 10) * 9;
-        const vocab9 = (avg(totals.vocab) / 10) * 9;
-        const grammar9 = (avg(totals.grammar) / 10) * 9;
-        const rel9 = (avg(totals.relevance) / 10) * 9;
-        
-        const isRepeatTask = topic?.assessmentType === 'Repeat Sentences' || topic?.subType === 'REPEAT_SENTENCES' || topic?.title?.toLowerCase().includes('repeat');
-        const overall9 = isRepeatTask ? (fluency9 + rel9) / 2 : (fluency9 + vocab9 + grammar9 + rel9) / 4;
+            const avg = (val) => val / valid;
+            const avgFluency = avg(totals.fluency);
+            const avgRelevance = avg(totals.relevance);
+            const fluency9 = (avgFluency / 10) * 9;
+            const vocab9 = (avg(totals.vocab) / 10) * 9;
+            const grammar9 = (avg(totals.grammar) / 10) * 9;
+            const rel9 = (avgRelevance / 10) * 9;
+            
+            const isRepeatTask = topic?.assessmentType === 'Repeat Sentences' || topic?.subType === 'REPEAT_SENTENCES' || topic?.title?.toLowerCase().includes('repeat');
+            const overall9 = isRepeatTask ? (fluency9 + rel9) / 2 : (fluency9 + vocab9 + grammar9 + rel9) / 4;
 
-        setReport({
-            score: overall9.toFixed(1),
-            isPass: overall9 >= 6.0,
-            title: isRepeatTask ? "Repeat Sentences" : "Speaking",
-            transcript: fullTranscript.join('\n\n'),
-            recordingUrls: allRecordingUrls,
-            metrics: isRepeatTask ? [
-                { label: "Avg WPM", value: Math.round(avg(totals.wpm)) },
-                { label: "Avg Fluency Score", value: `${fluency9.toFixed(1)}/9.0` },
-                { label: "Accuracy", value: `${Math.round(avg(totals.relevance) * 10)}%` },
-                { label: "Total Pauses", value: totals.pauses }
-            ] : [
-                { label: "Avg WPM", value: Math.round(avg(totals.wpm)) },
-                { label: "Avg Fluency Score", value: `${fluency9.toFixed(1)}/9.0` },
-                { label: "Avg Vocab Richness", value: `${vocab9.toFixed(1)}/9.0` },
-                { label: "Total Pauses", value: totals.pauses }
-            ],
-            criteria: isRepeatTask ? {
-                "Pronunciation": 80,
-                "Fluency": avg(totals.fluency) * 10,
-                "Accuracy": avg(totals.relevance) * 10,
-                "Confidence": avg(totals.fluency) > 7 ? 90 : 60
-            } : {
-                "Pronunciation": 80,
-                "Fluency": avg(totals.fluency) * 10,
-                "Grammar": avg(totals.grammar) * 10,
-                "Vocabulary": avg(totals.vocab) * 10,
-                "Confidence": avg(totals.fluency) > 7 ? 90 : 60,
-                "Relevance": avg(totals.relevance) * 10
-            },
-            mistakes: allMistakes,
-            recommendations: [
-                `Successfully completed ${valid} out of ${blobs.length} sentences.`,
-                avg(totals.relevance) < 6 ? "Ensure you repeat the sentences exactly as requested." : "Excellent sentence repetition and accuracy."
-            ]
-        });
-        setShowCelebration(true);
-        setLoading(false);
-    };
+            let fluencyRec = "Work on reducing pauses and maintaining a steady pace.";
+            if (avgFluency >= 8.5) fluencyRec = "Excellent natural cadence and speaking flow.";
+            else if (avgFluency >= 7.0) fluencyRec = "Good speaking pace, but minor hesitations present.";
+            else if (avgFluency >= 5.0) fluencyRec = "Average fluency. Try to minimize pauses and filler words.";
+            
+            let relRec = "Your response did not address the topic prompt accurately.";
+            if (avgRelevance >= 8.5) relRec = "Highly accurate and precise responses across sentences.";
+            else if (avgRelevance >= 7.0) relRec = "Mostly accurate, but lacking precision in some sentences.";
+            else if (avgRelevance >= 5.0) relRec = "Somewhat accurate. Focus on directly repeating or answering the prompt.";
+
+            const finalReport = {
+                score: overall9.toFixed(1),
+                isPass: overall9 >= 6.0,
+                title: isRepeatTask ? "Repeat Sentences" : "Speaking",
+                transcript: fullTranscript.join('\n\n'),
+                recordingUrls: allRecordingUrls,
+                metrics: isRepeatTask ? [
+                    { label: "Avg WPM", value: Math.round(avg(totals.wpm)) },
+                    { label: "Avg Fluency Score", value: `${fluency9.toFixed(1)}/9.0` },
+                    { label: "Accuracy", value: `${Math.round(avgRelevance * 10)}%` },
+                    { label: "Total Pauses", value: totals.pauses }
+                ] : [
+                    { label: "Avg WPM", value: Math.round(avg(totals.wpm)) },
+                    { label: "Avg Fluency Score", value: `${fluency9.toFixed(1)}/9.0` },
+                    { label: "Avg Vocab Richness", value: `${vocab9.toFixed(1)}/9.0` },
+                    { label: "Total Pauses", value: totals.pauses }
+                ],
+                criteria: isRepeatTask ? {
+                    "Pronunciation": 80,
+                    "Fluency": avgFluency * 10,
+                    "Accuracy": avgRelevance * 10,
+                    "Confidence": avgFluency > 7 ? 90 : 60
+                } : {
+                    "Pronunciation": 80,
+                    "Fluency": avgFluency * 10,
+                    "Grammar": avg(totals.grammar) * 10,
+                    "Vocabulary": avg(totals.vocab) * 10,
+                    "Confidence": avgFluency > 7 ? 90 : 60,
+                    "Relevance": avgRelevance * 10
+                },
+                mistakes: allMistakes,
+                recommendations: [
+                    `Successfully completed ${valid} out of ${blobs.length} prompts.`,
+                    fluencyRec,
+                    relRec,
+                    ...(allMistakes.length > 0 ? [`Identified ${allMistakes.length} structural points for refinement across all recordings.`] : ["Structure appears highly consistent overall."])
+                ]
+            };
+            
+            setReport(finalReport);
+            setShowCelebration(true);
+            setLoading(false);
+            
+            if (topic && topic.id) {
+                await api.post('/attempts/submit', {
+                    taskId: topic.id,
+                    score: Math.round(overall9 * 10),
+                    studentAnswers: fullTranscript.join('\n\n'),
+                    aiResults: finalReport,
+                    recordingUrl: allRecordingUrls.length > 0 ? allRecordingUrls[0] : null
+                });
+            }
+        };
 
     const handleStop = async (url, blob) => {
         const topic = selectedTopicRef.current;

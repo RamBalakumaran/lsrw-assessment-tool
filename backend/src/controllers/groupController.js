@@ -190,6 +190,19 @@ exports.addGroupMember = async (req, res) => {
     }
 
     await group.addMembers(users);
+
+    const { notifyUser } = require('../../utils/notify');
+    const loginLink = `${req.protocol}://${req.get('host')}/login`;
+    for (const user of users) {
+      await notifyUser({
+        userId: user.id,
+        title: `Added to Group: ${group.name}`,
+        message: `You have been added to the group "${group.name}".`,
+        type: 'INFO',
+        link: loginLink
+      });
+    }
+
     const updatedGroup = await getGroupWithDetails(id);
     return res.json({ message: 'Member added successfully', group: serializeGroup(updatedGroup) });
   } catch (err) {
@@ -418,6 +431,30 @@ exports.confirmBulkImport = async (req, res) => {
         const isMember = await group.hasMember(user);
         if (!isMember) {
           await group.addMember(user);
+          
+          // Send notification/email
+          const { notifyUser } = require('../../utils/notify');
+          const loginLink = `${req.protocol}://${req.get('host')}/login`;
+          
+          if (!studentData.exists) {
+            // New user invite
+            await notifyUser({
+              userId: user.id,
+              title: `Welcome to LSRW Platform!`,
+              message: `You have been added to the group "${group.name}".<br/>Your email is: <b>${normalizedEmail}</b><br/>Your temporary password is: <b>123456</b><br/><br/>Please login using the link below and change your password immediately.`,
+              type: 'INFO',
+              link: loginLink
+            });
+          } else {
+            // Existing user added to group
+            await notifyUser({
+              userId: user.id,
+              title: `Added to Group: ${group.name}`,
+              message: `You have been added to the group "${group.name}".`,
+              type: 'INFO',
+              link: loginLink
+            });
+          }
         }
 
         success.push({
@@ -449,17 +486,40 @@ exports.confirmBulkImport = async (req, res) => {
 exports.assignTaskToGroup = async (req, res) => {
   const { id, taskId } = req.params;
   try {
-    const group = await db.Group.findByPk(id);
+    const group = await getGroupWithDetails(id);
     if (!group) return res.status(404).json({ error: 'Group not found' });
 
     if (!userCanAccessGroup(group, req.user)) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    if (!(await userIsGroupAdmin(group, req.user))) {
+      return res.status(403).json({ error: 'Only group admins can assign tasks' });
+    }
+
     const task = await db.Task.findByPk(taskId);
     if (!task) return res.status(404).json({ error: 'Task not found' });
 
     await group.addTask(task);
+
+    // Send notifications
+    const { notifyUser, notifyGroupStudents } = require('../../utils/notify');
+    const timestamp = new Date().toLocaleString();
+
+    // Acknowledge Teacher
+    await notifyUser({
+      userId: req.user.id,
+      title: 'Task Assigned Successfully',
+      message: `You have successfully assigned the task "${task.title}" to group "${group.name}".<br/>Assigned on: ${timestamp}`,
+      type: 'SUCCESS'
+    });
+
+    // Notify Students
+    await notifyGroupStudents(id, {
+      title: 'New Task Assigned',
+      message: `A new task "${task.title}" has been assigned to your group "${group.name}".<br/>Posted on: ${timestamp}`,
+      type: 'INFO'
+    });
 
     const updatedGroup = await getGroupWithDetails(id);
     return res.json(serializeGroup(updatedGroup));

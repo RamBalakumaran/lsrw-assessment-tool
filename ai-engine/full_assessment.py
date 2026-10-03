@@ -41,7 +41,7 @@ elif os.path.exists(ffprobe_path):
 else:
     ffprobe_executable = "ffprobe"
 
-def analyze_audio(audio_path, topic_title="Speaking Task", topic_desc="", topic_image_url=""):
+def analyze_audio(audio_path, topic_title="Speaking Task", topic_desc="", topic_image_url="", expected_duration_sec=0):
     if not os.path.exists(audio_path):
         return {"error": f"Audio file not found at path: {audio_path}"}
 
@@ -265,6 +265,30 @@ def analyze_audio(audio_path, topic_title="Speaking Task", topic_desc="", topic_
                 "correctAnswer": "(pause silently instead)"
             })
             fluency_score = max(fluency_score - 1.5, 1.0)
+            
+        # Duration Penalty
+        if expected_duration_sec > 0:
+            if duration_sec < expected_duration_sec * 0.5:
+                # Spoke less than half the time
+                penalty = 1.0 - (duration_sec / expected_duration_sec)
+                vocab_score = max(vocab_score - (penalty * 5.0), 1.0)
+                fluency_score = max(fluency_score - (penalty * 3.0), 1.0)
+                mistakes.append({
+                    "type": "Incomplete Length",
+                    "question": f"Task required ~{int(expected_duration_sec)} seconds of speaking.",
+                    "userAnswer": f"{int(duration_sec)} seconds",
+                    "correctAnswer": f"Speak for the entire allocated time."
+                })
+            elif duration_sec < expected_duration_sec * 0.8:
+                # Spoke less than 80% of the time
+                penalty = 1.0 - (duration_sec / expected_duration_sec)
+                vocab_score = max(vocab_score - (penalty * 2.0), 1.0)
+                mistakes.append({
+                    "type": "Short Length",
+                    "question": f"Task required ~{int(expected_duration_sec)} seconds of speaking.",
+                    "userAnswer": f"{int(duration_sec)} seconds",
+                    "correctAnswer": "Try to elaborate more to fill the time."
+                })
 
         overall_score = (fluency_score + vocab_score + grammar_score + relevance_score) / 4
         
@@ -298,7 +322,14 @@ if __name__ == "__main__":
         desc = sys.argv[3] if len(sys.argv) > 3 else ""
         image_url = sys.argv[4] if len(sys.argv) > 4 else ""
         
-        result = analyze_audio(audio_p, title, desc, image_url)
+        expected_dur = 0.0
+        if len(sys.argv) > 5:
+            try:
+                expected_dur = float(sys.argv[5])
+            except:
+                pass
+        
+        result = analyze_audio(audio_p, title, desc, image_url, expected_dur)
         if result:
             print(json.dumps(result))
         else:

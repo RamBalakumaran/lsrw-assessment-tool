@@ -8,6 +8,9 @@ const { authMiddleware } = require('../../middleware/auth');
 // Login endpoint (no signup as per requirements)
 router.post('/login', authController.login);
 
+// Forgot password endpoint
+router.post('/forgot-password', authController.forgotPassword);
+
 // Setup first-time profile details and reset password
 router.post('/setup-profile', authController.setupProfile);
 

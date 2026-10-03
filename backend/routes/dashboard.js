@@ -488,14 +488,9 @@ router.get('/student', authMiddleware, async (req, res) => {
             }
         }
 
-        // 6. Combine all tasks for assignedTasks fallback
-        const allRelevantTasks = [...individuallyAssignedTasks, ...allGroupTasks, ...globalTasks];
-        const uniqueTasks = allRelevantTasks.filter((task, index, self) =>
-            index === self.findIndex((t) => t.id === task.id)
-        );
-        const pendingTasks = uniqueTasks.filter(task => !completedTaskIds.includes(task.id));
-
-        const formattedAssignedTasks = pendingTasks.map(t => ({
+        // 6. Provide individually assigned tasks
+        const pendingAssignedTasks = individuallyAssignedTasks.filter(task => !completedTaskIds.includes(task.id));
+        const formattedAssignedTasks = pendingAssignedTasks.map(t => ({
             id: t.id,
             task: t,
             dueDate: t.endDate

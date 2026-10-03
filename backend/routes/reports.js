@@ -60,7 +60,7 @@ router.get('/progress', authMiddleware, async (req, res) => {
             include: [{
                 model: db.Task,
                 as: 'task',
-                attributes: ['title', 'type', 'lsrwComponent']
+                attributes: ['title', 'type', 'lsrwComponent', 'category', 'visibilityScope']
             }]
         });
 
@@ -70,7 +70,7 @@ router.get('/progress', authMiddleware, async (req, res) => {
             responseMap[r.userId].push(r);
         });
 
-        let csvString = 'Name,Group,Attended,Domain,Task Title,Result\n';
+        let csvString = 'Name,Group,Task Scope,Category,Domain,Task Title,Attended,Result,Submitted At\n';
 
         const escapeCsv = (str) => {
             if (str === null || str === undefined) return '""';
@@ -87,16 +87,19 @@ router.get('/progress', authMiddleware, async (req, res) => {
             const studentResponses = responseMap[student.id] || [];
 
             if (studentResponses.length === 0) {
-                csvString += `${escapeCsv(studentName)},${escapeCsv(groupNames)},"No","N/A","N/A","N/A"\n`;
+                csvString += `${escapeCsv(studentName)},${escapeCsv(groupNames)},"N/A","N/A","N/A","N/A","No","N/A","N/A"\n`;
             } else {
                 studentResponses.forEach(r => {
                     const task = r.task;
                     const attended = 'Yes';
                     const domain = task ? (task.lsrwComponent || task.type || 'UNKNOWN').toUpperCase() : 'UNKNOWN';
                     const taskTitle = task ? task.title : 'Deleted Task';
+                    const scope = task ? (task.visibilityScope || 'UNKNOWN') : 'UNKNOWN';
+                    const category = task ? (task.category || 'PRACTICE') : 'UNKNOWN';
                     const result = r.score != null ? Math.round(r.score) + '%' : 'N/A';
+                    const submittedAt = r.submittedAt ? new Date(r.submittedAt).toLocaleString() : 'N/A';
 
-                    csvString += `${escapeCsv(studentName)},${escapeCsv(groupNames)},"${attended}",${escapeCsv(domain)},${escapeCsv(taskTitle)},"${result}"\n`;
+                    csvString += `${escapeCsv(studentName)},${escapeCsv(groupNames)},${escapeCsv(scope)},${escapeCsv(category)},${escapeCsv(domain)},${escapeCsv(taskTitle)},"${attended}","${result}","${submittedAt}"\n`;
                 });
             }
         });

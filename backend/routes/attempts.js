@@ -119,6 +119,7 @@ router.post('/submit', authMiddleware, async (req, res) => {
                 score,
                 aiResults,
                 feedback: aiResults ? (typeof aiResults === 'string' ? aiResults : JSON.stringify(aiResults)) : "",
+                recordingUrl: req.body.recordingUrl,
                 status: 'COMPLETED',
                 submittedAt: new Date()
             });
@@ -131,25 +132,40 @@ router.post('/submit', authMiddleware, async (req, res) => {
                 score,
                 aiResults,
                 feedback: aiResults ? (typeof aiResults === 'string' ? aiResults : JSON.stringify(aiResults)) : "",
+                recordingUrl: req.body.recordingUrl,
                 status: 'COMPLETED',
                 submittedAt: new Date()
             });
         }
         
+        const { notifyUser } = require('../utils/notify');
+        const timestamp = new Date().toLocaleString();
+        
+        let detailedReportHtml = "";
+        if (aiResults && aiResults.recommendations) {
+            detailedReportHtml = `<div style="margin-top: 20px; padding: 15px; background-color: #f9fafb; border-radius: 8px;">
+                <h3 style="color: #4f46e5; margin-top: 0;">Detailed AI Analysis</h3>
+                <p><strong>Feedback:</strong></p>
+                <ul>
+                    ${aiResults.recommendations.map(r => `<li>${r}</li>`).join('')}
+                </ul>
+            </div>`;
+        }
+        
         // Notify the student
-        await db.Notification.create({
+        await notifyUser({
             userId: req.user.id,
             title: 'Task Completed',
-            message: `You have successfully completed ${task ? `'${task.title}'` : 'the task'}.`,
+            message: `You have successfully completed ${task ? `'${task.title}'` : 'the task'}.<br/>Completion Time: ${timestamp}<br/><strong>Score: ${score !== undefined ? score : 'N/A'}</strong><br/>${detailedReportHtml}`,
             type: 'SUCCESS'
         });
 
         // Notify the teacher (creator of the task)
         if (task && task.creatorId) {
-            await db.Notification.create({
+            await notifyUser({
                 userId: task.creatorId,
                 title: 'Student Completed Task',
-                message: `A student has completed the task '${task.title}'.`,
+                message: `A student has completed the task '${task.title}' at ${timestamp}.`,
                 type: 'INFO',
                 link: `/admin/responses/${attempt.id}`
             });

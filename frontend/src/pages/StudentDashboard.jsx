@@ -110,17 +110,33 @@ const StudentDashboard = () => {
         
         setUser(dashRes.data.user);
         setStats(dashRes.data.stats);
-        setGlobalTasks(dashRes.data.globalTasks || []);
+        const globalTasksData = dashRes.data.globalTasks || [];
+        setGlobalTasks(globalTasksData);
+        if (globalTasksData.length > 0) {
+            const firstTask = globalTasksData[0].task || globalTasksData[0];
+            setGlobalCategoryTab(firstTask.category || 'PRACTICE');
+            setGlobalLsrwTab((firstTask.type || firstTask.lsrwComponent || 'LISTENING').toUpperCase());
+        }
+
         const fetchedGroupCards = dashRes.data.groupCards || [];
         setGroupCards(fetchedGroupCards);
         setAssignedTasks(dashRes.data.assignedTasks || []);
 
-        // Collapse all group cards by default
+        // Collapse all group cards by default and set their default tabs
         const initialExpanded = {};
+        const initGroupCat = {};
+        const initGroupLsrw = {};
         fetchedGroupCards.forEach(g => {
           initialExpanded[g.id] = false;
+          if (g.tasks && g.tasks.length > 0) {
+              const firstT = g.tasks[0].task || g.tasks[0];
+              initGroupCat[g.id] = firstT.category || 'PRACTICE';
+              initGroupLsrw[g.id] = (firstT.type || firstT.lsrwComponent || 'LISTENING').toUpperCase();
+          }
         });
         setExpandedGroups(initialExpanded);
+        setGroupCategoryTab(prev => ({...prev, ...initGroupCat}));
+        setGroupLsrwTab(prev => ({...prev, ...initGroupLsrw}));
         
         // Filter attempts that are completed
         const completedAttempts = (attemptsRes.data || []).filter(a => a.status === 'COMPLETED');

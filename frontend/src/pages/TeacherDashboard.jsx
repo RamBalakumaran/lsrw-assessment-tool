@@ -487,12 +487,6 @@ const TeacherDashboard = () => {
                                         >
                                             View Detailed Performance Report
                                         </button>
-                                        <button
-                                            onClick={openAssignModal}
-                                            className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl text-xs sm:text-sm font-black shadow-lg shadow-primary-500/20 transition px-4"
-                                        >
-                                            Assign New Task
-                                        </button>
                                     </div>
                                 </div>
                             </div>

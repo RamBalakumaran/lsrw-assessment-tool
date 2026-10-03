@@ -30,6 +30,26 @@ const Login = () => {
         }
     }, [navigate]);
 
+    const [message, setMessage] = useState('');
+
+    const handleForgotPassword = async () => {
+        if (!email) {
+            setError('Please enter your authorized email first.');
+            return;
+        }
+        setLoading(true);
+        setError('');
+        setMessage('');
+        try {
+            const res = await api.post('/auth/forgot-password', { email });
+            setMessage(res.data.message || 'Password reset email sent');
+        } catch (err) {
+            setError(err.response?.data?.error || 'Failed to send reset email');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -96,6 +116,17 @@ const Login = () => {
                             <span>{error}</span>
                         </motion.div>
                     )}
+                    {message && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mb-8 p-4 bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-100 flex items-start space-x-3 text-sm font-bold"
+                        >
+                            <AlertCircle size={18} className="flex-shrink-0" />
+                            <span>{message}</span>
+                        </motion.div>
+                    )}
                 </AnimatePresence>
 
                 <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
@@ -117,7 +148,7 @@ const Login = () => {
                     <div className="space-y-2">
                         <div className="flex justify-between items-end px-4">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Security Pin</label>
-                            <a href="#" className="text-[10px] font-black text-primary-500 uppercase tracking-widest hover:underline">Reset Pass</a>
+                            <button type="button" onClick={handleForgotPassword} className="text-[10px] font-black text-primary-500 uppercase tracking-widest hover:underline focus:outline-none">Reset Pass</button>
                         </div>
                         <div className="relative group">
                             <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-primary-500 transition-colors" size={20} />

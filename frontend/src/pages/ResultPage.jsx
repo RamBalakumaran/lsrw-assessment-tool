@@ -41,6 +41,8 @@ const ResultPage = () => {
       metrics={metrics}
       mistakes={result.mistakes || []}
       transcript={result.transcription}
+      recordingUrl={result.recordingUrl}
+      recordingUrls={result.recordingUrls}
       recommendations={recommendations}
       onRetry={() => navigate('/test/1')} // Assuming test ID 1 for now, or could pass from state
       onHome={() => navigate('/')}

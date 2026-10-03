@@ -146,3 +146,36 @@ exports.getMe = async (req, res) => {
     return res.status(401).json({ error: 'Invalid token' });
   }
 };
+
+// POST /api/auth/forgot-password
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const normalizedEmail = email?.trim().toLowerCase();
+    const user = await db.User.findOne({ where: { email: normalizedEmail } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // In a real app we'd generate a token. Here we'll just reset to 123456 and set forcePasswordReset
+    const newPass = '123456';
+    const bcrypt = require('bcryptjs');
+    user.passwordHash = await bcrypt.hash(newPass, 10);
+    user.forcePasswordReset = true;
+    await user.save();
+
+    const { notifyUser } = require('../../utils/notify');
+    const loginLink = req.protocol + '://' + req.get('host') + '/login';
+    await notifyUser({
+      userId: user.id,
+      title: 'Password Reset',
+      message: 'Your password has been reset to: <b>' + newPass + '</b>.<br/><br/>Please login and change it.',
+      type: 'INFO',
+      link: loginLink
+    });
+
+    res.json({ message: 'Password reset email sent' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+

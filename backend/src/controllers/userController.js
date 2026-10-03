@@ -20,8 +20,20 @@ exports.getUsers = async (req, res) => {
 
 // POST /api/users/invite
 exports.inviteUser = async (req, res) => {
-  const { firstName, lastName, email, role, password, teacherId, groupId } = req.body;
+  let { firstName, lastName, email, role, password, teacherId, groupId, registrationNumber, academicYear } = req.body;
   
+  // Only Global Admins can invite teachers
+  if (role === 'TEACHER') {
+    if (!['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Only Global Admins can add teachers to the platform.' });
+    }
+  }
+
+  // Derive email for students if missing
+  if (!email && role === 'STUDENT' && registrationNumber) {
+    email = `${registrationNumber.toLowerCase()}@nec.edu.in`;
+  }
+
   if (!email || !role) {
     return res.status(400).json({ error: 'Email and role are required' });
   }
@@ -41,6 +53,7 @@ exports.inviteUser = async (req, res) => {
       email,
       role,
       passwordHash,
+      registrationNumber,
       status: 'ACTIVE',
       forcePasswordReset: true
     });
@@ -52,6 +65,18 @@ exports.inviteUser = async (req, res) => {
        const group = await db.Group.findByPk(groupId);
        if (group) await group.addAdmin(newUser);
     }
+
+    const { notifyUser } = require('../../utils/notify');
+    
+    // Send invite email
+    const loginLink = `${req.protocol}://${req.get('host')}/login`;
+    await notifyUser({
+      userId: newUser.id,
+      title: `Welcome to LSRW Platform!`,
+      message: `You have been invited to join the platform as a ${role}.<br/>Your email is: <b>${email}</b><br/>Your temporary password is: <b>${userPassword}</b><br/><br/>Please login using the link below and you will be prompted to change your password immediately.`,
+      type: 'INFO',
+      link: loginLink
+    });
 
     const userObj = newUser.toJSON();
     delete userObj.passwordHash;

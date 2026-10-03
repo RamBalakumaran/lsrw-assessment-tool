@@ -93,15 +93,7 @@ exports.getAllTasks = async (req, res) => {
         order: [['createdAt', 'DESC']]
       });
       
-      tasks = tasks.filter(task => {
-        if (task.creatorId === userId) return true;
-        const scopeUpper = (task.visibilityScope || '').toUpperCase();
-        if (scopeUpper === 'GLOBAL') return true;
-        if (scopeUpper === 'GROUPSPECIFIC' || scopeUpper === 'GROUP') {
-          return task.targetGroups && task.targetGroups.some(g => groupIds.includes(g.id));
-        }
-        return false;
-      });
+      tasks = tasks.filter(task => task.creatorId === userId);
       
     } else {
       // ADMIN or SUPER_ADMIN sees all tasks
@@ -156,6 +148,30 @@ exports.createTask = async (req, res) => {
     taskJson.difficulty = (taskJson.difficultyLevel || taskJson.difficulty || '').toUpperCase();
     taskJson.groupIds = groupIds || [];
     taskJson.createdByRole = req.user.role;
+
+    // Send notifications
+    const { notifyUser, notifyGroupStudents } = require('../../utils/notify');
+    const timestamp = new Date().toLocaleString();
+    
+    // Acknowledge Teacher
+    const scopeMsg = (groupIds && groupIds.length > 0) ? 'Group Specific' : 'Global';
+    await notifyUser({
+      userId: req.user.id,
+      title: 'Task Created Successfully',
+      message: `You have successfully created a new ${scopeMsg} task "${task.title}".<br/><br/>Details:<br/>Type: ${taskJson.type}<br/>Difficulty: ${taskJson.difficulty}<br/>Timestamp: ${timestamp}`,
+      type: 'SUCCESS'
+    });
+
+    // Notify Students if assigned to groups immediately
+    if (groupIds && groupIds.length > 0) {
+      for (const gid of groupIds) {
+        await notifyGroupStudents(gid, {
+          title: 'New Task Assigned',
+          message: `A new task "${task.title}" has been assigned to your group by your teacher.<br/>Posted on: ${timestamp}`,
+          type: 'INFO'
+        });
+      }
+    }
 
     return res.status(201).json(taskJson);
   } catch (err) {

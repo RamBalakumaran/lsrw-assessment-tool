@@ -217,12 +217,7 @@ const DetailedReport = ({ title, score, isPass: isPassProp, metrics, mistakes, c
             >
               <LayoutDashboard className="mr-2" size={20} /> Return to Dashboard
             </button>
-            <button
-              onClick={onRetry}
-              className="flex items-center justify-center px-8 py-4 bg-gray-900 text-white rounded-2xl font-bold text-lg hover:bg-black transition active:scale-95 shadow-lg shadow-gray-900/20"
-            >
-              <RotateCcw className="mr-2" size={20} /> Try Another Module
-            </button>
+
           </div>
 
         </div>

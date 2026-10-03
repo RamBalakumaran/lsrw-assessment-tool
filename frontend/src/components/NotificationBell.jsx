@@ -45,23 +45,39 @@ const NotificationBell = () => {
                 )}
             </button>
             {isOpen && (
-                <div className="absolute left-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50">
-                    <div className="p-4 bg-gray-50 border-b border-gray-100 font-bold text-gray-700 flex justify-between">
-                        Notifications
-                        <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">{unreadCount}</span>
+                <div className="absolute left-0 mt-2 w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+                    <div className="p-4 bg-gray-50 border-b border-gray-100 font-bold text-gray-700 flex justify-between items-center">
+                        <span className="flex items-center gap-2">
+                            <Bell size={16} className="text-primary-500" />
+                            Notifications
+                        </span>
+                        {unreadCount > 0 && (
+                            <span className="text-xs font-black bg-primary-100 text-primary-700 px-3 py-1 rounded-full">{unreadCount} New</span>
+                        )}
                     </div>
-                    <div className="max-h-64 overflow-y-auto">
+                    <div className="max-h-80 overflow-y-auto">
                         {notifications.length === 0 ? (
-                            <div className="p-4 text-center text-xs text-gray-500">No notifications</div>
+                            <div className="p-8 text-center text-sm font-medium text-gray-500 flex flex-col items-center">
+                                <Bell size={32} className="text-gray-200 mb-2" />
+                                No notifications yet
+                            </div>
                         ) : (
                             notifications.map(n => (
                                 <div 
                                     key={n.id} 
                                     onClick={() => handleRead(n.id, n.link)}
-                                    className={`p-4 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors ${!n.isRead ? 'bg-indigo-50/30' : ''}`}
+                                    className={`p-5 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-all ${!n.isRead ? 'bg-primary-50/40 border-l-4 border-l-primary-500' : 'border-l-4 border-l-transparent'}`}
                                 >
-                                    <h4 className="text-sm font-bold text-gray-900">{n.title}</h4>
-                                    <p className="text-xs text-gray-500 mt-1">{n.message}</p>
+                                    <div className="flex justify-between items-start mb-1">
+                                        <h4 className={`text-sm font-bold ${!n.isRead ? 'text-gray-900' : 'text-gray-700'}`}>{n.title}</h4>
+                                        <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap ml-3">
+                                            {new Date(n.createdAt).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                    <div 
+                                        className="text-xs text-gray-500 leading-relaxed mt-1"
+                                        dangerouslySetInnerHTML={{ __html: n.message }}
+                                    />
                                 </div>
                             ))
                         )}

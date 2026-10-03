@@ -47,13 +47,14 @@ router.post('/assess-speaking', authMiddleware, upload.single('audio'), async (r
     const pythonScript = path.resolve(__dirname, '../../ai-engine/full_assessment.py');
     const topicTitle = req.body.topicTitle || "Speaking Task";
     const topicDesc = req.body.topicDesc || "General speech";
+    const expectedDuration = req.body.expectedDuration || "0";
     
     let topicImageUrl = req.body.topicImageUrl || "";
     if (topicImageUrl && topicImageUrl.startsWith('/')) {
         topicImageUrl = `http://localhost:${process.env.PORT || 5000}${topicImageUrl}`;
     }
     
-    const pythonProcess = spawn(getPythonExecutable(), [pythonScript, audioPath, topicTitle, topicDesc, topicImageUrl]);
+    const pythonProcess = spawn(getPythonExecutable(), [pythonScript, audioPath, topicTitle, topicDesc, topicImageUrl, expectedDuration]);
 
     let dataString = '';
     pythonProcess.stdout.on('data', (data) => { dataString += data.toString(); });
@@ -65,20 +66,6 @@ router.post('/assess-speaking', authMiddleware, upload.single('audio'), async (r
 
         try {
             const result = JSON.parse(dataString);
-
-            // Save attempt if user is authenticated and taskId is provided
-            if (req.user && req.body.taskId && req.body.taskId !== '00000000-0000-0000-0000-000000000000') {
-                await db.Response.create({
-                    userId: req.user.id,
-                    taskId: req.body.taskId,
-                    score: Math.round((result.overall_score || 0) * 10),
-                    answer: result.transcription || "",
-                    aiResults: result,
-                    feedback: JSON.stringify(result),
-                    recordingUrl: recordingUrl,
-                    submittedAt: new Date()
-                });
-            }
 
             // Return recording URL to the frontend
             res.json({ ...result, recordingUrl });
