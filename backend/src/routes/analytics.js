@@ -56,10 +56,12 @@ router.get('/teacher', async (req, res) => {
 
 router.get('/compare', async (req, res) => {
     try {
-        const { mode, ids, contextId, role, dateFrom, dateTo } = req.query;
+        const { mode, ids, taskIds, contextId, role, dateFrom, dateTo } = req.query;
         // ids might be empty for 'overall' mode
         const idList = ids ? ids.split(',').filter(Boolean) : [];
         if (mode !== 'overall' && idList.length === 0) return res.json([]);
+        
+        const filterTaskIds = taskIds ? taskIds.split(',').filter(Boolean) : [];
 
         let results = [];
         
@@ -89,7 +91,7 @@ router.get('/compare', async (req, res) => {
             const responses = await db.Response.findAll({ where: whereClause });
             const tasks = await db.Task.findAll();
             const taskMap = {};
-            tasks.forEach(t => taskMap[t.id] = t.type || 'SPEAKING');
+            tasks.forEach(t => taskMap[t.id] = t.lsrwComponent || t.type || 'SPEAKING');
 
             const stats = {
                 'LISTENING': { total: 0, count: 0, name: 'Listening' },
@@ -140,28 +142,52 @@ router.get('/compare', async (req, res) => {
             }));
         } 
         else if (mode === 'teacher-students' || mode === 'admin-teachers') {
-            const responses = await db.Response.findAll({
-                where: { 
-                    userId: idList,
-                    ...dateFilter
+            const queryWhere = { 
+                userId: idList,
+                ...dateFilter
+            };
+            if (filterTaskIds.length > 0) {
+                queryWhere.taskId = filterTaskIds;
+            }
+            
+            const responses = await db.Response.findAll({ where: queryWhere });
+            const users = await db.User.findAll({ where: { id: idList } });
+            const tasks = await db.Task.findAll();
+            const taskMap = {};
+            tasks.forEach(t => taskMap[t.id] = t.lsrwComponent || t.type || 'SPEAKING');
+
+            const grouped = {};
+            users.forEach(u => {
+                grouped[u.id] = { 
+                    name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email,
+                    LISTENING: { total: 0, count: 0 },
+                    SPEAKING: { total: 0, count: 0 },
+                    READING: { total: 0, count: 0 },
+                    WRITING: { total: 0, count: 0 },
                 }
             });
-            const users = await db.User.findAll({ where: { id: idList } });
-            const grouped = {};
-            users.forEach(u => grouped[u.id] = { total: 0, count: 0, name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email });
 
             responses.forEach(r => {
                 if (grouped[r.userId]) {
-                    grouped[r.userId].total += (r.score || 0);
-                    grouped[r.userId].count += 1;
+                    const type = taskMap[r.taskId] ? taskMap[r.taskId].toUpperCase() : 'SPEAKING';
+                    if (grouped[r.userId][type]) {
+                        grouped[r.userId][type].total += (r.score || 0);
+                        grouped[r.userId][type].count += 1;
+                    }
                 }
             });
 
-            results = Object.keys(grouped).map(id => ({
-                id,
-                name: grouped[id].name,
-                score: grouped[id].count > 0 ? Math.round(grouped[id].total / grouped[id].count) : 0
-            }));
+            results = Object.keys(grouped).map(id => {
+                const u = grouped[id];
+                return {
+                    id,
+                    name: u.name,
+                    Listening: u.LISTENING.count > 0 ? Math.round(u.LISTENING.total / u.LISTENING.count) : 0,
+                    Speaking: u.SPEAKING.count > 0 ? Math.round(u.SPEAKING.total / u.SPEAKING.count) : 0,
+                    Reading: u.READING.count > 0 ? Math.round(u.READING.total / u.READING.count) : 0,
+                    Writing: u.WRITING.count > 0 ? Math.round(u.WRITING.total / u.WRITING.count) : 0
+                };
+            });
         }
 
         res.json(results);

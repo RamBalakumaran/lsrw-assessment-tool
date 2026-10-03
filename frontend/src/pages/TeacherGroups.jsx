@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import { Layers, Plus, Search, ChevronRight, Users, Edit2, Trash2, X, Loader2, Upload, UserPlus, FileText, Target, Download, BarChart2 } from 'lucide-react';
+import { Layers, Plus, Search, ChevronRight, Users, Edit2, Trash2, X, Loader2, Upload, UserPlus, FileText, Target, Download, BarChart2, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
 import BulkImportModal from '../components/BulkImportModal';
 import MultiSelectSearchList from '../components/MultiSelectSearchList';
 import StudentPerformanceModal from '../components/StudentPerformanceModal';
 import * as XLSX from 'xlsx';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const TeacherGroups = () => {
     const currentUser = JSON.parse(localStorage.getItem('user'));
@@ -33,8 +34,8 @@ const TeacherGroups = () => {
     const [allTasks, setAllTasks] = useState([]);
     const [assignTaskLoading, setAssignTaskLoading] = useState(false);
 
-    // Reports Tab
-    const [activeTab, setActiveTab] = useState('STUDENTS');
+    // Reports & Analytics Tabs
+    const [activeTab, setActiveTab] = useState('ANALYTICS');
     const [reportConfig, setReportConfig] = useState({
         taskIds: [],
         includeData: 'FINAL_ONLY',
@@ -43,6 +44,56 @@ const TeacherGroups = () => {
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
     const [reportPreview, setReportPreview] = useState(null);
     const [reportError, setReportError] = useState(null);
+
+    // Group Analytics State
+    const [groupAnalytics, setGroupAnalytics] = useState(null);
+    const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
+    useEffect(() => {
+        if (selectedGroup && activeTab === 'ANALYTICS') {
+            const fetchGroupAnalytics = async () => {
+                if (!selectedGroup.members || selectedGroup.members.length === 0) {
+                    setGroupAnalytics([]);
+                    return;
+                }
+                setAnalyticsLoading(true);
+                try {
+                    const memberIds = selectedGroup.members.map(m => m.id).join(',');
+                    const res = await api.get('/analytics/compare', {
+                        params: {
+                            mode: 'teacher-students',
+                            ids: memberIds,
+                            role: currentUser.role
+                        }
+                    });
+                    setGroupAnalytics(res.data);
+                } catch (error) {
+                    console.error("Error fetching group analytics", error);
+                } finally {
+                    setAnalyticsLoading(false);
+                }
+            };
+            fetchGroupAnalytics();
+        }
+    }, [selectedGroup, activeTab, currentUser.role]);
+
+    const groupAverages = React.useMemo(() => {
+        if (!groupAnalytics || groupAnalytics.length === 0) return null;
+        const totals = { Listening: 0, Speaking: 0, Reading: 0, Writing: 0 };
+        groupAnalytics.forEach(s => {
+            totals.Listening += s.Listening || 0;
+            totals.Speaking += s.Speaking || 0;
+            totals.Reading += s.Reading || 0;
+            totals.Writing += s.Writing || 0;
+        });
+        const count = groupAnalytics.length;
+        return {
+            Listening: Math.round(totals.Listening / count),
+            Speaking: Math.round(totals.Speaking / count),
+            Reading: Math.round(totals.Reading / count),
+            Writing: Math.round(totals.Writing / count),
+        };
+    }, [groupAnalytics]);
 
     // Compute rowspans for preview
     const processedPreview = React.useMemo(() => {
@@ -399,6 +450,12 @@ const TeacherGroups = () => {
 
                         <div className="flex space-x-2 mb-8 bg-gray-50 p-1.5 rounded-2xl w-max border border-gray-100">
                             <button 
+                                onClick={() => setActiveTab('ANALYTICS')} 
+                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'ANALYTICS' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                            >
+                                <Activity size={16} /> Analytics
+                            </button>
+                            <button 
                                 onClick={() => setActiveTab('STUDENTS')} 
                                 className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'STUDENTS' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
                             >
@@ -423,6 +480,65 @@ const TeacherGroups = () => {
                                 <BarChart2 size={16} /> Reports
                             </button>
                         </div>
+
+                        {activeTab === 'ANALYTICS' && (
+                            <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm max-w-full">
+                                <h3 className="text-2xl font-black text-gray-900 mb-2">Group Analytics</h3>
+                                <p className="text-sm font-medium text-gray-500 mb-8">Performance insights and statistics for {selectedGroup.name}.</p>
+                                
+                                {analyticsLoading ? (
+                                    <div className="flex justify-center items-center h-64">
+                                        <Loader2 className="animate-spin text-primary-500" size={40} />
+                                    </div>
+                                ) : (!groupAnalytics || groupAnalytics.length === 0) ? (
+                                    <div className="p-10 text-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                                        <Activity size={40} className="mx-auto text-primary-300 mb-4" />
+                                        <h4 className="text-lg font-bold text-gray-700 mb-2">No Data Available</h4>
+                                        <p className="text-gray-500 text-sm">Add students and wait for them to complete tasks to see analytics.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-8">
+                                        {groupAverages && (
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100">
+                                                    <div className="text-emerald-600 font-bold text-sm uppercase tracking-wider mb-2">Listening Avg</div>
+                                                    <div className="text-3xl font-black text-emerald-700">{groupAverages.Listening}%</div>
+                                                </div>
+                                                <div className="bg-rose-50 p-6 rounded-2xl border border-rose-100">
+                                                    <div className="text-rose-600 font-bold text-sm uppercase tracking-wider mb-2">Speaking Avg</div>
+                                                    <div className="text-3xl font-black text-rose-700">{groupAverages.Speaking}%</div>
+                                                </div>
+                                                <div className="bg-amber-50 p-6 rounded-2xl border border-amber-100">
+                                                    <div className="text-amber-600 font-bold text-sm uppercase tracking-wider mb-2">Reading Avg</div>
+                                                    <div className="text-3xl font-black text-amber-700">{groupAverages.Reading}%</div>
+                                                </div>
+                                                <div className="bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
+                                                    <div className="text-indigo-600 font-bold text-sm uppercase tracking-wider mb-2">Writing Avg</div>
+                                                    <div className="text-3xl font-black text-indigo-700">{groupAverages.Writing}%</div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm h-[400px]">
+                                            <h4 className="text-sm font-bold text-gray-700 uppercase tracking-widest mb-6">Student Performance Comparison</h4>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart data={groupAnalytics} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12, fontWeight: 600 }} />
+                                                    <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12, fontWeight: 600 }} />
+                                                    <Tooltip cursor={{ fill: '#F3F4F6' }} contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', fontWeight: 'bold' }} />
+                                                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                                    <Bar dataKey="Listening" fill="#10B981" radius={[4, 4, 0, 0]} name="Listening (%)" />
+                                                    <Bar dataKey="Speaking" fill="#F43F5E" radius={[4, 4, 0, 0]} name="Speaking (%)" />
+                                                    <Bar dataKey="Reading" fill="#F59E0B" radius={[4, 4, 0, 0]} name="Reading (%)" />
+                                                    <Bar dataKey="Writing" fill="#6366F1" radius={[4, 4, 0, 0]} name="Writing (%)" />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {activeTab === 'STUDENTS' && (
                                 <div className="bg-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-gray-100 shadow-sm max-w-3xl">

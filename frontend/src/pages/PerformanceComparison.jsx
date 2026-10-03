@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import Sidebar from '../components/Sidebar';
 import { Loader2, Activity, Download } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const PerformanceComparison = () => {
     let role = 'STUDENT';
@@ -25,6 +25,7 @@ const PerformanceComparison = () => {
     // UI selections
     const [mode, setMode] = useState('overall');
     const [selectedIds, setSelectedIds] = useState([]);
+    const [selectedTaskIds, setSelectedTaskIds] = useState([]);
     
     // Date Filters
     const [dateFrom, setDateFrom] = useState('');
@@ -71,6 +72,7 @@ const PerformanceComparison = () => {
                 params: {
                     mode,
                     ids: selectedIds.join(','),
+                    taskIds: selectedTaskIds.join(','),
                     contextId: role === 'STUDENT' ? currentUserId : undefined,
                     role,
                     dateFrom: dateFrom || undefined,
@@ -140,6 +142,7 @@ const PerformanceComparison = () => {
                                     onChange={(e) => {
                                         setMode(e.target.value);
                                         setSelectedIds([]);
+                                        setSelectedTaskIds([]);
                                         setChartData([]);
                                     }}
                                 >
@@ -160,6 +163,7 @@ const PerformanceComparison = () => {
                                     onChange={(e) => {
                                         setMode(e.target.value);
                                         setSelectedIds([]);
+                                        setSelectedTaskIds([]);
                                         setChartData([]);
                                     }}
                                 >
@@ -233,6 +237,42 @@ const PerformanceComparison = () => {
                             </div>
                         </div>
                     )}
+                    
+                    {/* NEW ROW for Task filtering in teacher-students mode */}
+                    {(mode === 'teacher-students' || mode === 'admin-teachers') && (
+                        <div className="mt-6 pt-6 border-t border-gray-100 col-span-1 md:col-span-2">
+                            <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-4">
+                                Filter by Specific Tasks (Optional - leave empty for all)
+                            </label>
+                            
+                            {availableTasks.length === 0 ? (
+                                <div className="p-8 text-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                                    <p className="text-gray-500 font-medium">No tasks available.</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                                    {availableTasks.map(t => (
+                                        <button
+                                            key={t.id}
+                                            onClick={() => {
+                                                if (selectedTaskIds.includes(t.id)) {
+                                                    setSelectedTaskIds(selectedTaskIds.filter(id => id !== t.id));
+                                                } else {
+                                                    setSelectedTaskIds([...selectedTaskIds, t.id]);
+                                                }
+                                            }}
+                                            className={`flex items-center justify-between p-4 rounded-xl border-2 text-left transition-all ${selectedTaskIds.includes(t.id) ? 'border-primary-500 bg-primary-50' : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50'}`}
+                                        >
+                                            <span className={`font-bold text-sm truncate ${selectedTaskIds.includes(t.id) ? 'text-primary-700' : 'text-gray-700'}`}>{t.title}</span>
+                                            <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${selectedTaskIds.includes(t.id) ? 'border-primary-500 bg-primary-500' : 'border-gray-300'}`}>
+                                                {selectedTaskIds.includes(t.id) && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                     {/* Date Filters */}
@@ -291,7 +331,17 @@ const PerformanceComparison = () => {
                                         cursor={{ fill: '#F3F4F6' }}
                                         contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', fontWeight: 'bold' }}
                                     />
-                                    <Bar dataKey="score" fill="#6366F1" radius={[8, 8, 0, 0]} name="Average Score (%)" barSize={80} />
+                                    {(mode === 'teacher-students' || mode === 'admin-teachers') ? (
+                                        <>
+                                            <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                            <Bar dataKey="Listening" fill="#10B981" radius={[4, 4, 0, 0]} name="Listening (%)" />
+                                            <Bar dataKey="Speaking" fill="#F43F5E" radius={[4, 4, 0, 0]} name="Speaking (%)" />
+                                            <Bar dataKey="Reading" fill="#F59E0B" radius={[4, 4, 0, 0]} name="Reading (%)" />
+                                            <Bar dataKey="Writing" fill="#6366F1" radius={[4, 4, 0, 0]} name="Writing (%)" />
+                                        </>
+                                    ) : (
+                                        <Bar dataKey="score" fill="#6366F1" radius={[8, 8, 0, 0]} name="Average Score (%)" barSize={80} />
+                                    )}
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>

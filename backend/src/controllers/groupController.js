@@ -275,8 +275,9 @@ exports.removeGroupAdmin = async (req, res) => {
     const user = await db.User.findByPk(userId);
     if (!group || !user) return res.status(404).json({ error: 'Group or User not found' });
 
-    if (req.user?.id !== userId) {
-      return res.status(403).json({ error: 'Admins can only leave a group themselves' });
+    const isSelf = req.user?.id === userId;
+    if (!isSelf && !(await userIsGroupAdmin(group, req.user))) {
+      return res.status(403).json({ error: 'Only group admins can remove admins' });
     }
 
     await group.removeAdmin(user);

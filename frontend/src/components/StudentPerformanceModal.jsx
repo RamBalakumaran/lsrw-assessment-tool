@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
-import { X, Target, Award, BarChart, Loader2, Calendar, FileText } from 'lucide-react';
+import { X, Target, Award, BarChart, Loader2, Calendar, FileText, Download } from 'lucide-react';
 import { motion } from 'framer-motion';
+import * as XLSX from 'xlsx';
 
 const renderFeedback = (feedback, act) => {
     if (!feedback) return null;
@@ -139,6 +140,251 @@ const StudentPerformanceModal = ({ studentId, onClose }) => {
         fetchPerformance();
     }, [studentId, onClose]);
 
+    const handleDownloadReport = () => {
+        if (!performance) return;
+
+        const { student, stats, activities } = performance;
+        
+        const excelData = [];
+        
+        excelData.push(["NATIONAL ENGINEERING COLLEGE KOVILPATTI , 628 503"]);
+        excelData.push([`Student Report: ${student.firstName} ${student.lastName}`]);
+        excelData.push([`Email: ${student.email}`, `Registration No: ${student.registrationNumber || 'N/A'}`]);
+        excelData.push([`Overall Average: ${stats.avg}%`, `Peak Score: ${stats.peak}%`, `Total Attempts: ${stats.totalAttempts}`]);
+        excelData.push([]);
+        
+        const headers = ["Task Title", "Skill", "Submitted At", "Score", "Feedback / Answer"];
+        excelData.push(headers);
+        
+        activities.forEach(act => {
+            let details = '';
+            if (act.answer) details += `Answer: ${act.answer}\n`;
+            if (act.feedback) {
+                try {
+                    const f = JSON.parse(act.feedback);
+                    if (f.error) details += `Error: ${f.error}\n`;
+                    if (f.overall_score) details += `Overall: ${f.overall_score}\n`;
+                    if (f.metrics) details += `Metrics: ${JSON.stringify(f.metrics)}\n`;
+                    if (f.criteria) details += `Criteria: ${JSON.stringify(f.criteria)}\n`;
+                    if (f.structure_feedback) details += `Feedback: ${f.structure_feedback}\n`;
+                    if (f.transcription) details += `Transcription: ${f.transcription}\n`;
+                } catch(e) {
+                    details += `Feedback: ${act.feedback}`;
+                }
+            }
+            if (act.studentAnswers) {
+                details += `Responses: ${typeof act.studentAnswers === 'object' ? JSON.stringify(act.studentAnswers) : act.studentAnswers}\n`;
+            }
+            
+            excelData.push([
+                act.taskTitle,
+                act.lsrwComponent,
+                new Date(act.submittedAt).toLocaleDateString(),
+                act.score,
+                details.trim()
+            ]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(excelData);
+        
+        const merges = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }, // Title 1
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }, // Title 2
+        ];
+        ws['!merges'] = merges;
+        
+        ws['!cols'] = [
+            { wch: 30 }, // Task Title
+            { wch: 15 }, // Skill
+            { wch: 15 }, // Date
+            { wch: 10 }, // Score
+            { wch: 60 }  // Details
+        ];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Student_Report");
+        XLSX.writeFile(wb, `${student.firstName}_${student.lastName}_Report.xlsx`);
+    };
+
+    const handleDownloadTaskPDF = (act) => {
+        const printWindow = window.open('', '_blank');
+        
+        let feedbackHTML = '';
+        if (act.feedback) {
+            try {
+                const f = JSON.parse(act.feedback);
+                if (f.overall_score !== undefined && f.overall_score !== null && f.overall_score !== '') {
+                    feedbackHTML += `<p><strong>Overall Score:</strong> ${f.overall_score}</p>`;
+                }
+                if (f.transcription) {
+                    feedbackHTML += `<p><strong>Transcription:</strong> ${f.transcription}</p>`;
+                }
+                if (f.metrics && Object.keys(f.metrics).length > 0) {
+                    let metricItems = '';
+                    for (const [k, v] of Object.entries(f.metrics)) {
+                        if (v === null || v === undefined || v === '') continue;
+                        let displayLabel = k;
+                        let displayValue = v;
+                        
+                        if (typeof v === 'object') {
+                            if (v.label && v.value) {
+                                displayLabel = v.label;
+                                displayValue = v.value;
+                            } else {
+                                displayValue = JSON.stringify(v);
+                            }
+                        }
+                        
+                        if (displayValue !== '{}' && displayValue !== '[]' && displayValue !== '') {
+                            displayLabel = String(displayLabel).replace(/_/g, ' ');
+                            metricItems += `
+                                <div style="display: flex; justify-content: space-between; padding: 10px 15px; border-bottom: 1px solid #f3f4f6;">
+                                    <span style="color: #6b7280; font-weight: 600; text-transform: capitalize;">${displayLabel}</span>
+                                    <span style="color: #111827; font-weight: bold;">${displayValue}</span>
+                                </div>
+                            `;
+                        }
+                    }
+                    if (metricItems) {
+                        feedbackHTML += `<h4 style="margin-top: 20px; margin-bottom: 10px; color: #374151;">Metrics</h4>
+                                         <div style="border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; overflow: hidden;">${metricItems}</div>`;
+                    }
+                }
+                if (f.structure_feedback) {
+                    feedbackHTML += `<p><strong>AI Feedback:</strong> ${f.structure_feedback}</p>`;
+                }
+                if (f.criteria && Object.keys(f.criteria).length > 0) {
+                    let criteriaItems = '';
+                    for (const [k, v] of Object.entries(f.criteria)) {
+                        if (v === null || v === undefined || v === '') continue;
+                        let displayLabel = k;
+                        let displayValue = v;
+                        
+                        if (typeof v === 'object') {
+                            if (v.label && v.value) {
+                                displayLabel = v.label;
+                                displayValue = v.value;
+                            } else {
+                                displayValue = JSON.stringify(v);
+                            }
+                        }
+                        
+                        if (displayValue !== '{}' && displayValue !== '[]' && displayValue !== '') {
+                            displayLabel = String(displayLabel).replace(/_/g, ' ');
+                            // Do not add '%' if the value already has it
+                            const suffix = String(displayValue).includes('%') ? '' : '%';
+                            criteriaItems += `
+                                <div style="display: flex; justify-content: space-between; padding: 10px 15px; border-bottom: 1px solid #f3f4f6;">
+                                    <span style="color: #6b7280; font-weight: 600; text-transform: capitalize;">${displayLabel}</span>
+                                    <span style="color: #111827; font-weight: bold;">${displayValue}${suffix}</span>
+                                </div>
+                            `;
+                        }
+                    }
+                    if (criteriaItems) {
+                        feedbackHTML += `<h4 style="margin-top: 20px; margin-bottom: 10px; color: #374151;">Criteria</h4>
+                                         <div style="border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; overflow: hidden;">${criteriaItems}</div>`;
+                    }
+                }
+                if (f.error) {
+                    feedbackHTML += `<p><strong>Error:</strong> ${f.error}</p>`;
+                }
+            } catch(e) {
+                if (act.feedback) {
+                    feedbackHTML += `<p>${act.feedback}</p>`;
+                }
+            }
+        }
+        
+        let answersHTML = '';
+        if (act.answer) {
+            answersHTML += `<h4>Typed Answer</h4><p style="white-space: pre-wrap;">${act.answer}</p>`;
+        }
+        if (act.studentAnswers) {
+            let answersStr = '';
+            if (typeof act.studentAnswers === 'object') {
+                answersStr += `<div style="border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; overflow: hidden; margin-top: 10px;">`;
+                for (const [k, v] of Object.entries(act.studentAnswers)) {
+                    let displayVal = typeof v === 'object' ? JSON.stringify(v) : v;
+                    answersStr += `
+                        <div style="display: flex; justify-content: space-between; padding: 10px 15px; border-bottom: 1px solid #f3f4f6;">
+                            <span style="color: #6b7280; font-weight: bold; width: 20%;">Q${k}</span>
+                            <span style="color: #111827; width: 80%; text-align: right;">${displayVal}</span>
+                        </div>
+                    `;
+                }
+                answersStr += `</div>`;
+            } else {
+                answersStr = `<pre style="background: #f3f4f6; padding: 15px; border-radius: 8px; white-space: pre-wrap;">${act.studentAnswers}</pre>`;
+            }
+            if (answersStr !== '{}' && answersStr !== '[]' && answersStr !== '') {
+                answersHTML += `<h4>Responses</h4>${answersStr}`;
+            }
+        }
+
+        const html = `
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <title>Task Report - ${act.taskTitle}</title>
+                    <style>
+                        body { font-family: system-ui, -apple-system, sans-serif; color: #333; line-height: 1.6; padding: 40px; max-width: 800px; margin: 0 auto; }
+                        h1 { color: #111; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+                        .header-info { display: flex; justify-content: space-between; margin-bottom: 30px; background: #f9fafb; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; }
+                        .section { margin-bottom: 30px; }
+                        .section h3 { color: #4f46e5; margin-bottom: 15px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+                        .score-badge { background: #4f46e5; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 1.2em; display: inline-block; }
+                        .box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; background: #fff; }
+                        pre { background: #f3f4f6; padding: 10px; border-radius: 4px; overflow-x: auto; }
+                        .college-name { text-align: center; margin-bottom: 20px; color: #111; font-weight: 900; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 1px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="college-name">NATIONAL ENGINEERING COLLEGE , KOVILPATTI - 628 503</div>
+                    <h1>Task Performance Report</h1>
+                    
+                    <div class="header-info">
+                        <div>
+                            <p><strong>Student:</strong> ${performance.student.firstName} ${performance.student.lastName}</p>
+                            <p><strong>Email:</strong> ${performance.student.email}</p>
+                            <p><strong>Reg No:</strong> ${performance.student.registrationNumber || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p><strong>Task:</strong> ${act.taskTitle}</p>
+                            <p><strong>Skill:</strong> ${act.lsrwComponent}</p>
+                            <p><strong>Date:</strong> ${new Date(act.submittedAt).toLocaleDateString()}</p>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3>Overall Score</h3>
+                        <div class="score-badge">${act.score}%</div>
+                    </div>
+
+                    ${answersHTML ? `<div class="section">
+                        <h3>Student Submission</h3>
+                        <div class="box">${answersHTML}</div>
+                    </div>` : ''}
+
+                    ${feedbackHTML ? `<div class="section">
+                        <h3>AI Evaluation & Feedback</h3>
+                        <div class="box">${feedbackHTML}</div>
+                    </div>` : ''}
+
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                        }
+                    </script>
+                </body>
+            </html>
+        `;
+        
+        printWindow.document.open();
+        printWindow.document.write(html);
+        printWindow.document.close();
+    };
+
     if (loading) {
         return (
             <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-gray-900/40 backdrop-blur-sm">
@@ -189,9 +435,12 @@ const StudentPerformanceModal = ({ studentId, onClose }) => {
                             {student.email} {student.registrationNumber ? ` • Reg No: ${student.registrationNumber}` : ''}
                         </p>
                     </div>
-                    <span className="px-4 py-2 bg-primary-50 text-primary-700 rounded-xl text-xs font-black uppercase tracking-wider">
-                        Student Report
-                    </span>
+                    <button 
+                        onClick={handleDownloadReport}
+                        className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition"
+                    >
+                        <Download size={14} /> Download Report
+                    </button>
                 </div>
 
                 {/* Grid stats */}
@@ -290,14 +539,23 @@ const StudentPerformanceModal = ({ studentId, onClose }) => {
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-3 self-end md:self-auto">
-                                            <span className="text-xs text-gray-400 font-bold uppercase">Score</span>
-                                            <div className={`px-4 py-2 rounded-xl text-lg font-black ${
-                                                act.score >= 75 ? 'bg-emerald-50 text-emerald-700' :
-                                                act.score >= 50 ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'
-                                            }`}>
-                                                {act.score}%
+                                        <div className="flex items-center gap-4 self-end md:self-auto">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-gray-400 font-bold uppercase">Score</span>
+                                                <div className={`px-4 py-2 rounded-xl text-lg font-black ${
+                                                    act.score >= 75 ? 'bg-emerald-50 text-emerald-700' :
+                                                    act.score >= 50 ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'
+                                                }`}>
+                                                    {act.score}%
+                                                </div>
                                             </div>
+                                            <button 
+                                                onClick={() => handleDownloadTaskPDF(act)}
+                                                className="p-2.5 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 hover:text-gray-900 transition shadow-sm flex items-center justify-center"
+                                                title="Download PDF Report"
+                                            >
+                                                <Download size={16} />
+                                            </button>
                                         </div>
                                     </div>
                                 ))}
