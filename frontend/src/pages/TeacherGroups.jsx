@@ -34,7 +34,7 @@ const TeacherGroups = () => {
     const [assignTaskLoading, setAssignTaskLoading] = useState(false);
 
     // Reports Tab
-    const [activeTab, setActiveTab] = useState('OVERVIEW');
+    const [activeTab, setActiveTab] = useState('STUDENTS');
     const [reportConfig, setReportConfig] = useState({
         taskIds: [],
         includeData: 'FINAL_ONLY',
@@ -364,7 +364,7 @@ const TeacherGroups = () => {
                 {selectedGroup ? (
                     // GROUP DRILLDOWN
                     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
-                        <button onClick={() => { setSelectedGroup(null); setActiveTab('OVERVIEW'); }} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 font-bold transition">
+                        <button onClick={() => { setSelectedGroup(null); setActiveTab('STUDENTS'); }} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 font-bold transition">
                             <span className="mr-2">←</span> Back to My Groups
                         </button>
                         
@@ -399,10 +399,22 @@ const TeacherGroups = () => {
 
                         <div className="flex space-x-2 mb-8 bg-gray-50 p-1.5 rounded-2xl w-max border border-gray-100">
                             <button 
-                                onClick={() => setActiveTab('OVERVIEW')} 
-                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'OVERVIEW' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                                onClick={() => setActiveTab('STUDENTS')} 
+                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'STUDENTS' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
                             >
-                                <Layers size={16} /> Overview
+                                <Users size={16} /> Students
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('ADMINS')} 
+                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'ADMINS' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                            >
+                                <UserPlus size={16} /> Admins
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('TASKS')} 
+                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'TASKS' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                            >
+                                <FileText size={16} /> Tasks
                             </button>
                             <button 
                                 onClick={() => setActiveTab('REPORTS')} 
@@ -412,8 +424,7 @@ const TeacherGroups = () => {
                             </button>
                         </div>
 
-                        {activeTab === 'OVERVIEW' ? (
-                            <>
+                        {activeTab === 'STUDENTS' && (
                                 <div className="bg-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-gray-100 shadow-sm max-w-3xl">
                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
                                 <div>
@@ -555,9 +566,11 @@ const TeacherGroups = () => {
                                 </button>
                             </div>
                         </div>
+                        )}
 
                         {/* GROUP ADMINS SECTION */}
-                        <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm max-w-3xl mt-6">
+                        {activeTab === 'ADMINS' && (
+                        <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm max-w-3xl">
                             <h3 className="text-xl font-black text-gray-900 mb-6">Group Admins</h3>
                             <p className="text-sm font-medium text-gray-500 mb-6">Assign other teachers or trusted students to help manage this group.</p>
                             
@@ -595,9 +608,11 @@ const TeacherGroups = () => {
                                 ))}
                             </div>
                         </div>
+                        )}
 
                         {/* GROUP TASKS SECTION */}
-                        <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm max-w-3xl mt-6">
+                        {activeTab === 'TASKS' && (
+                        <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm max-w-3xl">
                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
                                 <div>
                                     <h3 className="text-xl font-black text-gray-900 font-sans">Group Tasks</h3>
@@ -643,8 +658,9 @@ const TeacherGroups = () => {
                                 </div>
                             )}
                         </div>
-                            </>
-                        ) : (
+                        )}
+
+                        {activeTab === 'REPORTS' && (
                             <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm max-w-3xl">
                                 <h3 className="text-2xl font-black text-gray-900 mb-6">Group Reports & Analytics</h3>
                                 

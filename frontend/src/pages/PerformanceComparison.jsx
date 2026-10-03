@@ -48,11 +48,10 @@ const PerformanceComparison = () => {
                     const resUsers = await api.get('/users');
                     setAvailableUsers(resUsers.data || []);
                     try {
-                        const resTasks = await api.get('/tasks/global'); 
+                        const resTasks = await api.get('/tasks'); 
                         setAvailableTasks(resTasks.data || []);
                     } catch (e) {
-                        // fallback if global tasks route isn't available
-                        console.warn("Could not fetch global tasks", e);
+                        console.warn("Could not fetch tasks", e);
                     }
                 }
             } catch (error) {
