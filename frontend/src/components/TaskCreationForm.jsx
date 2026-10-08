@@ -36,6 +36,7 @@ const TASK_CONFIG = {
         border: 'border-emerald-100',
         subtypes: {
             COMPREHENSION_MCQ: { label: 'Reading Comprehension (MCQ)', fields: ['passage', 'questions'] },
+            ERROR_SPOTTING: { label: 'Error Spotting', fields: ['passage', 'questions'] },
             TRUE_FALSE: { label: 'True/False Questions', fields: ['passage', 'questions'] },
             FILL_BLANKS: { label: 'Fill in the Blanks', fields: ['passage', 'questions'] },
             VOCABULARY: { label: 'Vocabulary from Context', fields: ['passage', 'questions'] }
@@ -279,7 +280,7 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Object.entries(config.subtypes).map(([subtype, subConfig]) => (
+                    {Object.entries(config.subtypes).filter(([subtype]) => subtype !== 'TRUE_FALSE').map(([subtype, subConfig]) => (
                         <button
                             key={subtype}
                             onClick={() => { setSubType(subtype); setStep(3); }}
@@ -514,6 +515,7 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
                             <QuestionBuilder 
                                 questions={formData.questions} 
                                 onChange={(newQuestions) => handleInputChange('questions', newQuestions)} 
+                                defaultQuestionType={subType === 'ERROR_SPOTTING' ? 'ERROR_SPOTTING' : 'MCQ'}
                             />
                         </div>
                     )}

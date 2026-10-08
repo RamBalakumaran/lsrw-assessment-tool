@@ -71,7 +71,7 @@ const SmartQuiz = ({ questions, onComplete }) => {
           )}
 
           <div className="space-y-4 mb-10">
-            {(!q.options && !q.opts) || (q.options || q.opts || []).length === 0 ? (
+            {q.type === 'ERROR_SPOTTING' || ((!q.options && !q.opts) || (q.options || q.opts || []).length === 0) ? (
               <div className="space-y-2">
                 <label className="text-sm font-bold text-gray-400 uppercase tracking-wider block mb-2">Your Answer</label>
                 <textarea

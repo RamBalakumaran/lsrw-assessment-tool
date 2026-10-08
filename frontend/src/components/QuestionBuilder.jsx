@@ -6,13 +6,13 @@ import api from '../utils/api';
 const QUESTION_TYPES = [
     { value: 'MCQ', label: 'Multiple Choice (Single Answer)' },
     { value: 'CHECKBOX', label: 'Checkboxes (Multiple Answers)' },
-    { value: 'TRUE_FALSE', label: 'True / False' },
+    { value: 'ERROR_SPOTTING', label: 'Grammar Checking' },
     { value: 'FILL_BLANKS', label: 'Fill in the Blanks' },
     { value: 'REPEAT_SENTENCE', label: 'Repeat Sentence (Audio/Video)' },
     { value: 'DICTATION', label: 'Audio Dictation / Short Answer' }
 ];
 
-const QuestionBuilder = ({ questions, onChange }) => {
+const QuestionBuilder = ({ questions, onChange, defaultQuestionType = 'MCQ' }) => {
     const [uploadingIndex, setUploadingIndex] = useState(null);
 
     const handleMediaUpload = async (index, e) => {
@@ -35,12 +35,13 @@ const QuestionBuilder = ({ questions, onChange }) => {
     };
     
     const addQuestion = () => {
+        const isErrorSpotting = defaultQuestionType === 'ERROR_SPOTTING';
         const newQuestion = {
             id: `q_${Date.now()}`,
-            type: 'MCQ',
+            type: defaultQuestionType,
             text: '',
-            options: ['Option 1', 'Option 2'],
-            correctAnswer: 'Option 1',
+            options: isErrorSpotting ? [] : ['Option 1', 'Option 2'],
+            correctAnswer: isErrorSpotting ? '' : 'Option 1',
             correctAnswers: [],
             points: 1,
             time: 20
@@ -63,6 +64,9 @@ const QuestionBuilder = ({ questions, onChange }) => {
             } else if (value === 'CHECKBOX') {
                 updated[index].options = ['Option 1', 'Option 2'];
                 updated[index].correctAnswers = [];
+            } else if (value === 'ERROR_SPOTTING') {
+                updated[index].options = [];
+                updated[index].correctAnswer = '';
             } else if (value === 'FILL_BLANKS') {
                 updated[index].options = [];
                 updated[index].correctAnswer = '';
@@ -226,6 +230,19 @@ const QuestionBuilder = ({ questions, onChange }) => {
                             placeholder="Exact text or comma-separated for multiple acceptable answers"
                         />
                         <p className="text-xs text-gray-400 mt-2 font-medium">Use <code className="bg-gray-100 px-1 rounded">___</code> in the question text to indicate where the blank is.</p>
+                    </div>
+                );
+            case 'ERROR_SPOTTING':
+                return (
+                    <div className="mt-4">
+                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Corrected Sentence *</label>
+                        <textarea
+                            value={q.correctAnswer || ''}
+                            onChange={(e) => updateQuestion(index, 'correctAnswer', e.target.value)}
+                            className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition resize-y"
+                            placeholder="Enter the sentence with the grammar error corrected"
+                            rows="2"
+                        />
                     </div>
                 );
             case 'REPEAT_SENTENCE':
