@@ -238,7 +238,7 @@ const StudentPerformanceModal = ({ studentId, onClose }) => {
                         if (displayValue !== '{}' && displayValue !== '[]' && displayValue !== '') {
                             displayLabel = String(displayLabel).replace(/_/g, ' ');
                             metricItems += `
-                                <div style="display: flex; justify-content: space-between; padding: 10px 15px; border-bottom: 1px solid #f3f4f6;">
+                                <div style="display: flex; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid #f3f4f6; border-right: 1px solid #f3f4f6; font-size: 13px;">
                                     <span style="color: #6b7280; font-weight: 600; text-transform: capitalize;">${displayLabel}</span>
                                     <span style="color: #111827; font-weight: bold;">${displayValue}</span>
                                 </div>
@@ -246,8 +246,8 @@ const StudentPerformanceModal = ({ studentId, onClose }) => {
                         }
                     }
                     if (metricItems) {
-                        feedbackHTML += `<h4 style="margin-top: 20px; margin-bottom: 10px; color: #374151;">Metrics</h4>
-                                         <div style="border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; overflow: hidden;">${metricItems}</div>`;
+                        feedbackHTML += `<h4 style="margin-top: 25px; margin-bottom: 12px; color: #374151; font-size: 15px;">Metrics</h4>
+                                         <div style="border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr;">${metricItems}</div>`;
                     }
                 }
                 if (f.structure_feedback) {
@@ -274,7 +274,7 @@ const StudentPerformanceModal = ({ studentId, onClose }) => {
                             // Do not add '%' if the value already has it
                             const suffix = String(displayValue).includes('%') ? '' : '%';
                             criteriaItems += `
-                                <div style="display: flex; justify-content: space-between; padding: 10px 15px; border-bottom: 1px solid #f3f4f6;">
+                                <div style="display: flex; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid #f3f4f6; border-right: 1px solid #f3f4f6; font-size: 13px;">
                                     <span style="color: #6b7280; font-weight: 600; text-transform: capitalize;">${displayLabel}</span>
                                     <span style="color: #111827; font-weight: bold;">${displayValue}${suffix}</span>
                                 </div>
@@ -282,8 +282,8 @@ const StudentPerformanceModal = ({ studentId, onClose }) => {
                         }
                     }
                     if (criteriaItems) {
-                        feedbackHTML += `<h4 style="margin-top: 20px; margin-bottom: 10px; color: #374151;">Criteria</h4>
-                                         <div style="border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; overflow: hidden;">${criteriaItems}</div>`;
+                        feedbackHTML += `<h4 style="margin-top: 25px; margin-bottom: 12px; color: #374151; font-size: 15px;">Criteria</h4>
+                                         <div style="border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr;">${criteriaItems}</div>`;
                     }
                 }
                 if (f.error) {
@@ -298,27 +298,27 @@ const StudentPerformanceModal = ({ studentId, onClose }) => {
         
         let answersHTML = '';
         if (act.answer) {
-            answersHTML += `<h4>Typed Answer</h4><p style="white-space: pre-wrap;">${act.answer}</p>`;
+            answersHTML += `<h4 style="margin-top: 25px; margin-bottom: 12px; color: #374151; font-size: 15px;">Typed Answer</h4><p style="white-space: pre-wrap; font-size: 13px; line-height: 1.8;">${act.answer}</p>`;
         }
         if (act.studentAnswers) {
             let answersStr = '';
             if (typeof act.studentAnswers === 'object') {
-                answersStr += `<div style="border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; overflow: hidden; margin-top: 10px;">`;
+                answersStr += `<div style="border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; overflow: hidden; margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr;">`;
                 for (const [k, v] of Object.entries(act.studentAnswers)) {
                     let displayVal = typeof v === 'object' ? JSON.stringify(v) : v;
                     answersStr += `
-                        <div style="display: flex; justify-content: space-between; padding: 10px 15px; border-bottom: 1px solid #f3f4f6;">
-                            <span style="color: #6b7280; font-weight: bold; width: 20%;">Q${k}</span>
-                            <span style="color: #111827; width: 80%; text-align: right;">${displayVal}</span>
+                        <div style="display: flex; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid #f3f4f6; border-right: 1px solid #f3f4f6; font-size: 13px;">
+                            <span style="color: #6b7280; font-weight: bold; width: 25%;">Q${k}</span>
+                            <span style="color: #111827; width: 75%; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${displayVal}">${displayVal}</span>
                         </div>
                     `;
                 }
                 answersStr += `</div>`;
             } else {
-                answersStr = `<pre style="background: #f3f4f6; padding: 15px; border-radius: 8px; white-space: pre-wrap;">${act.studentAnswers}</pre>`;
+                answersStr = `<pre style="background: #f3f4f6; padding: 20px; border-radius: 8px; white-space: pre-wrap; font-size: 13px; line-height: 1.8;">${act.studentAnswers}</pre>`;
             }
             if (answersStr !== '{}' && answersStr !== '[]' && answersStr !== '') {
-                answersHTML += `<h4>Responses</h4>${answersStr}`;
+                answersHTML += `<h4 style="margin-top: 25px; margin-bottom: 12px; color: #374151; font-size: 15px;">Responses</h4>${answersStr}`;
             }
         }
 
@@ -328,37 +328,111 @@ const StudentPerformanceModal = ({ studentId, onClose }) => {
                 <head>
                     <title>Task Report - ${act.taskTitle}</title>
                     <style>
-                        body { font-family: system-ui, -apple-system, sans-serif; color: #333; line-height: 1.6; padding: 40px; max-width: 800px; margin: 0 auto; }
-                        h1 { color: #111; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-                        .header-info { display: flex; justify-content: space-between; margin-bottom: 30px; background: #f9fafb; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; }
-                        .section { margin-bottom: 30px; }
-                        .section h3 { color: #4f46e5; margin-bottom: 15px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
-                        .score-badge { background: #4f46e5; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 1.2em; display: inline-block; }
-                        .box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; background: #fff; }
-                        pre { background: #f3f4f6; padding: 10px; border-radius: 4px; overflow-x: auto; }
-                        .college-name { text-align: center; margin-bottom: 20px; color: #111; font-weight: 900; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 1px; }
+                        :root {
+                            --primary: #4f46e5;
+                            --text: #111827;
+                            --muted: #6b7280;
+                            --border: #e5e7eb;
+                            --bg: #f9fafb;
+                        }
+                        * { -webkit-print-color-adjust: exact; print-color-adjust: exact; box-sizing: border-box; }
+                        body { 
+                            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+                            color: var(--text); 
+                            line-height: 1.6; 
+                            padding: 40px 60px; 
+                            max-width: 900px; 
+                            margin: 0 auto; 
+                            font-size: 14px;
+                        }
+                        .college-name { 
+                            text-align: center; 
+                            color: var(--text); 
+                            font-weight: 900; 
+                            font-size: 18px; 
+                            text-transform: uppercase; 
+                            letter-spacing: 0.5px;
+                            margin-bottom: 10px;
+                        }
+                        .report-title {
+                            text-align: center;
+                            color: var(--muted);
+                            font-size: 14px;
+                            font-weight: 600;
+                            text-transform: uppercase;
+                            letter-spacing: 1.5px;
+                            margin-bottom: 30px;
+                            padding-bottom: 20px;
+                            border-bottom: 2px solid var(--primary);
+                        }
+                        
+                        .header-info { 
+                            display: grid;
+                            grid-template-columns: 1fr 1fr;
+                            gap: 20px;
+                            margin-bottom: 40px; 
+                            background: var(--bg); 
+                            padding: 25px 30px; 
+                            border-radius: 12px; 
+                            border: 1px solid var(--border); 
+                            break-inside: avoid;
+                        }
+                        .header-info p { margin: 8px 0; font-size: 14px; }
+                        .header-info strong { color: var(--muted); display: inline-block; width: 70px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+                        .score-card {
+                            background: var(--primary);
+                            color: white;
+                            padding: 25px;
+                            border-radius: 12px;
+                            text-align: center;
+                            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                            margin-bottom: 40px;
+                            break-inside: avoid;
+                        }
+                        .score-card h3 { margin: 0 0 10px 0; font-size: 14px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; }
+                        .score-card .score-value { font-size: 48px; font-weight: 900; line-height: 1; }
+
+                        .section { margin-bottom: 40px; break-inside: avoid; page-break-inside: avoid; }
+                        .section h3 { 
+                            color: var(--primary); 
+                            margin: 0 0 20px 0; 
+                            border-bottom: 1px solid var(--border); 
+                            padding-bottom: 10px; 
+                            font-size: 16px;
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
+                        }
+                        .box { border: 1px solid var(--border); border-radius: 12px; padding: 25px; background: #fff; }
+                        p { margin: 0 0 15px 0; }
+                        
+                        @media print {
+                            body { padding: 0; margin: 0; }
+                            .section, .box, .header-info, .score-card { break-inside: avoid; page-break-inside: avoid; }
+                            @page { margin: 1.5cm; }
+                        }
                     </style>
                 </head>
                 <body>
-                    <div class="college-name">NATIONAL ENGINEERING COLLEGE , KOVILPATTI - 628 503</div>
-                    <h1>Task Performance Report</h1>
+                    <div class="college-name">NATIONAL ENGINEERING COLLEGE, KOVILPATTI - 628 503</div>
+                    <div class="report-title">Task Performance Report</div>
                     
                     <div class="header-info">
                         <div>
-                            <p><strong>Student:</strong> ${performance.student.firstName} ${performance.student.lastName}</p>
-                            <p><strong>Email:</strong> ${performance.student.email}</p>
-                            <p><strong>Reg No:</strong> ${performance.student.registrationNumber || 'N/A'}</p>
+                            <p><strong>Student</strong> ${performance.student.firstName} ${performance.student.lastName}</p>
+                            <p><strong>Email</strong> ${performance.student.email}</p>
+                            <p><strong>Reg No</strong> ${performance.student.registrationNumber || 'N/A'}</p>
                         </div>
                         <div>
-                            <p><strong>Task:</strong> ${act.taskTitle}</p>
-                            <p><strong>Skill:</strong> ${act.lsrwComponent}</p>
-                            <p><strong>Date:</strong> ${new Date(act.submittedAt).toLocaleDateString()}</p>
+                            <p><strong>Task</strong> ${act.taskTitle}</p>
+                            <p><strong>Skill</strong> ${act.lsrwComponent}</p>
+                            <p><strong>Date</strong> ${new Date(act.submittedAt).toLocaleDateString()}</p>
                         </div>
                     </div>
 
-                    <div class="section">
+                    <div class="score-card">
                         <h3>Overall Score</h3>
-                        <div class="score-badge">${act.score}%</div>
+                        <div class="score-value">${act.score}%</div>
                     </div>
 
                     ${answersHTML ? `<div class="section">

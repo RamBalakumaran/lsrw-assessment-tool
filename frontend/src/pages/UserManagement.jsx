@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import { UserPlus, Search, Users, ChevronLeft, Trash2, Edit2, ShieldAlert, X, Plus, UserCheck, Upload } from 'lucide-react';
+import { UserPlus, Search, Users, ChevronLeft, Trash2, Edit2, ShieldAlert, X, Plus, UserCheck, Upload, Activity, FileText, Target, BarChart2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
 import BulkImportModal from '../components/BulkImportModal';
 import MultiSelectSearchList from '../components/MultiSelectSearchList';
 import StudentPerformanceModal from '../components/StudentPerformanceModal';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const readStoredUser = () => {
     try {
@@ -36,6 +37,57 @@ const UserManagement = () => {
     
     const [selectedUser, setSelectedUser] = useState(null);
     const [selectedGroup, setSelectedGroup] = useState(null); // Drilldown view state
+    const [groupActiveTab, setGroupActiveTab] = useState('ANALYTICS');
+
+    // Group Analytics State
+    const [groupAnalytics, setGroupAnalytics] = useState(null);
+    const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
+    useEffect(() => {
+        if (selectedGroup && groupActiveTab === 'ANALYTICS') {
+            const fetchGroupAnalytics = async () => {
+                if (!selectedGroup.members || selectedGroup.members.length === 0) {
+                    setGroupAnalytics([]);
+                    return;
+                }
+                setAnalyticsLoading(true);
+                try {
+                    const memberIds = selectedGroup.members.map(m => m.id).join(',');
+                    const res = await api.get('/analytics/compare', {
+                        params: {
+                            mode: 'teacher-students',
+                            ids: memberIds,
+                            role: currentUser.role
+                        }
+                    });
+                    setGroupAnalytics(res.data);
+                } catch (error) {
+                    console.error("Error fetching group analytics", error);
+                } finally {
+                    setAnalyticsLoading(false);
+                }
+            };
+            fetchGroupAnalytics();
+        }
+    }, [selectedGroup, groupActiveTab, currentUser?.role]);
+
+    const groupAverages = React.useMemo(() => {
+        if (!groupAnalytics || groupAnalytics.length === 0) return null;
+        const totals = { Listening: 0, Speaking: 0, Reading: 0, Writing: 0 };
+        groupAnalytics.forEach(s => {
+            totals.Listening += s.Listening || 0;
+            totals.Speaking += s.Speaking || 0;
+            totals.Reading += s.Reading || 0;
+            totals.Writing += s.Writing || 0;
+        });
+        const count = groupAnalytics.length;
+        return {
+            Listening: Math.round(totals.Listening / count),
+            Speaking: Math.round(totals.Speaking / count),
+            Reading: Math.round(totals.Reading / count),
+            Writing: Math.round(totals.Writing / count),
+        };
+    }, [groupAnalytics]);
 
     // Form States
     const [inviteForm, setInviteForm] = useState({ firstName: '', lastName: '', email: '', role: 'STUDENT', password: '123456', groupId: '' });
@@ -225,9 +277,164 @@ const UserManagement = () => {
                             <p className="text-gray-500 font-medium">Manage admins, members, and view activity for this group.</p>
                         </header>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            {/* Admins Section */}
-                            <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
+                        <div className="flex space-x-2 mb-8 bg-gray-50 p-1.5 rounded-2xl w-max border border-gray-100">
+                            <button 
+                                onClick={() => setGroupActiveTab('ANALYTICS')} 
+                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${groupActiveTab === 'ANALYTICS' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                            >
+                                <Activity size={16} /> Analytics
+                            </button>
+                            <button 
+                                onClick={() => setGroupActiveTab('STUDENTS')} 
+                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${groupActiveTab === 'STUDENTS' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                            >
+                                <Users size={16} /> Students
+                            </button>
+                            <button 
+                                onClick={() => setGroupActiveTab('ADMINS')} 
+                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${groupActiveTab === 'ADMINS' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                            >
+                                <UserCheck size={16} /> Admins
+                            </button>
+                            <button 
+                                onClick={() => setGroupActiveTab('TASKS')} 
+                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${groupActiveTab === 'TASKS' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                            >
+                                <FileText size={16} /> Tasks
+                            </button>
+                        </div>
+
+                        {groupActiveTab === 'ANALYTICS' && (
+                            <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm max-w-full">
+                                <h3 className="text-2xl font-black text-gray-900 mb-2">Group Analytics</h3>
+                                <p className="text-sm font-medium text-gray-500 mb-8">Performance insights and statistics for {selectedGroup.name}.</p>
+                                
+                                {analyticsLoading ? (
+                                    <div className="flex justify-center items-center h-64">
+                                        <p className="text-gray-400 font-bold">Loading analytics...</p>
+                                    </div>
+                                ) : (!groupAnalytics || groupAnalytics.length === 0) ? (
+                                    <div className="p-10 text-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                                        <Activity size={40} className="mx-auto text-primary-300 mb-4" />
+                                        <h4 className="text-lg font-bold text-gray-700 mb-2">No Data Available</h4>
+                                        <p className="text-gray-500 text-sm">Add students and wait for them to complete tasks to see analytics.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-8">
+                                        {groupAverages && (
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100">
+                                                    <div className="text-emerald-600 font-bold text-sm uppercase tracking-wider mb-2">Listening Avg</div>
+                                                    <div className="text-3xl font-black text-emerald-700">{groupAverages.Listening}%</div>
+                                                </div>
+                                                <div className="bg-rose-50 p-6 rounded-2xl border border-rose-100">
+                                                    <div className="text-rose-600 font-bold text-sm uppercase tracking-wider mb-2">Speaking Avg</div>
+                                                    <div className="text-3xl font-black text-rose-700">{groupAverages.Speaking}%</div>
+                                                </div>
+                                                <div className="bg-amber-50 p-6 rounded-2xl border border-amber-100">
+                                                    <div className="text-amber-600 font-bold text-sm uppercase tracking-wider mb-2">Reading Avg</div>
+                                                    <div className="text-3xl font-black text-amber-700">{groupAverages.Reading}%</div>
+                                                </div>
+                                                <div className="bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
+                                                    <div className="text-indigo-600 font-bold text-sm uppercase tracking-wider mb-2">Writing Avg</div>
+                                                    <div className="text-3xl font-black text-indigo-700">{groupAverages.Writing}%</div>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm h-[400px]">
+                                            <h4 className="text-sm font-bold text-gray-700 uppercase tracking-widest mb-6">Student Performance Comparison</h4>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart data={groupAnalytics} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12, fontWeight: 600 }} />
+                                                    <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12, fontWeight: 600 }} />
+                                                    <Tooltip cursor={{ fill: '#F3F4F6' }} contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', fontWeight: 'bold' }} />
+                                                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                                    <Bar dataKey="Listening" fill="#10B981" radius={[4, 4, 0, 0]} name="Listening (%)" />
+                                                    <Bar dataKey="Speaking" fill="#F43F5E" radius={[4, 4, 0, 0]} name="Speaking (%)" />
+                                                    <Bar dataKey="Reading" fill="#F59E0B" radius={[4, 4, 0, 0]} name="Reading (%)" />
+                                                    <Bar dataKey="Writing" fill="#6366F1" radius={[4, 4, 0, 0]} name="Writing (%)" />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {groupActiveTab === 'STUDENTS' && (
+                            <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm max-w-3xl">
+                                <div className="flex justify-between items-center mb-6">
+                                    <div>
+                                        <h3 className="text-xl font-black text-gray-900 font-sans">Students</h3>
+                                        <p className="text-xs text-gray-400 font-bold mt-1">
+                                            {selectedGroup.members?.length || 0} students enrolled
+                                        </p>
+                                    </div>
+                                    <button 
+                                        onClick={() => setShowBulkImport(true)}
+                                        className="text-xs font-black text-primary-600 hover:text-primary-700 flex items-center gap-1 transition uppercase tracking-wider bg-primary-50 px-3 py-2 rounded-xl"
+                                    >
+                                        <Upload size={12} /> Bulk Import
+                                    </button>
+                                </div>
+                                <div className="mb-6">
+                                    <MultiSelectSearchList 
+                                        items={users.filter(u => u.role === 'STUDENT' && !selectedGroup.members?.some(m => m.id === u.id))}
+                                        placeholder="Search existing students to add..."
+                                        buttonText="Add Selected Students"
+                                        buttonColor="bg-primary-600 hover:bg-primary-700"
+                                        onAddSelected={handleAddMembersBulk}
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    {(selectedGroup.members || []).slice(0, 3).map(member => {
+                                        return (
+                                            <div 
+                                                key={member.id} 
+                                                className="flex justify-between items-center p-4 border border-gray-100 rounded-2xl bg-gray-50/50 hover:bg-gray-50 cursor-pointer transition-all"
+                                                onClick={() => setSelectedStudentId(member.id)}
+                                            >
+                                                <div>
+                                                    <div className="font-bold text-gray-900 hover:text-primary-600 transition-colors font-sans">
+                                                        {member.firstName} {member.lastName}
+                                                    </div>
+                                                    <div className="flex gap-2 items-center mt-1">
+                                                        <span className="text-xs text-gray-400 font-medium">{member.email}</span>
+                                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${member.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                                                            {member.status}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <button 
+                                                    onClick={(e) => { 
+                                                        e.stopPropagation(); 
+                                                        handleRemoveMember(member.id); 
+                                                    }} 
+                                                    className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                    {(!selectedGroup.members || selectedGroup.members.length === 0) && (
+                                        <p className="text-gray-400 text-sm font-bold py-4 text-center">No students assigned.</p>
+                                    )}
+                                </div>
+                                <div className="mt-6 pt-4 border-t border-gray-100 flex justify-center">
+                                    <button 
+                                        onClick={() => navigate(`/groups/${selectedGroup.id}/students`)}
+                                        className="text-xs font-black text-gray-700 hover:text-black uppercase tracking-wider bg-gray-100 hover:bg-gray-200 px-6 py-3 rounded-2xl transition w-full text-center"
+                                    >
+                                        {selectedGroup.members?.length > 3 ? "Show More / Manage" : "Manage Group Students"}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {groupActiveTab === 'ADMINS' && (
+                            <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm max-w-3xl">
                                 <h3 className="text-xl font-black text-gray-900 mb-6">Group Admins</h3>
                                 <div className="mb-6">
                                     <MultiSelectSearchList 
@@ -245,96 +452,57 @@ const UserManagement = () => {
                                                 <div className="font-bold text-gray-900">{admin.firstName} {admin.lastName}</div>
                                                 <div className="text-xs text-gray-500">{admin.email}</div>
                                             </div>
-                                            <button onClick={() => handleRemoveAdmin(admin.id)} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition">
-                                                <Trash2 size={16} />
-                                            </button>
+                                            {(admin.email !== 'admin@nec.edu.in' && admin.role !== 'SUPER_ADMIN') && (
+                                                <button onClick={() => handleRemoveAdmin(admin.id)} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition">
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            )}
                                         </div>
                                     ))}
                                     {(!selectedGroup.admins || selectedGroup.admins.length === 0) && <p className="text-gray-400 text-sm">No admins assigned.</p>}
                                 </div>
                             </div>
+                        )}
 
-                            {/* Members Section */}
-                             <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                                 <div className="flex justify-between items-center mb-6">
-                                     <div>
-                                         <h3 className="text-xl font-black text-gray-900 font-sans">Students</h3>
-                                         <p className="text-xs text-gray-400 font-bold mt-1">
-                                             {selectedGroup.members?.length || 0} students enrolled
-                                         </p>
-                                     </div>
-                                     <button 
-                                         onClick={() => setShowBulkImport(true)}
-                                         className="text-xs font-black text-primary-600 hover:text-primary-700 flex items-center gap-1 transition uppercase tracking-wider bg-primary-50 px-3 py-2 rounded-xl"
-                                     >
-                                         <Upload size={12} /> Bulk Import
-                                     </button>
-                                 </div>
-                                 <div className="mb-6">
-                                      <MultiSelectSearchList 
-                                          items={users.filter(u => u.role === 'STUDENT' && !selectedGroup.members?.some(m => m.id === u.id))}
-                                          placeholder="Search existing students to add..."
-                                          buttonText="Add Selected Students"
-                                          buttonColor="bg-primary-600 hover:bg-primary-700"
-                                          onAddSelected={handleAddMembersBulk}
-                                      />
-                                  </div>
- 
-                                 <div className="space-y-3">
-                                     {(selectedGroup.members || []).slice(0, 3).map(member => {
-                                         return (
-                                             <div 
-                                                 key={member.id} 
-                                                 className="flex justify-between items-center p-4 border border-gray-100 rounded-2xl bg-gray-50/50 hover:bg-gray-50 cursor-pointer transition-all"
-                                                 onClick={() => setSelectedStudentId(member.id)}
-                                             >
-                                                 <div>
-                                                     <div className="font-bold text-gray-900 hover:text-primary-600 transition-colors font-sans">
-                                                         {member.firstName} {member.lastName}
-                                                     </div>
-                                                     <div className="flex gap-2 items-center mt-1">
-                                                         <span className="text-xs text-gray-400 font-medium">{member.email}</span>
-                                                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${member.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                                                             {member.status}
-                                                         </span>
-                                                     </div>
-                                                 </div>
-                                                 <button 
-                                                     onClick={(e) => { 
-                                                         e.stopPropagation(); 
-                                                         handleRemoveMember(member.id); 
-                                                     }} 
-                                                     className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
-                                                 >
-                                                     <Trash2 size={16} />
-                                                 </button>
-                                             </div>
-                                         );
-                                     })}
-                                     {(!selectedGroup.members || selectedGroup.members.length === 0) && (
-                                         <p className="text-gray-400 text-sm font-bold py-4 text-center">No students assigned.</p>
-                                     )}
-                                 </div>
- 
-                                 <div className="mt-6 pt-4 border-t border-gray-100 flex justify-center">
-                                     <button 
-                                         onClick={() => navigate(`/groups/${selectedGroup.id}/students`)}
-                                         className="text-xs font-black text-gray-700 hover:text-black uppercase tracking-wider bg-gray-100 hover:bg-gray-200 px-6 py-3 rounded-2xl transition w-full text-center"
-                                     >
-                                         {selectedGroup.members?.length > 3 ? "Show More / Manage" : "Manage Group Students"}
-                                     </button>
-                                 </div>
-                             </div>
-                        </div>
-
-                        {/* Activity Section Placeholder */}
-                        <div className="mt-8 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                            <h3 className="text-xl font-black text-gray-900 mb-6">Group Activity</h3>
-                            <div className="p-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-center">
-                                <p className="text-gray-500 font-medium">Activity aggregation mapping to tasks completed by members in this group goes here.</p>
-                                <p className="text-sm text-gray-400 mt-2">({selectedGroup.tasks?.length || 0} tasks globally assigned to this group)</p>
+                        {groupActiveTab === 'TASKS' && (
+                            <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm max-w-3xl">
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+                                    <div>
+                                        <h3 className="text-xl font-black text-gray-900 font-sans">Group Tasks</h3>
+                                        <p className="text-sm font-medium text-gray-500">Tasks assigned to this group.</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => navigate('/admin/tasks')}
+                                        className="text-xs font-black text-primary-600 hover:text-primary-700 flex items-center gap-1 transition uppercase tracking-wider bg-primary-50 px-3 py-2 rounded-xl"
+                                    >
+                                        <Target size={14} /> Manage Global Tasks
+                                    </button>
+                                </div>
+                                {selectedGroup.tasks && selectedGroup.tasks.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {selectedGroup.tasks.map(task => (
+                                            <div key={task.id} className="flex justify-between items-center p-4 border border-gray-100 rounded-2xl bg-gray-50 hover:border-gray-200 transition">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 rounded-xl bg-primary-100 text-primary-600 font-black flex items-center justify-center text-lg">
+                                                        {(task.type || 'T')[0]}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-bold text-gray-900 flex items-center gap-2">
+                                                            {task.title}
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 font-medium uppercase tracking-widest">{task.type} • {task.difficultyLevel}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center p-6 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-sm font-bold text-gray-400">
+                                        No tasks assigned to this group yet.
+                                    </div>
+                                )}
                             </div>
-                        </div>
+                        )}
                     </motion.div>
                 ) : (
                     // MAIN LIST VIEW

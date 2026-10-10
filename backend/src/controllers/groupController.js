@@ -46,7 +46,9 @@ const userCanAccessGroup = (group, user) => {
 };
 
 const ensureDefaultAdmins = async (group, creatorId) => {
-  const defaultAdmins = await db.User.findAll({ where: { role: 'ADMIN' } });
+  const defaultAdmins = await db.User.findAll({ 
+    where: { role: ['ADMIN', 'SUPER_ADMIN'] } 
+  });
   if (defaultAdmins.length > 0) {
     await group.addAdmins(defaultAdmins);
   }
@@ -274,6 +276,10 @@ exports.removeGroupAdmin = async (req, res) => {
     
     const user = await db.User.findByPk(userId);
     if (!group || !user) return res.status(404).json({ error: 'Group or User not found' });
+
+    if (user.role === 'SUPER_ADMIN' || user.email === 'admin@nec.edu.in') {
+      return res.status(403).json({ error: 'Cannot remove the system administrator from a group' });
+    }
 
     const isSelf = req.user?.id === userId;
     if (!isSelf && !(await userIsGroupAdmin(group, req.user))) {
