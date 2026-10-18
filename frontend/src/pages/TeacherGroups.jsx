@@ -448,34 +448,34 @@ const TeacherGroups = () => {
                             </div>
                         </header>
 
-                        <div className="flex space-x-2 mb-8 bg-gray-50 p-1.5 rounded-2xl w-max border border-gray-100">
+                        <div className="flex gap-2 mb-6 sm:mb-8 bg-gray-50 p-1.5 rounded-2xl border border-gray-100 overflow-x-auto max-w-full">
                             <button 
                                 onClick={() => setActiveTab('ANALYTICS')} 
-                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'ANALYTICS' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                                className={`px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'ANALYTICS' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
                             >
                                 <Activity size={16} /> Analytics
                             </button>
                             <button 
                                 onClick={() => setActiveTab('STUDENTS')} 
-                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'STUDENTS' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                                className={`px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'STUDENTS' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
                             >
                                 <Users size={16} /> Students
                             </button>
                             <button 
                                 onClick={() => setActiveTab('ADMINS')} 
-                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'ADMINS' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                                className={`px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'ADMINS' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
                             >
                                 <UserPlus size={16} /> Admins
                             </button>
                             <button 
                                 onClick={() => setActiveTab('TASKS')} 
-                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'TASKS' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                                className={`px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'TASKS' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
                             >
                                 <FileText size={16} /> Tasks
                             </button>
                             <button 
                                 onClick={() => setActiveTab('REPORTS')} 
-                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'REPORTS' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                                className={`px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'REPORTS' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
                             >
                                 <BarChart2 size={16} /> Reports
                             </button>
@@ -934,26 +934,26 @@ const TeacherGroups = () => {
                 ) : (
                     // MAIN GROUPS LIST
                     <>
-                        <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6 mb-10">
+                        <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-6 mb-8 sm:mb-10">
                             <div>
-                                <h1 className="text-4xl font-black text-gray-900 tracking-tight">My Groups</h1>
-                                <p className="text-gray-500 font-medium">Create custom groups to organize your students.</p>
+                                <h1 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight">My Groups</h1>
+                                <p className="text-gray-500 font-medium text-xs sm:text-sm">Create custom groups to organize your students.</p>
                             </div>
-                            <button onClick={() => setShowGroupModal(true)} className="px-6 py-3 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition shadow-lg shadow-primary-500/30 flex items-center gap-2 self-start sm:self-auto">
-                                <Plus size={20} />
+                            <button onClick={() => setShowGroupModal(true)} className="px-4 py-2.5 sm:px-6 sm:py-3 bg-primary-600 text-white rounded-xl sm:rounded-2xl font-bold hover:bg-primary-700 transition shadow-lg shadow-primary-500/30 flex items-center gap-2 self-start sm:self-auto text-xs sm:text-sm">
+                                <Plus size={18} />
                                 <span>Create Group</span>
                             </button>
                         </header>
 
-                        <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-8">
-                            <div className="relative mb-8">
-                                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                        <div className="bg-white rounded-2xl sm:rounded-[2.5rem] border border-gray-100 shadow-sm p-4 sm:p-8">
+                            <div className="relative mb-6 sm:mb-8">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="Search your groups..."
-                                    className="w-full pl-14 pr-6 py-4 bg-gray-50 rounded-2xl border border-gray-100 font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition"
+                                    className="w-full pl-11 sm:pl-14 pr-4 sm:pr-6 py-3 sm:py-4 bg-gray-50 rounded-xl sm:rounded-2xl border border-gray-100 font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition text-xs sm:text-base"
                                 />
                             </div>
 

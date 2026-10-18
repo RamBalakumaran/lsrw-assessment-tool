@@ -23,6 +23,7 @@ import ReadingTest from './pages/ReadingTest';
 import WritingTest from './pages/WritingTest';
 import ProtectedRoute from './components/ProtectedRoute';
 import PerformanceComparison from './pages/PerformanceComparison';
+import UserGuide from './pages/UserGuide';
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<UserManagement />} />
             <Route path="/admin/tasks" element={<GlobalTasks />} />
+            <Route path="/admin/guide" element={<UserGuide fixedRole="admin" />} />
           </Route>
 
           {/* Teacher Routes */}
@@ -52,6 +54,7 @@ function App() {
             <Route path="/teacher/groups" element={<TeacherGroups />} />
             <Route path="/teacher/tasks" element={<TeacherTasks />} />
             <Route path="/teacher/performance" element={<TeacherPerformance />} />
+            <Route path="/teacher/guide" element={<UserGuide fixedRole="teacher" />} />
             <Route path="/groups/:groupId/students" element={<GroupStudentsPage />} />
           </Route>
 
@@ -59,6 +62,7 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={['STUDENT']} />}>
             <Route path="/student/dashboard" element={<StudentDashboard />} />
             <Route path="/student/history" element={<StudentHistory />} />
+            <Route path="/student/guide" element={<UserGuide fixedRole="student" />} />
 
             {/* Speaking Module */}
             <Route path="/test/:id" element={<TestInterface />} />

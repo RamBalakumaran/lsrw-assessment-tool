@@ -507,31 +507,31 @@ const UserManagement = () => {
                 ) : (
                     // MAIN LIST VIEW
                     <>
-                        <header className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6 mb-10">
+                        <header className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 sm:gap-6 mb-8 sm:mb-10">
                             <div>
-                                <h1 className="text-4xl font-black text-gray-900 tracking-tight">Access Control</h1>
-                                <p className="text-gray-500 font-medium">Manage students, teachers, admins, and department groups for NEC.</p>
+                                <h1 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight">Access Control</h1>
+                                <p className="text-gray-500 font-medium text-xs sm:text-sm">Manage students, teachers, admins, and department groups for NEC.</p>
                             </div>
 
-                            <div className="flex flex-wrap gap-3">
-                                <button onClick={() => setShowGroupModal(true)} className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 text-gray-700 rounded-2xl font-bold hover:bg-gray-50 transition shadow-sm">
-                                    <Users size={18} />
+                            <div className="flex flex-wrap gap-2.5 sm:gap-3">
+                                <button onClick={() => setShowGroupModal(true)} className="inline-flex items-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3 bg-white border border-gray-200 text-gray-700 rounded-xl sm:rounded-2xl font-bold hover:bg-gray-50 transition shadow-sm text-xs sm:text-sm">
+                                    <Users size={16} />
                                     <span>Create Group</span>
                                 </button>
-                                <button onClick={() => setShowInviteModal(true)} className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-2xl font-bold hover:bg-black transition shadow-lg">
-                                    <UserPlus size={18} />
+                                <button onClick={() => setShowInviteModal(true)} className="inline-flex items-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3 bg-gray-900 text-white rounded-xl sm:rounded-2xl font-bold hover:bg-black transition shadow-lg text-xs sm:text-sm">
+                                    <UserPlus size={16} />
                                     <span>Invite User</span>
                                 </button>
                             </div>
                         </header>
 
-                        <section className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-4 mb-8">
-                            <div className="flex flex-wrap gap-3">
+                        <section className="bg-white rounded-2xl sm:rounded-[2.5rem] border border-gray-100 shadow-sm p-3 sm:p-4 mb-6 sm:mb-8 overflow-x-auto">
+                            <div className="flex flex-wrap gap-2 sm:gap-3">
                                 {USER_TABS.map((tab) => (
                                     <button
                                         key={tab.key}
                                         onClick={() => setActiveTab(tab.key)}
-                                        className={`px-5 py-3 rounded-2xl text-sm font-black uppercase tracking-widest transition-all ${activeTab === tab.key
+                                        className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider sm:tracking-widest transition-all whitespace-nowrap ${activeTab === tab.key
                                             ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20'
                                             : 'bg-gray-50 text-gray-500 hover:text-gray-900'
                                             }`}
@@ -542,7 +542,7 @@ const UserManagement = () => {
                             </div>
                         </section>
 
-                        <section className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-6 mb-8">
+                        <section className="bg-white rounded-2xl sm:rounded-[2.5rem] border border-gray-100 shadow-sm p-4 sm:p-6 mb-8">
                             <div className="relative mb-6">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                                 <input
@@ -550,49 +550,49 @@ const UserManagement = () => {
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder={`Search ${activeTab.toLowerCase()}...`}
-                                    className="w-full pl-12 pr-5 py-4 bg-gray-50 rounded-2xl border border-gray-100 font-medium"
+                                    className="w-full pl-11 sm:pl-12 pr-4 sm:pr-5 py-3 sm:py-4 bg-gray-50 rounded-xl sm:rounded-2xl border border-gray-100 font-medium text-xs sm:text-sm"
                                 />
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="space-y-3 sm:space-y-4">
                                 {loading ? (
                                     <p className="text-gray-400 p-5">Loading...</p>
                                 ) : activeTab === 'GROUPS' ? (
                                     filteredGroups.map(group => (
-                                        <div key={group.id} onClick={() => openGroupDetails(group.id)} className="p-5 border border-gray-100 rounded-2xl flex justify-between items-center hover:shadow-md cursor-pointer transition">
+                                        <div key={group.id} onClick={() => openGroupDetails(group.id)} className="p-4 sm:p-5 border border-gray-100 rounded-xl sm:rounded-2xl flex justify-between items-center hover:shadow-md cursor-pointer transition">
                                             <div>
-                                                <div className="font-bold text-lg text-gray-900">{group.name}</div>
-                                                <div className="text-gray-500 text-sm">{group.admins?.length || 0} Admins</div>
+                                                <div className="font-bold text-base sm:text-lg text-gray-900">{group.name}</div>
+                                                <div className="text-gray-500 text-xs sm:text-sm">{group.admins?.length || 0} Admins</div>
                                             </div>
-                                            <div className="text-primary-600 font-bold bg-primary-50 px-4 py-2 rounded-xl">
+                                            <div className="text-primary-600 font-bold bg-primary-50 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm">
                                                 {group.members?.length || 0} Members
                                             </div>
                                         </div>
                                     ))
                                 ) : (
                                     filteredUsers.map(user => (
-                                        <div key={user.id} className="p-5 border border-gray-100 rounded-2xl flex justify-between items-center hover:shadow-md transition">
-                                            <div className="flex items-center gap-4">
-                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${user.status === 'ACTIVE' ? 'bg-primary-50 text-primary-600' : 'bg-gray-100 text-gray-400'}`}>
+                                        <div key={user.id} className="p-3.5 sm:p-5 border border-gray-100 rounded-xl sm:rounded-2xl flex justify-between items-center hover:shadow-md transition">
+                                            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                                                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center font-black flex-shrink-0 ${user.status === 'ACTIVE' ? 'bg-primary-50 text-primary-600' : 'bg-gray-100 text-gray-400'}`}>
                                                     {user.firstName[0]}
                                                 </div>
-                                                <div>
-                                                    <div className="font-bold text-lg text-gray-900 flex items-center gap-2">
-                                                        {user.firstName} {user.lastName} 
-                                                        {user.status === 'INACTIVE' && <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-600 uppercase tracking-wider">Inactive</span>}
+                                                <div className="min-w-0">
+                                                    <div className="font-bold text-sm sm:text-lg text-gray-900 flex items-center gap-2 truncate">
+                                                        <span>{user.firstName} {user.lastName}</span> 
+                                                        {user.status === 'INACTIVE' && <span className="text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-600 uppercase tracking-wider flex-shrink-0">Inactive</span>}
                                                     </div>
-                                                    <div className="text-gray-500 text-sm">{user.email}</div>
+                                                    <div className="text-gray-500 text-xs sm:text-sm truncate">{user.email}</div>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-4">
-                                                <div className="text-gray-400 font-bold px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs uppercase tracking-widest hidden sm:block">
+                                            <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+                                                <div className="text-gray-400 font-bold px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-xl text-[10px] sm:text-xs uppercase tracking-widest hidden sm:block">
                                                     {user.role}
                                                 </div>
                                                 <button onClick={() => { setSelectedUser(user); setShowEditUserModal(true); }} className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition">
-                                                    <Edit2 size={18} />
+                                                    <Edit2 size={16} />
                                                 </button>
                                                 <button onClick={() => handleDeleteUser(user.id)} className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition">
-                                                    <Trash2 size={18} />
+                                                    <Trash2 size={16} />
                                                 </button>
                                             </div>
                                         </div>
@@ -607,29 +607,29 @@ const UserManagement = () => {
             {/* Invite User Modal */}
             <AnimatePresence>
                 {showInviteModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setShowInviteModal(false)} />
-                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl p-10">
-                            <button onClick={() => setShowInviteModal(false)} className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-900"><X size={24} /></button>
-                            <h2 className="text-3xl font-black text-gray-900 mb-2">Invite User</h2>
-                            <form onSubmit={handleInviteUser} className="space-y-4 mt-6">
-                                <div className="flex gap-4">
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-lg bg-white rounded-2xl sm:rounded-[2.5rem] shadow-2xl p-5 sm:p-10 my-auto">
+                            <button onClick={() => setShowInviteModal(false)} className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2 text-gray-400 hover:text-gray-900"><X size={20} /></button>
+                            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 mb-1 sm:mb-2">Invite User</h2>
+                            <form onSubmit={handleInviteUser} className="space-y-4 mt-4 sm:mt-6">
+                                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                                     <div className="flex-1">
                                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1 block">First Name</label>
-                                        <input type="text" required value={inviteForm.firstName} onChange={e => setInviteForm({...inviteForm, firstName: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary-100" />
+                                        <input type="text" required value={inviteForm.firstName} onChange={e => setInviteForm({...inviteForm, firstName: e.target.value})} className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-100 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary-100 text-xs sm:text-sm" />
                                     </div>
                                     <div className="flex-1">
                                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1 block">Last Name</label>
-                                        <input type="text" required value={inviteForm.lastName} onChange={e => setInviteForm({...inviteForm, lastName: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary-100" />
+                                        <input type="text" required value={inviteForm.lastName} onChange={e => setInviteForm({...inviteForm, lastName: e.target.value})} className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-100 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary-100 text-xs sm:text-sm" />
                                     </div>
                                 </div>
                                 <div>
                                     <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1 block">Email</label>
-                                    <input type="email" required value={inviteForm.email} onChange={e => setInviteForm({...inviteForm, email: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary-100" />
+                                    <input type="email" required value={inviteForm.email} onChange={e => setInviteForm({...inviteForm, email: e.target.value})} className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-100 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary-100 text-xs sm:text-sm" />
                                 </div>
                                 <div>
                                     <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1 block">Role</label>
-                                    <select value={inviteForm.role} onChange={e => setInviteForm({...inviteForm, role: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary-100">
+                                    <select value={inviteForm.role} onChange={e => setInviteForm({...inviteForm, role: e.target.value})} className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-100 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary-100 text-xs sm:text-sm">
                                         <option value="STUDENT">Student</option>
                                         <option value="TEACHER">Teacher</option>
                                         <option value="ADMIN">Admin</option>
@@ -637,12 +637,12 @@ const UserManagement = () => {
                                 </div>
                                 <div>
                                     <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1 block">Assign to Group (Optional)</label>
-                                    <select value={inviteForm.groupId} onChange={e => setInviteForm({...inviteForm, groupId: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary-100">
+                                    <select value={inviteForm.groupId} onChange={e => setInviteForm({...inviteForm, groupId: e.target.value})} className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-100 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary-100 text-xs sm:text-sm">
                                         <option value="">None</option>
                                         {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                                     </select>
                                 </div>
-                                <button type="submit" className="w-full mt-4 py-4 bg-primary-600 text-white rounded-xl font-black hover:bg-primary-700 transition">Send Invitation</button>
+                                <button type="submit" className="w-full mt-4 py-3 sm:py-4 bg-primary-600 text-white rounded-xl font-black hover:bg-primary-700 transition text-sm">Send Invitation</button>
                             </form>
                         </motion.div>
                     </div>
@@ -650,21 +650,21 @@ const UserManagement = () => {
 
                 {/* Edit User Modal */}
                 {showEditUserModal && selectedUser && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setShowEditUserModal(false)} />
-                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-10">
-                            <button onClick={() => setShowEditUserModal(false)} className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-900"><X size={24} /></button>
-                            <h2 className="text-3xl font-black text-gray-900 mb-2">Edit User</h2>
-                            <p className="text-gray-500 mb-6 font-medium">{selectedUser.firstName} {selectedUser.lastName} ({selectedUser.email})</p>
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-md bg-white rounded-2xl sm:rounded-[2.5rem] shadow-2xl p-5 sm:p-10 my-auto">
+                            <button onClick={() => setShowEditUserModal(false)} className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2 text-gray-400 hover:text-gray-900"><X size={20} /></button>
+                            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 mb-1 sm:mb-2">Edit User</h2>
+                            <p className="text-gray-500 mb-4 sm:mb-6 font-medium text-xs sm:text-sm">{selectedUser.firstName} {selectedUser.lastName} ({selectedUser.email})</p>
                             <form onSubmit={handleEditUser} className="space-y-4">
                                 <div>
                                     <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1 block">Account Status</label>
-                                    <select value={selectedUser.status || 'ACTIVE'} onChange={e => setSelectedUser({...selectedUser, status: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary-100">
+                                    <select value={selectedUser.status || 'ACTIVE'} onChange={e => setSelectedUser({...selectedUser, status: e.target.value})} className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-100 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary-100 text-xs sm:text-sm">
                                         <option value="ACTIVE">Active</option>
                                         <option value="INACTIVE">Inactive (Suspended)</option>
                                     </select>
                                 </div>
-                                <button type="submit" className="w-full py-4 bg-gray-900 text-white rounded-xl font-black hover:bg-black transition mt-4">Save Changes</button>
+                                <button type="submit" className="w-full py-3 sm:py-4 bg-gray-900 text-white rounded-xl font-black hover:bg-black transition mt-4 text-sm">Save Changes</button>
                             </form>
                         </motion.div>
                     </div>
@@ -672,17 +672,17 @@ const UserManagement = () => {
 
                 {/* Create Group Modal */}
                 {showGroupModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setShowGroupModal(false)} />
-                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-10">
-                            <button onClick={() => setShowGroupModal(false)} className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-900"><X size={24} /></button>
-                            <h2 className="text-3xl font-black text-gray-900 mb-6">Create Group</h2>
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-md bg-white rounded-2xl sm:rounded-[2.5rem] shadow-2xl p-5 sm:p-10 my-auto">
+                            <button onClick={() => setShowGroupModal(false)} className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2 text-gray-400 hover:text-gray-900"><X size={20} /></button>
+                            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 mb-4 sm:mb-6">Create Group</h2>
                             <form onSubmit={handleCreateGroup} className="space-y-4">
                                 <div>
                                     <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1 block">Department Name</label>
-                                    <input type="text" required value={groupForm.name} onChange={e => setGroupForm({name: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary-100" />
+                                    <input type="text" required value={groupForm.name} onChange={e => setGroupForm({name: e.target.value})} className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-100 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary-100 text-xs sm:text-sm" />
                                 </div>
-                                <button type="submit" className="w-full py-4 bg-primary-600 text-white rounded-xl font-black hover:bg-primary-700 transition mt-4">Create</button>
+                                <button type="submit" className="w-full py-3 sm:py-4 bg-primary-600 text-white rounded-xl font-black hover:bg-primary-700 transition mt-4 text-sm">Create</button>
                             </form>
                         </motion.div>
                     </div>

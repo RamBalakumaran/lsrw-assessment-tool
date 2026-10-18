@@ -229,31 +229,31 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
 
     if (step === 1) {
         return (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[2.5rem] shadow-xl p-10 font-sans border border-gray-100 max-w-4xl w-full mx-auto">
-                <div className="flex items-center gap-4 mb-10">
-                    <div className="w-16 h-16 rounded-2xl bg-gray-900 text-white flex items-center justify-center shadow-lg">
-                        <LayoutTemplate size={32} />
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-2 sm:p-6 font-sans max-w-4xl w-full mx-auto">
+                <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-10">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gray-900 text-white flex items-center justify-center shadow-lg flex-shrink-0">
+                        <LayoutTemplate size={28} />
                     </div>
                     <div>
-                        <h2 className="text-3xl font-black text-gray-900 tracking-tight">Create Assessment</h2>
-                        <p className="text-gray-500 font-medium">Select the foundational component for your new task.</p>
+                        <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">Create Assessment</h2>
+                        <p className="text-gray-500 font-medium text-xs sm:text-sm">Select the foundational component for your new task.</p>
                     </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     {Object.entries(TASK_CONFIG).map(([type, config]) => (
                         <motion.button
                             whileHover={{ y: -4 }}
                             key={type}
                             onClick={() => { setTaskType(type); setStep(2); }}
-                            className={`p-8 border-2 border-gray-100 rounded-[2rem] text-left transition-all hover:border-transparent hover:shadow-xl group relative overflow-hidden`}
+                            className={`p-5 sm:p-8 border-2 border-gray-100 rounded-2xl sm:rounded-[2rem] text-left transition-all hover:border-transparent hover:shadow-xl group relative overflow-hidden bg-white`}
                         >
                             <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity ${config.bg}`}></div>
-                            <div className={`w-16 h-16 rounded-2xl mb-6 flex items-center justify-center shadow-inner ${config.bg} ${config.color}`}>
+                            <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl mb-4 sm:mb-6 flex items-center justify-center shadow-inner ${config.bg} ${config.color}`}>
                                 {config.icon}
                             </div>
-                            <h3 className="font-black text-2xl text-gray-900 mb-2">{type}</h3>
-                            <p className="text-gray-400 font-bold text-sm uppercase tracking-widest">Select Category →</p>
+                            <h3 className="font-black text-xl sm:text-2xl text-gray-900 mb-1 sm:mb-2">{type}</h3>
+                            <p className="text-gray-400 font-bold text-xs sm:text-sm uppercase tracking-widest">Select Category →</p>
                         </motion.button>
                     ))}
                 </div>
@@ -264,30 +264,30 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
     if (step === 2 && taskType) {
         const config = TASK_CONFIG[taskType];
         return (
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-[2.5rem] shadow-xl p-10 font-sans border border-gray-100 max-w-4xl w-full mx-auto">
-                <button onClick={() => setStep(1)} className="flex items-center text-gray-400 hover:text-gray-900 font-bold mb-8 transition">
-                    <ChevronLeft size={20} className="mr-1" /> Back to Categories
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="p-2 sm:p-6 font-sans max-w-4xl w-full mx-auto">
+                <button onClick={() => setStep(1)} className="flex items-center text-gray-400 hover:text-gray-900 font-bold mb-6 transition text-sm">
+                    <ChevronLeft size={18} className="mr-1" /> Back to Categories
                 </button>
 
-                <div className="flex items-center gap-4 mb-10">
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${config.bg} ${config.color}`}>
+                <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-10">
+                    <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-inner ${config.bg} ${config.color} flex-shrink-0`}>
                         {config.icon}
                     </div>
                     <div>
-                        <h2 className="text-3xl font-black text-gray-900 tracking-tight">{taskType} Focus</h2>
-                        <p className="text-gray-500 font-medium">Select the specific assessment format.</p>
+                        <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">{taskType} Focus</h2>
+                        <p className="text-gray-500 font-medium text-xs sm:text-sm">Select the specific assessment format.</p>
                     </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     {Object.entries(config.subtypes).filter(([subtype]) => subtype !== 'TRUE_FALSE').map(([subtype, subConfig]) => (
                         <button
                             key={subtype}
                             onClick={() => { setSubType(subtype); setStep(3); }}
-                            className="p-6 border-2 border-gray-100 rounded-2xl text-left hover:border-gray-900 transition-all group"
+                            className="p-4 sm:p-6 border-2 border-gray-100 rounded-xl sm:rounded-2xl text-left hover:border-gray-900 transition-all group bg-white"
                         >
-                            <div className="font-black text-lg text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">{subConfig.label}</div>
-                            <div className="text-xs text-gray-400 font-bold uppercase tracking-widest">
+                            <div className="font-black text-base sm:text-lg text-gray-900 mb-1 sm:mb-2 group-hover:text-primary-600 transition-colors">{subConfig.label}</div>
+                            <div className="text-[11px] sm:text-xs text-gray-400 font-bold uppercase tracking-widest">
                                 Required: {subConfig.fields.join(', ')}
                             </div>
                         </button>
@@ -302,39 +302,39 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
         const config = typeConfig.subtypes[subType];
         
         return (
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-[2.5rem] shadow-xl p-10 font-sans border border-gray-100 max-w-4xl w-full mx-auto relative overflow-hidden">
-                <button onClick={() => setStep(2)} className="flex items-center text-gray-400 hover:text-gray-900 font-bold mb-8 transition relative z-10">
-                    <ChevronLeft size={20} className="mr-1" /> Back to Formats
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="p-2 sm:p-6 font-sans max-w-4xl w-full mx-auto relative overflow-hidden">
+                <button onClick={() => setStep(2)} className="flex items-center text-gray-400 hover:text-gray-900 font-bold mb-6 transition relative z-10 text-sm">
+                    <ChevronLeft size={18} className="mr-1" /> Back to Formats
                 </button>
 
-                <div className="flex items-center gap-4 mb-10 relative z-10">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-inner ${typeConfig.bg} ${typeConfig.color}`}>
-                        <Layers size={24} />
+                <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-10 relative z-10">
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shadow-inner ${typeConfig.bg} ${typeConfig.color} flex-shrink-0`}>
+                        <Layers size={22} />
                     </div>
                     <div>
-                        <h2 className="text-3xl font-black text-gray-900 tracking-tight">{config.label}</h2>
-                        <p className="text-gray-500 font-medium">Configure the parameters for this assessment.</p>
+                        <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">{config.label}</h2>
+                        <p className="text-gray-500 font-medium text-xs sm:text-sm">Configure the parameters for this assessment.</p>
                     </div>
                 </div>
 
                 <AnimatePresence>
                     {errors.submit && (
-                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mb-8 p-4 bg-rose-50 text-rose-600 rounded-2xl border border-rose-100 flex items-start space-x-3 font-bold text-sm">
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mb-6 p-4 bg-rose-50 text-rose-600 rounded-xl sm:rounded-2xl border border-rose-100 flex items-start space-x-3 font-bold text-sm">
                             <AlertCircle size={20} className="flex-shrink-0" />
                             <span>{errors.submit}</span>
                         </motion.div>
                     )}
                     {success && (
-                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mb-8 p-4 bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-100 flex items-center space-x-3 font-bold text-sm">
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mb-6 p-4 bg-emerald-50 text-emerald-600 rounded-xl sm:rounded-2xl border border-emerald-100 flex items-center space-x-3 font-bold text-sm">
                             <CheckCircle2 size={20} />
                             <span>Assessment Task deployed successfully!</span>
                         </motion.div>
                     )}
                 </AnimatePresence>
 
-                <div className="space-y-8 relative z-10">
+                <div className="space-y-6 sm:space-y-8 relative z-10">
                     {/* Title & Description */}
-                    <div className="bg-gray-50 p-8 rounded-[2rem] border border-gray-100 space-y-6">
+                    <div className="bg-gray-50 p-4 sm:p-8 rounded-2xl sm:rounded-[2rem] border border-gray-100 space-y-4 sm:space-y-6">
                         <div>
                             <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Task Title *</label>
                             <input
@@ -342,7 +342,7 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
                                 value={formData.title}
                                 onChange={(e) => handleInputChange('title', e.target.value)}
                                 placeholder="e.g., Advanced English Grammar Review"
-                                className={`w-full px-5 py-4 bg-white border ${errors.title ? 'border-rose-300 focus:ring-rose-100' : 'border-gray-200 focus:ring-primary-100'} rounded-2xl font-bold focus:outline-none focus:ring-4 transition`}
+                                className={`w-full px-4 sm:px-5 py-3 sm:py-4 bg-white border ${errors.title ? 'border-rose-300 focus:ring-rose-100' : 'border-gray-200 focus:ring-primary-100'} rounded-xl sm:rounded-2xl font-bold focus:outline-none focus:ring-4 transition text-sm sm:text-base`}
                             />
                             {errors.title && <span className="text-rose-600 text-xs font-bold mt-2 block">{errors.title}</span>}
                         </div>
@@ -353,18 +353,18 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
                                 onChange={(e) => handleInputChange('description', e.target.value)}
                                 placeholder="Additional instructions or context..."
                                 rows="3"
-                                className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl font-medium focus:outline-none focus:ring-4 focus:ring-primary-100 transition resize-none"
+                                className="w-full px-4 sm:px-5 py-3 sm:py-4 bg-white border border-gray-200 rounded-xl sm:rounded-2xl font-medium focus:outline-none focus:ring-4 focus:ring-primary-100 transition resize-none text-sm sm:text-base"
                             />
                         </div>
                     </div>
 
                     {/* Meta Config */}
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                         <div>
                             <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Category</label>
-                            <div className="flex gap-4">
+                            <div className="flex gap-3 sm:gap-4">
                                 {['PRACTICE', 'ASSESSMENT'].map(cat => (
-                                    <label key={cat} className={`flex-1 flex items-center justify-center p-4 border-2 rounded-2xl cursor-pointer transition font-bold ${formData.category === cat ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-100 bg-white text-gray-500 hover:border-gray-200'}`}>
+                                    <label key={cat} className={`flex-1 flex items-center justify-center p-3 sm:p-4 border-2 rounded-xl sm:rounded-2xl cursor-pointer transition font-bold text-xs sm:text-sm ${formData.category === cat ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-100 bg-white text-gray-500 hover:border-gray-200'}`}>
                                         <input type="radio" name="category" className="hidden" checked={formData.category === cat} onChange={() => handleInputChange('category', cat)} />
                                         {cat}
                                     </label>
@@ -385,13 +385,13 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6">
                         <div>
-                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Difficulty</label>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5 sm:mb-2 block">Difficulty</label>
                             <select
                                 value={formData.difficultyLevel}
                                 onChange={(e) => handleInputChange('difficultyLevel', e.target.value)}
-                                className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition appearance-none cursor-pointer"
+                                className="w-full px-3 sm:px-5 py-2.5 sm:py-3.5 bg-white border border-gray-200 rounded-xl sm:rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition appearance-none cursor-pointer text-xs sm:text-sm"
                             >
                                 <option value="Beginner">Beginner</option>
                                 <option value="Intermediate">Intermediate</option>
@@ -399,53 +399,53 @@ const TaskCreationForm = ({ onTaskCreated, userRole, initialData }) => {
                             </select>
                         </div>
                         <div>
-                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Time Limit (s)</label>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5 sm:mb-2 block">Time (s)</label>
                             <input
                                 type="number"
                                 value={formData.timeLimit}
                                 onChange={(e) => handleInputChange('timeLimit', parseInt(e.target.value) || 0)}
-                                className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition"
+                                className="w-full px-3 sm:px-5 py-2.5 sm:py-3.5 bg-white border border-gray-200 rounded-xl sm:rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition text-xs sm:text-sm"
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Max Attempts</label>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5 sm:mb-2 block">Attempts</label>
                             <input
                                 type="number"
                                 value={formData.maxAttempts}
                                 onChange={(e) => handleInputChange('maxAttempts', parseInt(e.target.value) || 1)}
-                                className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition"
+                                className="w-full px-3 sm:px-5 py-2.5 sm:py-3.5 bg-white border border-gray-200 rounded-xl sm:rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition text-xs sm:text-sm"
                                 min="1"
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Passing Score</label>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5 sm:mb-2 block">Pass Score</label>
                             <input
                                 type="number"
                                 value={formData.passingScore}
                                 onChange={(e) => handleInputChange('passingScore', parseInt(e.target.value) || 0)}
-                                className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition"
+                                className="w-full px-3 sm:px-5 py-2.5 sm:py-3.5 bg-white border border-gray-200 rounded-xl sm:rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition text-xs sm:text-sm"
                                 min="0" max="100"
                             />
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
                         <div>
-                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">Start Date (Active From)</label>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5 sm:mb-2 block">Start Date (Active From)</label>
                             <input
                                 type="datetime-local"
                                 value={formData.startDate ? new Date(new Date(formData.startDate).getTime() - new Date(formData.startDate).getTimezoneOffset() * 60000).toISOString().slice(0,16) : ''}
                                 onChange={(e) => handleInputChange('startDate', e.target.value ? new Date(e.target.value).toISOString() : '')}
-                                className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition"
+                                className="w-full px-3 sm:px-5 py-2.5 sm:py-3.5 bg-white border border-gray-200 rounded-xl sm:rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition text-xs sm:text-sm"
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">End Date (Active Until)</label>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5 sm:mb-2 block">End Date (Active Until)</label>
                             <input
                                 type="datetime-local"
                                 value={formData.endDate ? new Date(new Date(formData.endDate).getTime() - new Date(formData.endDate).getTimezoneOffset() * 60000).toISOString().slice(0,16) : ''}
                                 onChange={(e) => handleInputChange('endDate', e.target.value ? new Date(e.target.value).toISOString() : '')}
-                                className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition"
+                                className="w-full px-3 sm:px-5 py-2.5 sm:py-3.5 bg-white border border-gray-200 rounded-xl sm:rounded-2xl font-bold focus:outline-none focus:ring-4 focus:ring-primary-100 transition text-xs sm:text-sm"
                             />
                         </div>
                     </div>

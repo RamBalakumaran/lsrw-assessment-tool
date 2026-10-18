@@ -411,20 +411,20 @@ const GlobalTasks = () => {
                             onClick={() => setShowModal(false)}
                         />
                         <motion.div
-                            initial={{ opacity: 0, y: 100, scale: 0.9 }}
+                            initial={{ opacity: 0, y: 30, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 100, scale: 0.9 }}
-                            className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-[3.5rem] shadow-2xl flex flex-col"
+                            exit={{ opacity: 0, y: 30, scale: 0.95 }}
+                            className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto bg-white rounded-2xl sm:rounded-[3rem] shadow-2xl flex flex-col my-auto"
                         >
-                            <div className="absolute top-6 right-6 z-10">
+                            <div className="absolute top-3 right-3 sm:top-6 sm:right-6 z-20">
                                 <button
                                     onClick={() => setShowModal(false)}
-                                    className="p-3 hover:bg-gray-100 rounded-2xl transition text-gray-400 hover:text-gray-900 bg-white shadow"
+                                    className="p-2 sm:p-3 hover:bg-gray-100 rounded-xl sm:rounded-2xl transition text-gray-400 hover:text-gray-900 bg-white shadow"
                                 >
-                                    <X size={24} />
+                                    <X size={20} />
                                 </button>
                             </div>
-                            <div className="p-8">
+                            <div className="p-2 sm:p-6 pt-10 sm:pt-6">
                                 <TaskCreationForm 
                                     onTaskCreated={(newTask) => {
                                         setShowModal(false);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import {
     Calendar,
@@ -8,7 +8,8 @@ import {
     Search,
     Filter,
     ArrowUpRight,
-    Download
+    Download,
+    BookOpen
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
@@ -150,38 +151,46 @@ const TeacherDashboard = () => {
             <Sidebar role="TEACHER" />
 
             <main className="flex-1 p-6 md:p-10 overflow-y-auto min-w-0">
-                <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6 mb-10">
+                <header className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 sm:gap-6 mb-8 sm:mb-10">
                     <div>
-                        <h1 className="text-4xl font-black text-gray-900 tracking-tight">Educator Hub</h1>
-                        <p className="text-gray-500 font-medium">Monitoring {stats.studentCount} assigned students</p>
+                        <h1 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight">Educator Hub</h1>
+                        <p className="text-gray-500 font-medium text-xs sm:text-sm">Monitoring {stats.studentCount} assigned students</p>
                     </div>
 
-                    <div className="flex items-center space-x-4 w-full sm:w-auto">
+                    <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+                        <Link
+                            to="/teacher/guide"
+                            className="flex items-center space-x-2 bg-emerald-50 text-emerald-700 border border-emerald-100 px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm hover:bg-emerald-100 transition shadow-sm"
+                            title="Open Teacher Operations Manual"
+                        >
+                            <BookOpen size={16} className="text-emerald-600" />
+                            <span>User Manual</span>
+                        </Link>
                         <button
                             onClick={handleDownloadReport}
-                            className="flex items-center space-x-2 bg-indigo-50 text-indigo-600 px-4 py-3 rounded-2xl font-bold text-sm hover:bg-indigo-100 transition"
+                            className="flex items-center space-x-2 bg-indigo-50 text-indigo-600 px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm hover:bg-indigo-100 transition"
                         >
-                            <Download size={18} />
-                            <span className="hidden sm:inline">Download Report</span>
+                            <Download size={16} />
+                            <span>Download Report</span>
                         </button>
-                        <div className="relative w-full sm:w-auto">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <div className="relative flex-1 sm:w-80">
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                             <input
                                 type="text"
                                 placeholder="Search student..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-12 pr-6 py-3 bg-white border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-100 transition shadow-sm font-medium w-full sm:w-80"
+                                className="pl-10 pr-4 py-2.5 sm:py-3 bg-white border border-gray-100 rounded-xl sm:rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-100 transition shadow-sm font-medium w-full text-xs sm:text-sm"
                             />
                         </div>
                     </div>
                 </header>
 
                 {/* Tabs */}
-                <div className="flex gap-6 mb-8 border-b border-gray-200">
+                <div className="flex gap-4 sm:gap-6 mb-6 sm:mb-8 border-b border-gray-200 overflow-x-auto">
                     <button
                         onClick={() => setActiveTab('students')}
-                        className={`pb-4 px-2 font-black uppercase text-xs tracking-wider border-b-2 transition ${
+                        className={`pb-3 sm:pb-4 px-2 font-black uppercase text-xs tracking-wider border-b-2 transition whitespace-nowrap ${
                             activeTab === 'students' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-400 hover:text-gray-900'
                         }`}
                     >
@@ -189,7 +198,7 @@ const TeacherDashboard = () => {
                     </button>
                     <button
                         onClick={() => setActiveTab('groups')}
-                        className={`pb-4 px-2 font-black uppercase text-xs tracking-wider border-b-2 transition ${
+                        className={`pb-3 sm:pb-4 px-2 font-black uppercase text-xs tracking-wider border-b-2 transition whitespace-nowrap ${
                             activeTab === 'groups' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-400 hover:text-gray-900'
                         }`}
                     >
@@ -197,16 +206,16 @@ const TeacherDashboard = () => {
                     </button>
                 </div>
 
-                <div className="grid lg:grid-cols-3 gap-10">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-10">
                     {activeTab === 'students' ? (
                         /* Student List */
                         <div className="lg:col-span-2 space-y-6">
                             <div className="flex items-center justify-between mb-2">
-                                <h3 className="text-2xl font-black text-gray-900">Assigned Students</h3>
+                                <h3 className="text-xl sm:text-2xl font-black text-gray-900">Assigned Students</h3>
                                 <div className="flex items-center space-x-2">
-                                    <Filter size={16} className="text-gray-400" />
+                                    <Filter size={15} className="text-gray-400" />
                                     <select
-                                        className="bg-transparent border-none text-primary-600 font-bold text-sm focus:ring-0 cursor-pointer"
+                                        className="bg-transparent border-none text-primary-600 font-bold text-xs sm:text-sm focus:ring-0 cursor-pointer"
                                         value={filterStatus}
                                         onChange={(e) => setFilterStatus(e.target.value)}
                                     >
@@ -218,17 +227,18 @@ const TeacherDashboard = () => {
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-x-auto max-w-full">
-                                <table className="w-full text-left font-medium">
-                                    <thead>
-                                        <tr className="bg-gray-50/50 border-b border-gray-50">
-                                            <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Student</th>
-                                            <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Avg. Score</th>
-                                            <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Status</th>
-                                            <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none text-right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-50">
+                            <div className="bg-white rounded-2xl sm:rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+                                <div className="overflow-x-auto w-full">
+                                    <table className="w-full text-left font-medium min-w-[580px]">
+                                        <thead>
+                                            <tr className="bg-gray-50/50 border-b border-gray-50">
+                                                <th className="px-5 sm:px-8 py-4 sm:py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Student</th>
+                                                <th className="px-5 sm:px-8 py-4 sm:py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Avg. Score</th>
+                                                <th className="px-5 sm:px-8 py-4 sm:py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Status</th>
+                                                <th className="px-5 sm:px-8 py-4 sm:py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none text-right">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-50">
                                         {students.length === 0 ? (
                                             <tr>
                                                 <td colSpan="4" className="px-8 py-20 text-center text-gray-400 font-bold uppercase tracking-widest">
@@ -274,95 +284,98 @@ const TeacherDashboard = () => {
                                 </table>
                             </div>
                         </div>
-                    ) : (
-                        /* Group Reports */
-                        <div className="lg:col-span-2 space-y-6">
+                    </div>
+                ) : (
+                    /* Group Reports */
+                    <div className="lg:col-span-2 space-y-6">
                             <div className="flex items-center justify-between mb-2">
-                                <h3 className="text-2xl font-black text-gray-900">Group Reports</h3>
+                                <h3 className="text-xl sm:text-2xl font-black text-gray-900">Group Reports</h3>
                                 <span className="text-xs text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full font-bold">
                                     {stats.groupsCount} groups managed
                                 </span>
                             </div>
 
-                            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-x-auto max-w-full">
-                                <table className="w-full text-left font-medium">
-                                    <thead>
-                                        <tr className="bg-gray-50/50 border-b border-gray-50">
-                                            <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Group</th>
-                                            <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Students</th>
-                                            <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Submissions</th>
-                                            <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Avg. Score</th>
-                                            <th className="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none text-right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-50">
-                                        {stats.groupActivities.length === 0 ? (
-                                            <tr>
-                                                <td colSpan="5" className="px-8 py-20 text-center text-gray-400 font-bold uppercase tracking-widest">
-                                                    No administered groups found
-                                                </td>
+                            <div className="bg-white rounded-2xl sm:rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+                                <div className="overflow-x-auto w-full">
+                                    <table className="w-full text-left font-medium min-w-[580px]">
+                                        <thead>
+                                            <tr className="bg-gray-50/50 border-b border-gray-50">
+                                                <th className="px-5 sm:px-8 py-4 sm:py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Group</th>
+                                                <th className="px-5 sm:px-8 py-4 sm:py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Students</th>
+                                                <th className="px-5 sm:px-8 py-4 sm:py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Submissions</th>
+                                                <th className="px-5 sm:px-8 py-4 sm:py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none">Avg. Score</th>
+                                                <th className="px-5 sm:px-8 py-4 sm:py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none text-right">Actions</th>
                                             </tr>
-                                        ) : (
-                                            stats.groupActivities.map((g) => (
-                                                <tr key={g.groupId} className="group hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => navigate(`/groups/${g.groupId}/students`)}>
-                                                    <td className="px-8 py-5">
-                                                        <div className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors">{g.groupName}</div>
-                                                    </td>
-                                                    <td className="px-8 py-5 text-gray-500 font-bold">
-                                                        {g.studentCount} students
-                                                    </td>
-                                                    <td className="px-8 py-5 text-gray-500 font-bold">
-                                                        {g.attemptCount} submissions
-                                                    </td>
-                                                    <td className="px-8 py-5">
-                                                        <div className="flex items-center gap-3">
-                                                            <span className="font-black text-lg text-gray-700">{g.avgScore}%</span>
-                                                            <div className="w-24 bg-gray-100 h-2 rounded-full overflow-hidden">
-                                                                <div 
-                                                                    className={`h-full rounded-full ${
-                                                                        g.avgScore > 75 ? 'bg-emerald-500' : g.avgScore > 50 ? 'bg-amber-500' : 'bg-rose-500'
-                                                                    }`}
-                                                                    style={{ width: `${g.avgScore}%` }}
-                                                                ></div>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-8 py-5 text-right">
-                                                        <button className="text-xs font-black text-primary-600 hover:text-primary-700 bg-primary-50 px-3 py-1.5 rounded-xl transition">
-                                                            Details
-                                                        </button>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-50">
+                                            {stats.groupActivities.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan="5" className="px-5 sm:px-8 py-16 text-center text-gray-400 font-bold uppercase tracking-widest">
+                                                        No administered groups found
                                                     </td>
                                                 </tr>
-                                            ))
-                                        )}
-                                    </tbody>
-                                </table>
+                                            ) : (
+                                                stats.groupActivities.map((g) => (
+                                                    <tr key={g.groupId} className="group hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => navigate(`/groups/${g.groupId}/students`)}>
+                                                        <td className="px-5 sm:px-8 py-4 sm:py-5">
+                                                            <div className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors text-sm sm:text-base">{g.groupName}</div>
+                                                        </td>
+                                                        <td className="px-5 sm:px-8 py-4 sm:py-5 text-gray-500 font-bold text-xs sm:text-sm">
+                                                            {g.studentCount} students
+                                                        </td>
+                                                        <td className="px-5 sm:px-8 py-4 sm:py-5 text-gray-500 font-bold text-xs sm:text-sm">
+                                                            {g.attemptCount} submissions
+                                                        </td>
+                                                        <td className="px-5 sm:px-8 py-4 sm:py-5">
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="font-black text-base sm:text-lg text-gray-700">{g.avgScore}%</span>
+                                                                <div className="w-16 sm:w-24 bg-gray-100 h-2 rounded-full overflow-hidden">
+                                                                    <div 
+                                                                        className={`h-full rounded-full ${
+                                                                            g.avgScore > 75 ? 'bg-emerald-500' : g.avgScore > 50 ? 'bg-amber-500' : 'bg-rose-500'
+                                                                        }`}
+                                                                        style={{ width: `${g.avgScore}%` }}
+                                                                    ></div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-5 sm:px-8 py-4 sm:py-5 text-right">
+                                                            <button className="text-xs font-black text-primary-600 hover:text-primary-700 bg-primary-50 px-2.5 sm:px-3 py-1.5 rounded-xl transition">
+                                                                Details
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     )}
 
                     {/* Sidebar Stats / Activity */}
-                    <div className="space-y-8">
-                        <div className="bg-indigo-900 p-10 rounded-[2.5rem] shadow-xl shadow-indigo-900/20 text-white relative overflow-hidden">
+                    <div className="space-y-6 sm:space-y-8">
+                        <div className="bg-indigo-900 p-6 sm:p-10 rounded-2xl sm:rounded-[2.5rem] shadow-xl shadow-indigo-900/20 text-white relative overflow-hidden">
                             <div className="relative z-10">
-                                <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md">
-                                    <Calendar size={24} />
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/10 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 backdrop-blur-md">
+                                    <Calendar size={20} />
                                 </div>
-                                <h3 className="text-2xl font-black mb-2">Weekly Summary</h3>
-                                <p className="text-indigo-200 font-medium mb-8">System auto-generated report</p>
+                                <h3 className="text-xl sm:text-2xl font-black mb-1 sm:mb-2">Weekly Summary</h3>
+                                <p className="text-indigo-200 font-medium mb-6 sm:mb-8 text-xs sm:text-sm">System auto-generated report</p>
 
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10">
-                                        <span className="text-sm font-bold opacity-70 uppercase tracking-widest">Groups Managed</span>
-                                        <span className="text-2xl font-black text-emerald-400">{stats.groupsCount}</span>
+                                <div className="space-y-3 sm:space-y-4">
+                                    <div className="flex justify-between items-center bg-white/5 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-white/10">
+                                        <span className="text-xs sm:text-sm font-bold opacity-70 uppercase tracking-widest">Groups Managed</span>
+                                        <span className="text-xl sm:text-2xl font-black text-emerald-400">{stats.groupsCount}</span>
                                     </div>
-                                    <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10">
-                                        <span className="text-sm font-bold opacity-70 uppercase tracking-widest">Tasks Assigned</span>
-                                        <span className="text-2xl font-black">{stats.tasksAssigned}</span>
+                                    <div className="flex justify-between items-center bg-white/5 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-white/10">
+                                        <span className="text-xs sm:text-sm font-bold opacity-70 uppercase tracking-widest">Tasks Assigned</span>
+                                        <span className="text-xl sm:text-2xl font-black">{stats.tasksAssigned}</span>
                                     </div>
-                                    <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10">
-                                        <span className="text-sm font-bold opacity-70 uppercase tracking-widest">Reports Pending</span>
-                                        <span className="text-2xl font-black text-amber-400">{String(stats.pendingReports).padStart(2, '0')}</span>
+                                    <div className="flex justify-between items-center bg-white/5 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-white/10">
+                                        <span className="text-xs sm:text-sm font-bold opacity-70 uppercase tracking-widest">Reports Pending</span>
+                                        <span className="text-xl sm:text-2xl font-black text-amber-400">{String(stats.pendingReports).padStart(2, '0')}</span>
                                     </div>
                                 </div>
                             </div>
@@ -370,26 +383,26 @@ const TeacherDashboard = () => {
                             <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-primary-500 rounded-full blur-[80px] opacity-30"></div>
                         </div>
 
-                        <div className="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                            <h4 className="text-xl font-black text-gray-900 mb-6 flex items-center space-x-2">
-                                <MessageSquare size={20} className="text-primary-500" />
+                        <div className="bg-white p-6 sm:p-10 rounded-2xl sm:rounded-[2.5rem] border border-gray-100 shadow-sm">
+                            <h4 className="text-lg sm:text-xl font-black text-gray-900 mb-4 sm:mb-6 flex items-center space-x-2">
+                                <MessageSquare size={18} className="text-primary-500" />
                                 <span>AI Observations</span>
                             </h4>
-                            <div className="space-y-6">
+                            <div className="space-y-4 sm:space-y-6">
                                 {stats.studentCount > 0 && (
                                     <>
-                                        <div className="flex space-x-4 border-l-4 border-emerald-500 pl-4">
+                                        <div className="flex space-x-3 sm:space-x-4 border-l-4 border-emerald-500 pl-3 sm:pl-4">
                                             <div>
-                                                <h5 className="font-bold text-gray-900 text-sm">Proficiency Index</h5>
-                                                <p className="text-xs text-gray-500 mt-1">
+                                                <h5 className="font-bold text-gray-900 text-xs sm:text-sm">Proficiency Index</h5>
+                                                <p className="text-[11px] sm:text-xs text-gray-500 mt-1">
                                                     {originalStudents.filter(s => s.score > 70).length} students are performing above the institutional baseline.
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="flex space-x-4 border-l-4 border-rose-500 pl-4">
+                                        <div className="flex space-x-3 sm:space-x-4 border-l-4 border-rose-500 pl-3 sm:pl-4">
                                             <div>
-                                                <h5 className="font-bold text-gray-900 text-sm">Intervention Required</h5>
-                                                <p className="text-xs text-gray-500 mt-1">
+                                                <h5 className="font-bold text-gray-900 text-xs sm:text-sm">Intervention Required</h5>
+                                                <p className="text-[11px] sm:text-xs text-gray-500 mt-1">
                                                     {originalStudents.filter(s => s.score < 50).length} students flagged with low consistency in recent modules.
                                                 </p>
                                             </div>
@@ -398,9 +411,9 @@ const TeacherDashboard = () => {
                                 )}
                             </div>
 
-                            <button className="w-full mt-10 py-4 border-2 border-dashed border-gray-100 rounded-2xl text-gray-400 font-bold text-sm hover:border-primary-200 hover:text-primary-600 transition flex items-center justify-center space-x-2">
+                            <button className="w-full mt-6 sm:mt-10 py-3 sm:py-4 border-2 border-dashed border-gray-100 rounded-xl sm:rounded-2xl text-gray-400 font-bold text-xs sm:text-sm hover:border-primary-200 hover:text-primary-600 transition flex items-center justify-center space-x-2">
                                 <span>Full Insights Report</span>
-                                <ArrowUpRight size={16} />
+                                <ArrowUpRight size={15} />
                             </button>
                         </div>
                     </div>
@@ -408,11 +421,11 @@ const TeacherDashboard = () => {
 
                 {/* Student Details Modal */}
                 {selectedStudent && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/50 backdrop-blur-sm overflow-y-auto">
                         <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
+                            initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="bg-white w-full max-w-4xl rounded-[3rem] overflow-hidden shadow-2xl"
+                            className="bg-white w-full max-w-4xl rounded-2xl sm:rounded-[3rem] overflow-hidden shadow-2xl max-h-[92vh] flex flex-col my-auto"
                         >
                             <div className="p-6 sm:p-10 border-b border-gray-100 flex justify-between items-start gap-4">
                                 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left w-full">
@@ -496,25 +509,25 @@ const TeacherDashboard = () => {
 
                 {/* Task Assignment Selection Sub-Modal */}
                 {isAssigning && (
-                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-md overflow-y-auto">
                         <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
+                            initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="bg-white w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-2xl"
+                            className="bg-white w-full max-w-2xl rounded-2xl sm:rounded-[3rem] overflow-hidden shadow-2xl max-h-[92vh] flex flex-col my-auto"
                         >
-                            <div className="p-10 border-b border-gray-100 flex justify-between items-center">
+                            <div className="p-5 sm:p-8 border-b border-gray-100 flex justify-between items-center">
                                 <div>
-                                    <h3 className="text-3xl font-black text-gray-900">Select Task</h3>
-                                    <p className="text-gray-500 font-medium italic">Assigning to {selectedStudent?.name}</p>
+                                    <h3 className="text-xl sm:text-3xl font-black text-gray-900">Select Task</h3>
+                                    <p className="text-gray-500 font-medium text-xs sm:text-sm italic">Assigning to {selectedStudent?.name}</p>
                                 </div>
-                                <button onClick={() => setIsAssigning(false)} className="p-3 bg-gray-50 text-gray-400 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                <button onClick={() => setIsAssigning(false)} className="p-2 sm:p-3 bg-gray-50 text-gray-400 rounded-xl sm:rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition">
+                                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                                 </button>
                             </div>
 
-                            <div className="p-10 max-h-[60vh] overflow-y-auto space-y-4">
+                            <div className="p-4 sm:p-8 max-h-[60vh] overflow-y-auto space-y-3 sm:space-y-4">
                                 {availableTasks.length === 0 ? (
-                                    <div className="text-center py-10 text-gray-400 font-bold uppercase tracking-widest leading-none">
+                                    <div className="text-center py-10 text-gray-400 font-bold uppercase tracking-widest text-xs sm:text-sm">
                                         No curriculum modules available
                                     </div>
                                 ) : (
@@ -522,7 +535,7 @@ const TeacherDashboard = () => {
                                         <div
                                             key={task.id}
                                             onClick={() => handleAssignTask(task.id)}
-                                            className="group p-6 bg-gray-50 rounded-[1.5rem] border border-gray-100 flex items-center justify-between cursor-pointer hover:bg-primary-600 transition-all shadow-sm hover:shadow-lg"
+                                            className="group p-4 sm:p-6 bg-gray-50 rounded-xl sm:rounded-[1.5rem] border border-gray-100 flex items-center justify-between cursor-pointer hover:bg-primary-600 transition-all shadow-sm hover:shadow-lg"
                                         >
                                             <div className="flex items-center space-x-6">
                                                 <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-primary-600 font-black shadow-sm group-hover:scale-110 transition">

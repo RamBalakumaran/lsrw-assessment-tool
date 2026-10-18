@@ -221,74 +221,75 @@ const StudentHistory = () => {
         <div className="flex bg-gray-50 min-h-screen">
             <Sidebar role="STUDENT" />
 
-            <main className="flex-1 p-6 md:p-10 overflow-y-auto min-w-0">
-                <header className="flex justify-between items-center mb-10">
+            <main className="flex-1 p-4 sm:p-6 md:p-10 overflow-y-auto min-w-0 max-w-full">
+                <header className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-8 sm:mb-10">
                     <div>
-                        <h1 className="text-4xl font-black text-gray-900 tracking-tight">Performance History</h1>
-                        <p className="text-gray-500 font-medium">Review your growth over the last 30 days</p>
+                        <h1 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight">Performance History</h1>
+                        <p className="text-gray-500 font-medium text-xs sm:text-base mt-0.5">Review your growth over the last 30 days</p>
                     </div>
 
                     <button
                         onClick={handleExport}
-                        className="flex items-center space-x-2 px-6 py-3 bg-white border border-gray-100 rounded-2xl font-bold text-gray-600 hover:bg-gray-50 transition shadow-sm active:scale-95"
+                        className="w-full sm:w-auto flex items-center justify-center space-x-2 px-5 sm:px-6 py-2.5 sm:py-3 bg-white border border-gray-200 rounded-2xl font-bold text-xs sm:text-sm text-gray-700 hover:bg-gray-50 transition shadow-sm active:scale-95"
                     >
-                        <Download size={18} />
+                        <Download size={16} />
                         <span>Export Path Report</span>
                     </button>
                 </header>
 
                 {/* Highlight Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-                    <div className="bg-gradient-to-br from-indigo-600 to-primary-700 p-10 rounded-[2.5rem] text-white flex justify-between items-center shadow-xl shadow-primary-500/20 relative overflow-hidden">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8 mb-8 sm:mb-12">
+                    <div className="bg-gradient-to-br from-indigo-600 to-primary-700 p-5 sm:p-8 md:p-10 rounded-2xl sm:rounded-[2.5rem] text-white flex justify-between items-center shadow-xl shadow-primary-500/20 relative overflow-hidden">
                         <div className="relative z-10">
-                            <div className="text-indigo-200 text-xs font-black uppercase tracking-widest mb-2">Peak Performance</div>
-                            <div className="text-5xl font-black mb-4 tracking-tighter">{stats.peak}%</div>
-                            <p className="text-indigo-100 font-medium">{stats.peakTask}</p>
+                            <div className="text-indigo-200 text-[10px] sm:text-xs font-black uppercase tracking-widest mb-1 sm:mb-2">Peak Performance</div>
+                            <div className="text-3xl sm:text-5xl font-black mb-2 sm:mb-4 tracking-tighter">{stats.peak}%</div>
+                            <p className="text-indigo-100 font-medium text-xs sm:text-base">{stats.peakTask}</p>
                         </div>
-                        <div className="relative z-10 w-24 h-24 bg-white/10 rounded-3xl flex items-center justify-center backdrop-blur-md border border-white/20">
-                            <Trophy size={48} className="text-amber-400 fill-current" />
+                        <div className="relative z-10 w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white/10 rounded-2xl sm:rounded-3xl flex items-center justify-center backdrop-blur-md border border-white/20 shrink-0">
+                            <Trophy className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-amber-400 fill-current" />
                         </div>
-                        <div className="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                        <div className="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
                     </div>
 
-                    <div className="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-sm flex justify-between items-center relative overflow-hidden">
+                    <div className="bg-white p-5 sm:p-8 md:p-10 rounded-2xl sm:rounded-[2.5rem] border border-gray-100 shadow-sm flex justify-between items-center relative overflow-hidden">
                         <div>
-                            <div className="text-gray-400 text-xs font-black uppercase tracking-widest mb-2">Total Modules</div>
-                            <div className="text-5xl font-black text-gray-900 mb-4 tracking-tighter">{stats.total}</div>
-                            <p className="text-emerald-600 font-bold flex items-center">
-                                <Target size={18} className="mr-2" />
+                            <div className="text-gray-400 text-[10px] sm:text-xs font-black uppercase tracking-widest mb-1 sm:mb-2">Total Modules</div>
+                            <div className="text-3xl sm:text-5xl font-black text-gray-900 mb-2 sm:mb-4 tracking-tighter">{stats.total}</div>
+                            <p className="text-emerald-600 font-bold flex items-center text-xs sm:text-base">
+                                <Target size={16} className="mr-1.5" />
                                 {stats.average}% Skill Average
                             </p>
                         </div>
-                        <div className="w-24 h-24 bg-gray-50 rounded-3xl flex items-center justify-center text-primary-500">
-                            <History size={48} />
+                        <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-gray-50 rounded-2xl sm:rounded-3xl flex items-center justify-center text-primary-500 shrink-0">
+                            <History className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12" />
                         </div>
                     </div>
                 </div>
 
                 {/* Filters & Sorting */}
-                <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm mb-8">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-xl font-black text-gray-900 flex items-center">
+                {/* Filter and Sort Section */}
+                <div className="bg-white p-5 sm:p-8 rounded-2xl sm:rounded-[2.5rem] border border-gray-100 shadow-sm mb-8">
+                    <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                        <h3 className="text-lg sm:text-xl font-black text-gray-900 flex items-center">
                             <Filter className="mr-2 text-primary-500" size={20} />
                             Filter & Sort Options
                         </h3>
                         <button
                             onClick={() => {
                                 setSearchTerm('');
-                                setDomainFilter('ALL');
-                                setResultCondition('ALL');
-                                setResultValue('');
-                                setDateFrom('');
-                                setDateTo('');
+                                domainFilter !== 'ALL' && setDomainFilter('ALL');
+                                resultCondition !== 'ALL' && setResultCondition('ALL');
+                                resultValue && setResultValue('');
+                                dateFrom && setDateFrom('');
+                                dateTo && setDateTo('');
                             }}
-                            className="text-sm font-bold text-gray-500 hover:text-rose-500 transition flex items-center"
+                            className="text-xs sm:text-sm font-bold text-gray-500 hover:text-rose-500 transition flex items-center"
                         >
                             <X size={16} className="mr-1" /> Clear Filters
                         </button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                         {/* Module Search */}
                         <div className="space-y-2">
                             <label className="text-xs font-black uppercase tracking-widest text-gray-400">Assessment Module</label>
@@ -370,144 +371,149 @@ const StudentHistory = () => {
                 </div>
 
                 {/* Attempt Table */}
-                <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="px-10 py-8 border-b border-gray-50 flex justify-between items-center">
-                        <h3 className="text-2xl font-black text-gray-900">Recent Sessions</h3>
+                <div className="bg-white rounded-2xl sm:rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden mb-8">
+                    <div className="px-5 sm:px-10 py-5 sm:py-8 border-b border-gray-50 flex justify-between items-center">
+                        <div>
+                            <h3 className="text-xl sm:text-2xl font-black text-gray-900">Recent Sessions</h3>
+                            <p className="text-xs text-gray-400 mt-1 font-medium">Detailed log of evaluated and completed submissions</p>
+                        </div>
                         <div className="flex space-x-2">
-                            <span className="w-3 h-3 bg-indigo-500 rounded-full"></span>
-                            <span className="w-3 h-3 bg-indigo-200 rounded-full"></span>
-                            <span className="w-3 h-3 bg-indigo-100 rounded-full"></span>
+                            <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full"></span>
+                            <span className="w-2.5 h-2.5 bg-indigo-200 rounded-full"></span>
+                            <span className="w-2.5 h-2.5 bg-indigo-100 rounded-full"></span>
                         </div>
                     </div>
-                    <table className="w-full text-left">
-                        <thead className="bg-gray-50/50">
-                            <tr>
-                                {
-                                    [
-                                        { label: 'Assessment Module', field: 'module' },
-                                        { label: 'Skill Domain', field: 'domain' },
-                                        { label: 'Result', field: 'result' },
-                                        { label: 'Date', field: 'date' }
-                                    ].map((col) => (
-                                        <th 
-                                            key={col.field} 
-                                            onClick={() => {
-                                                if (sortField === col.field) {
-                                                    setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-                                                } else {
-                                                    setSortField(col.field);
-                                                    setSortDirection('desc');
-                                                }
-                                            }}
-                                            className="px-10 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none cursor-pointer hover:text-gray-700 transition select-none group"
-                                        >
-                                            <div className="flex items-center space-x-2">
-                                                <span>{col.label}</span>
-                                                <ArrowUpDown size={12} className={`transition ${sortField === col.field ? 'text-primary-500 opacity-100' : 'opacity-0 group-hover:opacity-50'}`} />
-                                            </div>
-                                        </th>
-                                    ))
-                                }
-                                <th className="px-10 py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none"></th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                            {filteredAndSortedAttempts.length === 0 ? (
+                    <div className="overflow-x-auto w-full">
+                        <table className="w-full text-left min-w-[620px]">
+                            <thead className="bg-gray-50/50">
                                 <tr>
-                                    <td colSpan="5" className="px-10 py-12 text-center text-gray-500 font-medium">
-                                        No sessions match your filters.
-                                    </td>
+                                    {
+                                        [
+                                            { label: 'Assessment Module', field: 'module' },
+                                            { label: 'Skill Domain', field: 'domain' },
+                                            { label: 'Result', field: 'result' },
+                                            { label: 'Date', field: 'date' }
+                                        ].map((col) => (
+                                            <th 
+                                                key={col.field} 
+                                                onClick={() => {
+                                                    if (sortField === col.field) {
+                                                        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                                                    } else {
+                                                        setSortField(col.field);
+                                                        setSortDirection('desc');
+                                                    }
+                                                }}
+                                                className="px-5 sm:px-8 py-4 sm:py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none cursor-pointer hover:text-gray-700 transition select-none group"
+                                            >
+                                                <div className="flex items-center space-x-2">
+                                                    <span>{col.label}</span>
+                                                    <ArrowUpDown size={12} className={`transition ${sortField === col.field ? 'text-primary-500 opacity-100' : 'opacity-0 group-hover:opacity-50'}`} />
+                                                </div>
+                                            </th>
+                                        ))
+                                    }
+                                    <th className="px-5 sm:px-8 py-4 sm:py-5 text-xs font-black text-gray-400 uppercase tracking-widest leading-none"></th>
                                 </tr>
-                            ) : filteredAndSortedAttempts.map((attempt, i) => (
-                                <tr key={i} className="group hover:bg-gray-50/50 transition-colors">
-                                    <td className="px-10 py-6">
-                                        <span className="font-bold text-gray-900 text-lg">{attempt.task?.title || "Speaking Session"}</span>
-                                        <div className="text-xs text-emerald-500 font-bold mt-1 uppercase tracking-tighter">Verified Result</div>
-                                    </td>
-                                    <td className="px-10 py-6">
-                                        <span className="inline-flex px-4 py-1.5 rounded-xl bg-gray-50 text-gray-600 font-bold text-xs uppercase tracking-widest border border-gray-100">
-                                            {attempt.task?.type || "Speaking"}
-                                        </span>
-                                    </td>
-                                    <td className="px-10 py-6 font-black text-2xl text-gray-700">
-                                        {Math.round(attempt.score || 0)}%
-                                    </td>
-                                    <td className="px-10 py-6 text-gray-400 font-medium">
-                                        <div className="flex items-center space-x-2">
-                                            <Calendar size={14} />
-                                            <span>{new Date(attempt.submittedAt).toLocaleDateString()}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-10 py-6 text-right">
-                                        <button
-                                            onClick={() => setSelectedAttempt(attempt)}
-                                            className="p-3 bg-gray-50 text-gray-400 rounded-2xl hover:bg-primary-600 hover:text-white transition shadow-sm"
-                                        >
-                                            <ChevronRight size={20} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                                {filteredAndSortedAttempts.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="5" className="px-5 sm:px-10 py-12 text-center text-gray-500 font-medium">
+                                            No sessions match your filters.
+                                        </td>
+                                    </tr>
+                                ) : filteredAndSortedAttempts.map((attempt, i) => (
+                                    <tr key={i} className="group hover:bg-gray-50/50 transition-colors">
+                                        <td className="px-5 sm:px-8 py-5">
+                                            <span className="font-bold text-gray-900 text-base sm:text-lg block">{attempt.task?.title || "Speaking Session"}</span>
+                                            <div className="text-[11px] text-emerald-500 font-bold mt-1 uppercase tracking-tighter">Verified Result</div>
+                                        </td>
+                                        <td className="px-5 sm:px-8 py-5">
+                                            <span className="inline-flex px-3 sm:px-4 py-1.5 rounded-xl bg-gray-50 text-gray-600 font-bold text-xs uppercase tracking-widest border border-gray-100">
+                                                {attempt.task?.type || "Speaking"}
+                                            </span>
+                                        </td>
+                                        <td className="px-5 sm:px-8 py-5 font-black text-xl sm:text-2xl text-gray-700">
+                                            {Math.round(attempt.score || 0)}%
+                                        </td>
+                                        <td className="px-5 sm:px-8 py-5 text-gray-400 font-medium text-xs sm:text-sm">
+                                            <div className="flex items-center space-x-2">
+                                                <Calendar size={14} />
+                                                <span>{new Date(attempt.submittedAt).toLocaleDateString()}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-5 sm:px-8 py-5 text-right">
+                                            <button
+                                                onClick={() => setSelectedAttempt(attempt)}
+                                                className="p-2.5 sm:p-3 bg-gray-50 text-gray-400 rounded-xl sm:rounded-2xl hover:bg-primary-600 hover:text-white transition shadow-sm"
+                                            >
+                                                <ChevronRight size={18} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 {/* Attempt Details Modal */}
                 {selectedAttempt && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/50 backdrop-blur-sm overflow-y-auto">
                         <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
+                            initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="bg-white w-full max-w-3xl rounded-[3rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+                            className="bg-white w-full max-w-3xl rounded-2xl sm:rounded-[3rem] overflow-hidden shadow-2xl flex flex-col max-h-[92vh] my-auto"
                         >
-                            <div className="p-10 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                            <div className="p-5 sm:p-8 border-b border-gray-100 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-gray-50/50">
                                 <div>
-                                    <h2 className="text-3xl font-black text-gray-900">{selectedAttempt.task?.title || "Practice Session"}</h2>
-                                    <p className="text-gray-500 font-medium uppercase tracking-widest text-xs mt-2">{selectedAttempt.task?.type || "SPEAKING"} • {new Date(selectedAttempt.submittedAt).toLocaleDateString()}</p>
+                                    <h2 className="text-xl sm:text-3xl font-black text-gray-900">{selectedAttempt.task?.title || "Practice Session"}</h2>
+                                    <p className="text-gray-500 font-medium uppercase tracking-widest text-xs mt-1.5">{selectedAttempt.task?.type || "SPEAKING"} • {new Date(selectedAttempt.submittedAt).toLocaleDateString()}</p>
                                 </div>
-                                <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
                                     <button 
                                         onClick={() => handleDownloadAttemptPdf(selectedAttempt.id, selectedAttempt.task?.title)} 
-                                        className="px-5 py-2.5 bg-primary-600 text-white font-bold text-sm rounded-xl hover:bg-primary-700 transition shadow-lg shadow-primary-500/30 flex items-center gap-2"
+                                        className="px-4 py-2 sm:px-5 sm:py-2.5 bg-primary-600 text-white font-bold text-xs sm:text-sm rounded-xl hover:bg-primary-700 transition shadow-lg shadow-primary-500/30 flex items-center gap-2"
                                     >
-                                        <Download size={16} />
-                                        Download PDF Report
+                                        <Download size={15} />
+                                        <span>Download PDF</span>
                                     </button>
-                                    <button onClick={() => setSelectedAttempt(null)} className="p-3 bg-white text-gray-400 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition shadow-sm border border-gray-100">
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    <button onClick={() => setSelectedAttempt(null)} className="p-2 sm:p-3 bg-white text-gray-400 rounded-xl sm:rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition shadow-sm border border-gray-100">
+                                        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="p-10 overflow-y-auto">
-                                <div className="grid grid-cols-2 gap-6 mb-8">
-                                    <div className="bg-primary-50 rounded-[2rem] p-8 border border-primary-100">
-                                        <div className="text-primary-600 text-xs font-black uppercase tracking-widest mb-2">Final Score</div>
-                                        <div className="text-6xl font-black text-primary-900">{Math.round(selectedAttempt.score || 0)}%</div>
+                            <div className="p-5 sm:p-8 overflow-y-auto">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                                    <div className="bg-primary-50 rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 border border-primary-100">
+                                        <div className="text-primary-600 text-xs font-black uppercase tracking-widest mb-1 sm:mb-2">Final Score</div>
+                                        <div className="text-4xl sm:text-6xl font-black text-primary-900">{Math.round(selectedAttempt.score || 0)}%</div>
                                     </div>
-                                    <div className="bg-gray-50 rounded-[2rem] p-8 border border-gray-100">
-                                        <div className="text-gray-400 text-xs font-black uppercase tracking-widest mb-2">Status</div>
-                                        <div className={`text-4xl font-black pt-2 ${selectedAttempt.status === 'ASSIGNED' ? 'text-amber-500' : 'text-emerald-500'}`}>{selectedAttempt.status || "COMPLETED"}</div>
+                                    <div className="bg-gray-50 rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 border border-gray-100">
+                                        <div className="text-gray-400 text-xs font-black uppercase tracking-widest mb-1 sm:mb-2">Status</div>
+                                        <div className={`text-2xl sm:text-4xl font-black pt-1 sm:pt-2 ${selectedAttempt.status === 'ASSIGNED' ? 'text-amber-500' : 'text-emerald-500'}`}>{selectedAttempt.status || "COMPLETED"}</div>
                                     </div>
                                 </div>
 
                                 {selectedAttempt.aiResults && (
-                                    <div className="space-y-6 mb-8">
-                                        <h4 className="text-xl font-black text-gray-900 flex items-center">
-                                            <Target className="mr-2 text-primary-500" size={20} />
+                                    <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-8">
+                                        <h4 className="text-lg sm:text-xl font-black text-gray-900 flex items-center">
+                                            <Target className="mr-2 text-primary-500" size={18} />
                                             AI Evaluation Details
                                         </h4>
-                                        <div className="bg-white border border-gray-100 rounded-[2rem] p-8 shadow-sm">
+                                        <div className="bg-white border border-gray-100 rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 shadow-sm">
                                             {typeof selectedAttempt.aiResults === 'string' ? (
-                                                <p className="text-gray-600 font-medium leading-relaxed">{selectedAttempt.aiResults}</p>
+                                                <p className="text-gray-600 font-medium leading-relaxed text-sm sm:text-base">{selectedAttempt.aiResults}</p>
                                             ) : (
-                                                <div className="space-y-6">
+                                                <div className="space-y-4 sm:space-y-6">
                                                     {Object.entries(selectedAttempt.aiResults)
                                                         .filter(([key]) => !(selectedAttempt.recordingUrl && (key === 'transcription' || key === 'stt')))
                                                         .map(([key, value]) => (
-                                                        <div key={key} className="flex flex-col bg-gray-50 p-6 rounded-[1.5rem] border border-gray-100">
+                                                        <div key={key} className="flex flex-col bg-gray-50 p-4 sm:p-6 rounded-xl sm:rounded-[1.5rem] border border-gray-100">
                                                             <span className="text-xs font-black uppercase tracking-widest text-gray-400 mb-1">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                                                            <div className="w-full">
+                                                            <div className="w-full text-sm">
                                                                 {renderNestedValue(value)}
                                                             </div>
                                                         </div>
@@ -519,25 +525,25 @@ const StudentHistory = () => {
                                 )}
 
                                 {selectedAttempt.recordingUrl && (
-                                    <div className="mb-8 space-y-6">
-                                        <h4 className="text-xl font-black text-gray-900 flex items-center">
+                                    <div className="mb-6 sm:mb-8 space-y-4 sm:space-y-6">
+                                        <h4 className="text-lg sm:text-xl font-black text-gray-900 flex items-center">
                                             <svg className="w-5 h-5 mr-2 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"></path></svg>
                                             Audio Recording
                                         </h4>
-                                        <div className="bg-gray-50 border border-gray-100 rounded-[2rem] p-8 shadow-sm">
+                                        <div className="bg-gray-50 border border-gray-100 rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 shadow-sm">
                                             <audio controls src={process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL.replace('/api', '')}${selectedAttempt.recordingUrl}` : `http://localhost:5000${selectedAttempt.recordingUrl}`} className="w-full" />
                                         </div>
                                     </div>
                                 )}
 
                                 {selectedAttempt.teacherFeedback && (
-                                    <div className="mb-8 space-y-6">
-                                        <h4 className="text-xl font-black text-gray-900 flex items-center">
-                                            <Target className="mr-2 text-primary-500" size={20} />
+                                    <div className="mb-6 sm:mb-8 space-y-4 sm:space-y-6">
+                                        <h4 className="text-lg sm:text-xl font-black text-gray-900 flex items-center">
+                                            <Target className="mr-2 text-primary-500" size={18} />
                                             Teacher Feedback
                                         </h4>
-                                        <div className="bg-amber-50 border border-amber-100 rounded-[2rem] p-8 shadow-sm">
-                                            <p className="text-amber-900 font-medium leading-relaxed">
+                                        <div className="bg-amber-50 border border-amber-100 rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 shadow-sm">
+                                            <p className="text-amber-900 font-medium leading-relaxed text-sm sm:text-base">
                                                 {selectedAttempt.teacherFeedback}
                                             </p>
                                         </div>
@@ -545,8 +551,8 @@ const StudentHistory = () => {
                                 )}
 
                                 {(!selectedAttempt.aiResults && !selectedAttempt.teacherFeedback) && (
-                                    <div className="text-center py-10 bg-gray-50 rounded-[2rem] border-2 border-dashed border-gray-200">
-                                        <p className="text-gray-400 font-bold uppercase tracking-widest">No detailed feedback available</p>
+                                    <div className="text-center py-8 sm:py-10 bg-gray-50 rounded-2xl sm:rounded-[2rem] border-2 border-dashed border-gray-200">
+                                        <p className="text-gray-400 font-bold uppercase tracking-widest text-xs sm:text-sm">No detailed feedback available</p>
                                     </div>
                                 )}
                             </div>

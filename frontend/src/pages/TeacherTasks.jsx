@@ -442,18 +442,18 @@ const TeacherTasks = () => {
 
                 {/* Create Task Modal */}
                 {isModalOpen && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-6 bg-black/50 backdrop-blur-sm overflow-y-auto">
                         <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
+                            initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-[3.5rem] shadow-2xl relative"
+                            className="bg-white w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl sm:rounded-[3rem] shadow-2xl relative my-auto"
                         >
-                            <div className="absolute top-6 right-6 z-10">
-                                <button onClick={() => setIsModalOpen(false)} className="p-3 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-2xl bg-white shadow transition">
-                                    <Plus className="rotate-45" size={24} />
+                            <div className="absolute top-3 right-3 sm:top-6 sm:right-6 z-20">
+                                <button onClick={() => setIsModalOpen(false)} className="p-2 sm:p-3 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl sm:rounded-2xl bg-white shadow transition">
+                                    <Plus className="rotate-45" size={20} />
                                 </button>
                             </div>
-                            <div className="p-8">
+                            <div className="p-2 sm:p-6 pt-10 sm:pt-6">
                                 <TaskCreationForm 
                                     onTaskCreated={(newTask) => {
                                         setIsModalOpen(false);

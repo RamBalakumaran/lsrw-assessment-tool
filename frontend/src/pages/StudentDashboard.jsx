@@ -227,33 +227,41 @@ const StudentDashboard = () => {
     <div className="flex bg-gray-50 min-h-screen">
       <Sidebar role="STUDENT" />
 
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto min-w-0">
-        <header className="flex justify-between items-end mb-12">
+      <main className="flex-1 p-4 sm:p-6 md:p-10 overflow-y-auto min-w-0 max-w-full">
+        <header className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 mb-8 lg:mb-12">
           <div>
-            <div className="flex items-center space-x-2 text-primary-600 font-black text-xs uppercase tracking-[0.2em] mb-3">
+            <div className="flex items-center space-x-2 text-primary-600 font-black text-xs uppercase tracking-[0.2em] mb-2 sm:mb-3">
               <Sparkles size={14} />
               <span>AI Personalized Path Active</span>
             </div>
-            <h1 className="text-5xl font-black text-gray-900 tracking-tighter">
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-gray-900 tracking-tight sm:tracking-tighter">
               Welcome back, <span className="gradient-text">{user.firstName}</span>
             </h1>
-            <p className="text-gray-500 font-medium text-lg mt-1">Ready to push your boundaries today?</p>
+            <p className="text-gray-500 font-medium text-sm sm:text-base lg:text-lg mt-1">Ready to push your boundaries today?</p>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+            <Link
+              to="/student/guide"
+              className="flex items-center space-x-2 bg-sky-50 text-sky-700 border border-sky-100 px-3.5 sm:px-4 py-2 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm hover:bg-sky-100 transition shadow-sm active:scale-95"
+              title="Open Student Assessment Manual"
+            >
+              <BookOpen size={16} className="text-sky-600" />
+              <span>User Manual</span>
+            </Link>
             <button
               onClick={handleDownloadReport}
-              className="flex items-center space-x-2 bg-indigo-50 text-indigo-600 px-4 py-3 rounded-2xl font-bold text-sm hover:bg-indigo-100 transition"
+              className="flex items-center space-x-2 bg-indigo-50 text-indigo-600 px-3.5 sm:px-4 py-2 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm hover:bg-indigo-100 transition active:scale-95 shadow-sm"
             >
-              <Download size={18} />
+              <Download size={16} />
               <span>Download Report</span>
             </button>
-            <div className="flex items-center space-x-6 bg-white p-3 rounded-[2rem] border border-gray-100 shadow-sm">
-              <div className="text-right pl-4">
-                <div className="font-black text-gray-900 leading-none">{user.firstName} {user.lastName}</div>
-                <div className="text-[10px] font-black uppercase text-gray-400 mt-1 tracking-widest">{user.plan}</div>
+            <div className="flex items-center space-x-3 bg-white p-2 sm:p-2.5 rounded-[1.5rem] border border-gray-100 shadow-sm">
+              <div className="text-right pl-2 sm:pl-3">
+                <div className="font-black text-xs sm:text-sm text-gray-900 leading-none">{user.firstName} {user.lastName}</div>
+                <div className="text-[9px] sm:text-[10px] font-black uppercase text-gray-400 mt-0.5 sm:mt-1 tracking-widest">{user.plan || 'STUDENT'}</div>
               </div>
-              <div className="w-14 h-14 rounded-2xl bg-primary-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-primary-500/30">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-primary-600 flex items-center justify-center text-white font-black text-sm sm:text-base shadow-md shadow-primary-500/20">
                 {user?.firstName?.[0] || ''}{user?.lastName?.[0] || ''}
               </div>
             </div>
@@ -261,25 +269,25 @@ const StudentDashboard = () => {
         </header>
 
         {/* Dynamic Stats Section */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8 lg:mb-12">
           {stats.map((stat, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
-              className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-shadow duration-500"
+              className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-shadow duration-300"
             >
-              <div className="flex justify-between items-start mb-6">
-                <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center">
+              <div className="flex justify-between items-start mb-3 sm:mb-6">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 rounded-xl sm:rounded-2xl flex items-center justify-center">
                   {getIconForStat(stat.label)}
                 </div>
-                <span className="text-[10px] font-black text-emerald-500 bg-emerald-50 px-2 py-1 rounded-lg">
+                <span className="text-[9px] sm:text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg">
                   {stat.trend}
                 </span>
               </div>
-              <div className="text-xs font-black text-gray-400 uppercase tracking-widest leading-none mb-2">{stat.label}</div>
-              <div className="text-3xl font-black text-gray-900">{stat.value}</div>
+              <div className="text-[10px] sm:text-xs font-black text-gray-400 uppercase tracking-widest leading-none mb-1 sm:mb-2">{stat.label}</div>
+              <div className="text-xl sm:text-3xl font-black text-gray-900">{stat.value}</div>
             </motion.div>
           ))}
         </div>
@@ -287,65 +295,65 @@ const StudentDashboard = () => {
         {/* Assigned Tasks Section (Directly assigned tasks) HIDDEN AS PER REQUEST */}
 
         {/* Global Tasks Card Section */}
-        <div className="mb-12">
-          <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm transition-all duration-300">
+        <div className="mb-8 lg:mb-12">
+          <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2.5rem] border border-gray-100 shadow-sm transition-all duration-300">
             <div 
                 className="flex items-center justify-between cursor-pointer group"
                 onClick={() => setIsGlobalExpanded(!isGlobalExpanded)}
             >
-              <div className="flex items-center space-x-4">
-                <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black transition-transform group-hover:scale-105">
-                  <Globe size={28} />
+              <div className="flex items-center space-x-3 sm:space-x-4">
+                <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black transition-transform group-hover:scale-105 shrink-0">
+                  <Globe size={22} className="sm:w-7 sm:h-7" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-gray-900 tracking-tight group-hover:text-indigo-600 transition-colors">Global Tasks</h2>
-                  <p className="text-xs font-bold text-gray-400 mt-1">Platform-wide assessment and practice tasks</p>
+                  <h2 className="text-lg sm:text-2xl font-black text-gray-900 tracking-tight group-hover:text-indigo-600 transition-colors">Global Tasks</h2>
+                  <p className="text-[11px] sm:text-xs font-bold text-gray-400 mt-0.5 sm:mt-1">Platform-wide assessment & practice tasks</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-4">
-                  <span className="text-xs font-black bg-indigo-50 text-indigo-600 px-3.5 py-1.5 rounded-full">
+              <div className="flex items-center space-x-2 sm:space-x-4">
+                  <span className="text-[10px] sm:text-xs font-black bg-indigo-50 text-indigo-600 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full">
                     {globalTasks.length} {globalTasks.length === 1 ? 'task' : 'tasks'}
                   </span>
-                  <div className="w-10 h-10 rounded-xl bg-gray-50 text-gray-400 flex items-center justify-center group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
-                      {isGlobalExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gray-50 text-gray-400 flex items-center justify-center group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+                      {isGlobalExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                   </div>
               </div>
             </div>
 
             {isGlobalExpanded && (
-                <div className="mt-8 pt-8 border-t border-gray-100">
-                    <div className="flex space-x-4 mb-6 bg-gray-50 p-2 rounded-2xl w-max">
+                <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-gray-100">
+                    <div className="flex flex-wrap gap-2 mb-6 bg-gray-50 p-1.5 rounded-2xl w-full sm:w-max">
                         {['ASSESSMENT', 'PRACTICE'].map(cat => (
                             <button
                                 key={cat}
                                 onClick={() => setGlobalCategoryTab(cat)}
-                                className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-colors ${globalCategoryTab === cat ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                                className={`flex-1 sm:flex-initial px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-colors ${globalCategoryTab === cat ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
                             >
                                 {cat}
                             </button>
                         ))}
                     </div>
 
-                    <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8 border-b border-gray-100 pb-4">
-                        <div className="flex space-x-2">
+                    <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6 sm:mb-8 border-b border-gray-100 pb-4">
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
                             {['LISTENING', 'SPEAKING', 'READING', 'WRITING'].map(lsrw => (
                                 <button
                                     key={lsrw}
                                     onClick={() => setGlobalLsrwTab(lsrw)}
-                                    className={`px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-widest transition-colors ${globalLsrwTab === lsrw ? 'bg-indigo-50 text-indigo-700' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-700'}`}
+                                    className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg font-black text-[10px] sm:text-xs uppercase tracking-wider transition-colors ${globalLsrwTab === lsrw ? 'bg-indigo-50 text-indigo-700' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-700'}`}
                                 >
                                     {lsrw}
                                 </button>
                             ))}
                         </div>
-                        <div className="relative">
+                        <div className="relative w-full md:w-auto">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                             <input 
                                 type="text"
                                 placeholder="Search global tasks..."
                                 value={globalSearchQuery}
                                 onChange={e => setGlobalSearchQuery(e.target.value)}
-                                className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-full md:w-64 transition-all shadow-sm"
+                                className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-full md:w-64 transition-all shadow-sm"
                             />
                         </div>
                     </div>
@@ -702,40 +710,40 @@ const StudentDashboard = () => {
 
       {/* Attempt Details Modal */}
       {selectedAttempt && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/50 backdrop-blur-sm">
               <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
+                  initial={{ scale: 0.95, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  className="bg-white w-full max-w-3xl rounded-[3rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+                  className="bg-white w-full max-w-3xl rounded-2xl sm:rounded-[3rem] overflow-hidden shadow-2xl flex flex-col max-h-[92vh]"
               >
-                  <div className="p-10 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                  <div className="p-5 sm:p-8 md:p-10 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-50/50">
                       <div>
-                          <h2 className="text-3xl font-black text-gray-900">{selectedAttempt.task?.title || "Practice Session"}</h2>
-                          <p className="text-gray-500 font-medium uppercase tracking-widest text-xs mt-2">{selectedAttempt.task?.type || "SPEAKING"} • {new Date(selectedAttempt.submittedAt).toLocaleDateString()}</p>
+                          <h2 className="text-xl sm:text-3xl font-black text-gray-900">{selectedAttempt.task?.title || "Practice Session"}</h2>
+                          <p className="text-gray-500 font-medium uppercase tracking-widest text-xs mt-1 sm:mt-2">{selectedAttempt.task?.type || "SPEAKING"} • {new Date(selectedAttempt.submittedAt).toLocaleDateString()}</p>
                       </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                           <button 
                               onClick={() => handleDownloadAttemptPdf(selectedAttempt.id, selectedAttempt.task?.title)} 
-                              className="px-5 py-2.5 bg-primary-600 text-white font-bold text-sm rounded-xl hover:bg-primary-700 transition shadow-lg shadow-primary-500/30 flex items-center gap-2"
+                              className="px-4 sm:px-5 py-2 sm:py-2.5 bg-primary-600 text-white font-bold text-xs sm:text-sm rounded-xl hover:bg-primary-700 transition shadow-lg shadow-primary-500/30 flex items-center gap-2"
                           >
-                              <Download size={16} />
-                              Download PDF Report
+                              <Download size={15} />
+                              <span>Download PDF</span>
                           </button>
-                          <button onClick={() => setSelectedAttempt(null)} className="p-3 bg-white text-gray-400 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition shadow-sm border border-gray-100">
-                              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                          <button onClick={() => setSelectedAttempt(null)} className="p-2 sm:p-3 bg-white text-gray-400 rounded-xl sm:rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition shadow-sm border border-gray-100">
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
                           </button>
                       </div>
                   </div>
 
-                  <div className="p-10 overflow-y-auto">
-                      <div className="grid grid-cols-2 gap-6 mb-8">
-                          <div className="bg-primary-50 rounded-[2rem] p-8 border border-primary-100">
-                              <div className="text-primary-600 text-xs font-black uppercase tracking-widest mb-2">Final Score</div>
-                              <div className="text-6xl font-black text-primary-900">{Math.round(selectedAttempt.score || 0)}%</div>
+                  <div className="p-4 sm:p-8 md:p-10 overflow-y-auto">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                          <div className="bg-primary-50 rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 border border-primary-100">
+                              <div className="text-primary-600 text-xs font-black uppercase tracking-widest mb-1 sm:mb-2">Final Score</div>
+                              <div className="text-4xl sm:text-6xl font-black text-primary-900">{Math.round(selectedAttempt.score || 0)}%</div>
                           </div>
-                          <div className="bg-gray-50 rounded-[2rem] p-8 border border-gray-100">
-                              <div className="text-gray-400 text-xs font-black uppercase tracking-widest mb-2">Status</div>
-                              <div className={`text-4xl font-black pt-2 ${selectedAttempt.status === 'ASSIGNED' ? 'text-amber-500' : 'text-emerald-500'}`}>{selectedAttempt.status || "COMPLETED"}</div>
+                          <div className="bg-gray-50 rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 border border-gray-100">
+                              <div className="text-gray-400 text-xs font-black uppercase tracking-widest mb-1 sm:mb-2">Status</div>
+                              <div className={`text-2xl sm:text-4xl font-black pt-1 sm:pt-2 ${selectedAttempt.status === 'ASSIGNED' ? 'text-amber-500' : 'text-emerald-500'}`}>{selectedAttempt.status || "COMPLETED"}</div>
                           </div>
                       </div>
 

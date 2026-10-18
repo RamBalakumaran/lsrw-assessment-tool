@@ -122,16 +122,16 @@ const PerformanceComparison = () => {
     return (
         <div className="flex bg-gray-50 min-h-screen">
             <Sidebar role={role} />
-            <main className="flex-1 p-6 md:p-10 overflow-y-auto">
-                <header className="mb-10">
-                    <h1 className="text-4xl font-black text-gray-900 tracking-tight flex items-center">
-                        <Activity className="mr-4 text-primary-500" size={40} />
+            <main className="flex-1 p-4 sm:p-6 md:p-10 overflow-y-auto max-w-full">
+                <header className="mb-6 sm:mb-10">
+                    <h1 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight flex items-center">
+                        <Activity className="mr-3 sm:mr-4 text-primary-500 shrink-0" size={32} />
                         Performance Comparison
                     </h1>
-                    <p className="text-gray-500 font-medium mt-2">Analyze and contrast performance metrics</p>
+                    <p className="text-xs sm:text-base text-gray-500 font-medium mt-1 sm:mt-2">Analyze and contrast performance metrics</p>
                 </header>
 
-                <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 mb-8">
+                <div className="bg-white p-4 sm:p-8 rounded-2xl sm:rounded-[2.5rem] shadow-sm border border-gray-100 mb-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {role !== 'STUDENT' ? (
                             <div>
@@ -310,20 +310,20 @@ const PerformanceComparison = () => {
                 </div>
 
                 {chartData.length > 0 && (
-                    <div className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-gray-100 relative">
-                        <div className="flex justify-between items-center mb-8">
-                            <h3 className="text-2xl font-black text-gray-900">Comparison Results</h3>
+                    <div className="bg-white p-4 sm:p-10 rounded-2xl sm:rounded-[2.5rem] shadow-sm border border-gray-100 relative">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
+                            <h3 className="text-xl sm:text-2xl font-black text-gray-900">Comparison Results</h3>
                             <button 
                                 onClick={handleDownloadGraph}
-                                className="flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition"
+                                className="flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition text-sm"
                             >
                                 <Download size={18} className="mr-2" />
                                 Download Graph
                             </button>
                         </div>
-                        <div className="h-[400px] w-full bg-white">
+                        <div className="h-[280px] sm:h-[400px] w-full min-w-0 bg-white">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12, fontWeight: 600 }} />
                                     <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12, fontWeight: 600 }} />
